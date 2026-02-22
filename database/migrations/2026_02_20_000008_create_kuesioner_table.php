@@ -1,0 +1,25 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('kuesioner', function (Blueprint $table) {
+            $table->id('id_kuesioner');
+            $table->string('judul_kuesioner');
+            $table->string('deskripsi_kuesioner');
+            $table->enum('status_kuesioner', ['draft', 'publish', 'close'])->default('draft');
+            $table->date('tanggal_publikasi')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('kuesioner');
+    }
+};
