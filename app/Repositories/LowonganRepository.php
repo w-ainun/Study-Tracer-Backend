@@ -10,7 +10,7 @@ class LowonganRepository implements LowonganRepositoryInterface
 {
     public function getAll(array $filters = [], int $perPage = 15)
     {
-        $query = Lowongan::with(['perusahaan.kota.provinsi', 'pekerjaan']);
+        $query = Lowongan::with(['perusahaan.kota.provinsi', 'pekerjaan', 'user']);
 
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
@@ -33,20 +33,21 @@ class LowonganRepository implements LowonganRepositoryInterface
 
     public function getById(int $id)
     {
-        return Lowongan::with(['perusahaan.kota.provinsi', 'pekerjaan'])
+        return Lowongan::with(['perusahaan.kota.provinsi', 'pekerjaan', 'user'])
             ->findOrFail($id);
     }
 
     public function create(array $data)
     {
-        return Lowongan::create($data);
+        $lowongan = Lowongan::create($data);
+        return $lowongan->load(['perusahaan.kota.provinsi', 'pekerjaan', 'user']);
     }
 
     public function update(int $id, array $data)
     {
         $lowongan = Lowongan::findOrFail($id);
         $lowongan->update($data);
-        return $lowongan->fresh();
+        return $lowongan->fresh(['perusahaan.kota.provinsi', 'pekerjaan', 'user']);
     }
 
     public function delete(int $id)
@@ -58,7 +59,7 @@ class LowonganRepository implements LowonganRepositoryInterface
 
     public function getByApprovalStatus(string $status, int $perPage = 15)
     {
-        return Lowongan::with(['perusahaan.kota.provinsi'])
+        return Lowongan::with(['perusahaan.kota.provinsi', 'user'])
             ->where('approval_status', $status)
             ->orderBy('created_at', 'desc')
             ->paginate($perPage);
@@ -68,7 +69,7 @@ class LowonganRepository implements LowonganRepositoryInterface
     {
         $lowongan = Lowongan::findOrFail($id);
         $lowongan->update(['approval_status' => $status]);
-        return $lowongan->fresh();
+        return $lowongan->fresh(['perusahaan.kota.provinsi', 'pekerjaan', 'user']);
     }
 
     public function getSavedByUser(int $userId, int $perPage = 15)

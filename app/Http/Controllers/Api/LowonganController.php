@@ -68,9 +68,23 @@ class LowonganController extends Controller
         try {
             $data = $request->validated();
 
+            // Handle foto upload
             if ($request->hasFile('foto_lowongan')) {
                 $data['foto_lowongan'] = $request->file('foto_lowongan')->store('lowongan', 'public');
             }
+
+            // If nama_perusahaan provided but no id_perusahaan, auto-create
+            if (!empty($data['nama_perusahaan']) && empty($data['id_perusahaan'])) {
+                $perusahaan = \App\Models\Perusahaan::firstOrCreate(
+                    ['nama_perusahaan' => $data['nama_perusahaan']],
+                    ['jalan' => $data['lokasi'] ?? null]
+                );
+                $data['id_perusahaan'] = $perusahaan->id_perusahaan;
+            }
+            unset($data['nama_perusahaan']);
+
+            // Attach current user as poster
+            $data['id_users'] = $request->user()->id_users;
 
             $lowongan = $this->lowonganService->create($data);
             return $this->createdResponse(new LowonganResource($lowongan), 'Lowongan berhasil dibuat');
@@ -87,6 +101,16 @@ class LowonganController extends Controller
             if ($request->hasFile('foto_lowongan')) {
                 $data['foto_lowongan'] = $request->file('foto_lowongan')->store('lowongan', 'public');
             }
+
+            // If nama_perusahaan provided, auto-create
+            if (!empty($data['nama_perusahaan'])) {
+                $perusahaan = \App\Models\Perusahaan::firstOrCreate(
+                    ['nama_perusahaan' => $data['nama_perusahaan']],
+                    ['jalan' => $data['lokasi'] ?? null]
+                );
+                $data['id_perusahaan'] = $perusahaan->id_perusahaan;
+            }
+            unset($data['nama_perusahaan']);
 
             $lowongan = $this->lowonganService->update($id, $data);
             return $this->successResponse(new LowonganResource($lowongan), 'Lowongan berhasil diperbarui');

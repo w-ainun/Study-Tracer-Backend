@@ -93,4 +93,35 @@ class AdminController extends Controller
             return $this->errorResponse('Gagal menghapus user: ' . $e->getMessage());
         }
     }
+
+    public function getLowonganStats()
+    {
+        try {
+            $stats = $this->adminService->getLowonganStats();
+            return $this->successResponse($stats);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil statistik lowongan');
+        }
+    }
+
+    public function getTopCompanies(Request $request)
+    {
+        try {
+            $limit = $request->input('limit', 5);
+            $companies = $this->adminService->getTopCompanies($limit);
+            return $this->successResponse($companies);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil perusahaan teratas');
+        }
+    }
+
+    public function getGeographicDistribution()
+    {
+        try {
+            $distribution = $this->adminService->getGeographicDistribution();
+            return $this->successResponse($distribution);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil distribusi geografis');
+        }
+    }
 }

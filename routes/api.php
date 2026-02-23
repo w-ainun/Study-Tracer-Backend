@@ -65,6 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard
         Route::get('/dashboard-stats', [AdminController::class, 'getStats']);
+        Route::get('/lowongan-stats', [AdminController::class, 'getLowonganStats']);
+        Route::get('/top-companies', [AdminController::class, 'getTopCompanies']);
+        Route::get('/geographic-distribution', [AdminController::class, 'getGeographicDistribution']);
 
         // User Management
         Route::get('/pending-users', [AdminController::class, 'getPendingUsers']);
@@ -76,10 +79,10 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Lowongan Management
         Route::get('/lowongan', [LowonganController::class, 'index']);
+        Route::get('/lowongan/pending', [LowonganController::class, 'pending']);
         Route::post('/lowongan', [LowonganController::class, 'store']);
         Route::put('/lowongan/{id}', [LowonganController::class, 'update']);
         Route::delete('/lowongan/{id}', [LowonganController::class, 'destroy']);
-        Route::get('/lowongan/pending', [LowonganController::class, 'pending']);
         Route::post('/lowongan/{id}/approve', [LowonganController::class, 'approve']);
         Route::post('/lowongan/{id}/reject', [LowonganController::class, 'reject']);
 

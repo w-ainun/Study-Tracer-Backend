@@ -15,12 +15,19 @@ class Lowongan extends Model
     protected $fillable = [
         'judul_lowongan',
         'deskripsi',
+        'tipe_pekerjaan',
+        'lokasi',
         'status',
         'approval_status',
         'lowongan_selesai',
         'id_pekerjaan',
         'foto_lowongan',
         'id_perusahaan',
+        'id_users',
+    ];
+
+    protected $casts = [
+        'lowongan_selesai' => 'date',
     ];
 
     public function pekerjaan()
@@ -36,5 +43,10 @@ class Lowongan extends Model
     public function simpanLowongan()
     {
         return $this->hasMany(SimpanLowongan::class, 'id_lowongan', 'id_lowongan');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_users', 'id_users');
     }
 }

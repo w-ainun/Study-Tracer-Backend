@@ -18,11 +18,15 @@ class StoreLowonganRequest extends FormRequest
         return [
             'judul_lowongan' => ['required', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
+            'tipe_pekerjaan' => ['nullable', 'string', 'max:255'],
+            'lokasi' => ['nullable', 'string', 'max:255'],
             'status' => ['sometimes', 'in:draft,published,closed'],
-            'lowongan_selesai' => ['nullable', 'date_format:H:i:s'],
+            'lowongan_selesai' => ['nullable', 'date'],
             'id_pekerjaan' => ['nullable', 'exists:pekerjaan,id_pekerjaan'],
             'foto_lowongan' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'id_perusahaan' => ['required', 'exists:perusahaan,id_perusahaan'],
+            // Either id_perusahaan OR nama_perusahaan can be provided
+            'id_perusahaan' => ['nullable', 'exists:perusahaan,id_perusahaan'],
+            'nama_perusahaan' => ['nullable', 'string', 'max:255', 'required_without:id_perusahaan'],
         ];
     }
 
@@ -30,8 +34,8 @@ class StoreLowonganRequest extends FormRequest
     {
         return [
             'judul_lowongan.required' => 'Judul lowongan wajib diisi.',
-            'id_perusahaan.required' => 'Perusahaan wajib dipilih.',
             'id_perusahaan.exists' => 'Perusahaan tidak valid.',
+            'nama_perusahaan.required_without' => 'Nama perusahaan wajib diisi jika tidak memilih perusahaan.',
         ];
     }
 

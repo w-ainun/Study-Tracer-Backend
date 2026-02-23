@@ -5,6 +5,9 @@ namespace App\Interfaces;
 interface AdminRepositoryInterface
 {
     public function getDashboardStats(): array;
+    public function getLowonganStats(): array;
+    public function getTopCompanies(int $limit = 5): array;
+    public function getGeographicDistribution(): array;
     public function getPendingAlumni(int $perPage = 15);
     public function approveAlumni(int $alumniId);
     public function rejectAlumni(int $alumniId);

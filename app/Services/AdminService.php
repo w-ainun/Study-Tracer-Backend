@@ -47,4 +47,19 @@ class AdminService
     {
         return $this->adminRepository->deleteUser($userId);
     }
+
+    public function getLowonganStats(): array
+    {
+        return $this->adminRepository->getLowonganStats();
+    }
+
+    public function getTopCompanies(int $limit = 5): array
+    {
+        return $this->adminRepository->getTopCompanies($limit);
+    }
+
+    public function getGeographicDistribution(): array
+    {
+        return $this->adminRepository->getGeographicDistribution();
+    }
 }

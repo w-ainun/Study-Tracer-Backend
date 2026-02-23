@@ -18,11 +18,14 @@ class UpdateLowonganRequest extends FormRequest
         return [
             'judul_lowongan' => ['sometimes', 'string', 'max:255'],
             'deskripsi' => ['nullable', 'string'],
+            'tipe_pekerjaan' => ['nullable', 'string', 'max:255'],
+            'lokasi' => ['nullable', 'string', 'max:255'],
             'status' => ['sometimes', 'in:draft,published,closed'],
-            'lowongan_selesai' => ['nullable', 'date_format:H:i:s'],
+            'lowongan_selesai' => ['nullable', 'date'],
             'id_pekerjaan' => ['nullable', 'exists:pekerjaan,id_pekerjaan'],
             'foto_lowongan' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
-            'id_perusahaan' => ['sometimes', 'exists:perusahaan,id_perusahaan'],
+            'id_perusahaan' => ['nullable', 'exists:perusahaan,id_perusahaan'],
+            'nama_perusahaan' => ['nullable', 'string', 'max:255'],
         ];
     }
 
