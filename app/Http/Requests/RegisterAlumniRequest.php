@@ -27,12 +27,12 @@ class RegisterAlumniRequest extends FormRequest
             'jenis_kelamin' => ['required', 'in:Laki-laki,Perempuan'],
             'tanggal_lahir' => ['nullable', 'date'],
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
-            'tahun_masuk' => ['nullable', 'integer', 'min:2000', 'max:' . (date('Y') + 1)],
+            'tahun_masuk' => ['nullable', 'string', 'digits:4'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'alamat' => ['nullable', 'string'],
             'no_hp' => ['nullable', 'string', 'max:20'],
             'id_jurusan' => ['required', 'exists:jurusan,id_jurusan'],
-            'tahun_lulus' => ['nullable', 'date'],
+            'tahun_lulus' => ['nullable', 'string', 'digits:4'],
 
             // Skills & Social Media
             'skills' => ['nullable', 'array'],

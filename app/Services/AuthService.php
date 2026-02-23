@@ -19,6 +19,11 @@ class AuthService
     public function registerUserAndProfile(array $accountData, array $profileData)
     {
         return DB::transaction(function () use ($accountData, $profileData) {
+            // Convert year-only values to proper date format for DB
+            if (!empty($profileData['tahun_lulus']) && preg_match('/^\d{4}$/', $profileData['tahun_lulus'])) {
+                $profileData['tahun_lulus'] = $profileData['tahun_lulus'] . '-01-01';
+            }
+
             $user = $this->authRepository->createUser($accountData);
             $this->authRepository->createAlumniProfile($user->id_users, $profileData);
 
