@@ -18,7 +18,7 @@ class LowonganResource extends JsonResource
             'status' => $this->status,
             'approval_status' => $this->approval_status,
             'lowongan_selesai' => $this->lowongan_selesai?->format('Y-m-d'),
-            'foto' => $this->foto_lowongan ? asset('storage/' . $this->foto_lowongan) : null,
+            'foto' => $this->foto_lowongan,
             'perusahaan' => new PerusahaanResource($this->whenLoaded('perusahaan')),
             'pekerjaan' => $this->whenLoaded('pekerjaan', function () {
                 return [

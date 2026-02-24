@@ -13,6 +13,21 @@ class UpdateLowonganRequest extends FormRequest
         return true;
     }
 
+    public function prepareForValidation()
+    {
+        // Handle input fields
+        $this->merge([
+            'judul_lowongan' => $this->input('judul') ?? $this->input('judul_lowongan'),
+            'nama_perusahaan' => $this->input('perusahaan') ?? $this->input('nama_perusahaan'),
+            'lowongan_selesai' => $this->input('tanggal_berakhir') ?? $this->input('lowongan_selesai'),
+        ]);
+
+        // Handle file upload renaming (foto -> foto_lowongan)
+        if ($this->hasFile('foto')) {
+            $this->files->set('foto_lowongan', $this->file('foto'));
+        }
+    }
+
     public function rules(): array
     {
         return [

@@ -12,14 +12,14 @@ class JurusanFactory extends Factory
     public function definition(): array
     {
         $jurusanList = [
-            'Teknik Komputer dan Jaringan',
-            'Rekayasa Perangkat Lunak',
+            'TKJ',
+            'RPL',
             'Multimedia',
             'Akuntansi',
-            'Administrasi Perkantoran',
+            'AP',
             'Pemasaran',
-            'Teknik Kendaraan Ringan',
-            'Teknik Elektronika Industri',
+            'TKR',
+            'TEI',
         ];
 
         return [

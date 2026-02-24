@@ -45,7 +45,11 @@ class LowonganService
 
     public function approve(int $id)
     {
-        return $this->lowonganRepository->updateApprovalStatus($id, 'approved');
+        // When approved, also set status to published (active)
+        return $this->lowonganRepository->update($id, [
+            'approval_status' => 'approved',
+            'status' => 'published'
+        ]);
     }
 
     public function reject(int $id)

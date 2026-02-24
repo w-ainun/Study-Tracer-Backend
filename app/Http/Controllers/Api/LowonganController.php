@@ -75,9 +75,22 @@ class LowonganController extends Controller
 
             // If nama_perusahaan provided but no id_perusahaan, auto-create
             if (!empty($data['nama_perusahaan']) && empty($data['id_perusahaan'])) {
+                // Determine id_kota: try to match 'lokasi' with city name, or fallback to first city in DB
+                $defaultCityId = \App\Models\Kota::value('id_kota') ?? 1; // Fallback to 1 if empty
+                
+                if (!empty($data['lokasi'])) {
+                    $city = \App\Models\Kota::where('nama_kota', 'like', '%' . $data['lokasi'] . '%')->first();
+                    if ($city) {
+                        $defaultCityId = $city->id_kota;
+                    }
+                }
+
                 $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                     ['nama_perusahaan' => $data['nama_perusahaan']],
-                    ['jalan' => $data['lokasi'] ?? null]
+                    [
+                        'jalan' => $data['lokasi'] ?? '-',
+                        'id_kota' => $defaultCityId
+                    ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
@@ -104,9 +117,21 @@ class LowonganController extends Controller
 
             // If nama_perusahaan provided, auto-create
             if (!empty($data['nama_perusahaan'])) {
+                $defaultCityId = \App\Models\Kota::value('id_kota') ?? 1;
+                
+                if (!empty($data['lokasi'])) {
+                    $city = \App\Models\Kota::where('nama_kota', 'like', '%' . $data['lokasi'] . '%')->first();
+                    if ($city) {
+                        $defaultCityId = $city->id_kota;
+                    }
+                }
+
                 $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                     ['nama_perusahaan' => $data['nama_perusahaan']],
-                    ['jalan' => $data['lokasi'] ?? null]
+                    [
+                        'jalan' => $data['lokasi'] ?? '-',
+                        'id_kota' => $defaultCityId
+                    ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
