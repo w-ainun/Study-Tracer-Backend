@@ -18,6 +18,11 @@ class AdminService
         return $this->adminRepository->getDashboardStats();
     }
 
+    public function getUserManagementStats(): array
+    {
+        return $this->adminRepository->getUserManagementStats();
+    }
+
     public function getPendingAlumni(int $perPage = 15)
     {
         return $this->adminRepository->getPendingAlumni($perPage);

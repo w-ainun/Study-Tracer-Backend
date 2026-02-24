@@ -26,6 +26,7 @@ Route::prefix('master')->group(function () {
     Route::get('/status', [MasterDataController::class, 'status']);
     Route::get('/bidang-usaha', [MasterDataController::class, 'bidangUsaha']);
     Route::get('/universitas', [MasterDataController::class, 'universitas']);
+    Route::get('/tipe-pekerjaan', [MasterDataController::class, 'tipePekerjaan']);
 });
 
 // Public approved lowongan
@@ -65,6 +66,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard
         Route::get('/dashboard-stats', [AdminController::class, 'getStats']);
+        Route::get('/user-stats', [AdminController::class, 'getUserManagementStats']);
         Route::get('/lowongan-stats', [AdminController::class, 'getLowonganStats']);
         Route::get('/top-companies', [AdminController::class, 'getTopCompanies']);
         Route::get('/geographic-distribution', [AdminController::class, 'getGeographicDistribution']);
@@ -73,6 +75,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending-users', [AdminController::class, 'getPendingUsers']);
         Route::post('/approve-user/{id}', [AdminController::class, 'approveUser']);
         Route::post('/reject-user/{id}', [AdminController::class, 'rejectUser']);
+        Route::get('/alumni/export', [AdminController::class, 'exportAlumniCsv']); // before {id}
         Route::get('/alumni', [AdminController::class, 'getAllAlumni']);
         Route::get('/alumni/{id}', [AdminController::class, 'getAlumniDetail']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
@@ -101,41 +104,49 @@ Route::middleware('auth:sanctum')->group(function () {
         // Master Data CRUD (admin only)
         Route::prefix('master')->group(function () {
             // Provinsi
+            Route::get('/provinsi', [MasterDataController::class, 'provinsi']);
             Route::post('/provinsi', [MasterDataController::class, 'storeProvinsi']);
             Route::put('/provinsi/{id}', [MasterDataController::class, 'updateProvinsi']);
             Route::delete('/provinsi/{id}', [MasterDataController::class, 'destroyProvinsi']);
 
             // Kota
+            Route::get('/kota', [MasterDataController::class, 'kota']);
             Route::post('/kota', [MasterDataController::class, 'storeKota']);
             Route::put('/kota/{id}', [MasterDataController::class, 'updateKota']);
             Route::delete('/kota/{id}', [MasterDataController::class, 'destroyKota']);
 
             // Jurusan
+            Route::get('/jurusan', [MasterDataController::class, 'jurusan']);
             Route::post('/jurusan', [MasterDataController::class, 'storeJurusan']);
             Route::put('/jurusan/{id}', [MasterDataController::class, 'updateJurusan']);
             Route::delete('/jurusan/{id}', [MasterDataController::class, 'destroyJurusan']);
 
             // Jurusan Kuliah
+            Route::get('/jurusan-kuliah', [MasterDataController::class, 'jurusanKuliah']);
             Route::post('/jurusan-kuliah', [MasterDataController::class, 'storeJurusanKuliah']);
             Route::put('/jurusan-kuliah/{id}', [MasterDataController::class, 'updateJurusanKuliah']);
             Route::delete('/jurusan-kuliah/{id}', [MasterDataController::class, 'destroyJurusanKuliah']);
 
             // Skills
+            Route::get('/skills', [MasterDataController::class, 'skills']);
             Route::post('/skills', [MasterDataController::class, 'storeSkill']);
             Route::put('/skills/{id}', [MasterDataController::class, 'updateSkill']);
             Route::delete('/skills/{id}', [MasterDataController::class, 'destroySkill']);
 
             // Social Media
+            Route::get('/social-media', [MasterDataController::class, 'socialMedia']);
             Route::post('/social-media', [MasterDataController::class, 'storeSocialMedia']);
             Route::put('/social-media/{id}', [MasterDataController::class, 'updateSocialMedia']);
             Route::delete('/social-media/{id}', [MasterDataController::class, 'destroySocialMedia']);
 
             // Status
+            Route::get('/status', [MasterDataController::class, 'status']);
             Route::post('/status', [MasterDataController::class, 'storeStatus']);
             Route::put('/status/{id}', [MasterDataController::class, 'updateStatus']);
             Route::delete('/status/{id}', [MasterDataController::class, 'destroyStatus']);
 
             // Bidang Usaha
+            Route::get('/bidang-usaha', [MasterDataController::class, 'bidangUsaha']);
             Route::post('/bidang-usaha', [MasterDataController::class, 'storeBidangUsaha']);
             Route::put('/bidang-usaha/{id}', [MasterDataController::class, 'updateBidangUsaha']);
             Route::delete('/bidang-usaha/{id}', [MasterDataController::class, 'destroyBidangUsaha']);
@@ -147,7 +158,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/perusahaan/{id}', [MasterDataController::class, 'destroyPerusahaan']);
 
             // Universitas
+            Route::get('/universitas', [MasterDataController::class, 'universitas']);
             Route::post('/universitas', [MasterDataController::class, 'storeUniversitas']);
+
+            // Tipe Pekerjaan
+            Route::get('/tipe-pekerjaan', [MasterDataController::class, 'tipePekerjaan']);
         });
     });
 });

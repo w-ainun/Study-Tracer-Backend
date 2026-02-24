@@ -499,4 +499,21 @@ class MasterDataController extends Controller
             return $this->errorResponse('Gagal menambahkan universitas: ' . $e->getMessage());
         }
     }
+
+    // =====================
+    // TIPE PEKERJAAN (dynamic list from Lowongan)
+    // =====================
+    public function tipePekerjaan()
+    {
+        try {
+            $data = \App\Models\Lowongan::whereNotNull('tipe_pekerjaan')
+                ->distinct()
+                ->orderBy('tipe_pekerjaan')
+                ->pluck('tipe_pekerjaan')
+                ->map(fn ($item) => ['nama' => $item]);
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil data tipe pekerjaan');
+        }
+    }
 }

@@ -17,6 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->statefulApi();
+        
+        // Trust all proxies to handle HTTPS and Headers correctly behind ngrok
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

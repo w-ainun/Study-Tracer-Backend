@@ -5,6 +5,7 @@ namespace App\Interfaces;
 interface AdminRepositoryInterface
 {
     public function getDashboardStats(): array;
+    public function getUserManagementStats(): array;
     public function getLowonganStats(): array;
     public function getTopCompanies(int $limit = 5): array;
     public function getGeographicDistribution(): array;

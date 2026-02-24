@@ -18,7 +18,7 @@ class AlumniResource extends JsonResource
             'tanggal_lahir' => $this->tanggal_lahir?->format('Y-m-d'),
             'tempat_lahir' => $this->tempat_lahir,
             'tahun_masuk' => $this->tahun_masuk,
-            'foto' => $this->foto ? asset('storage/' . $this->foto) : null,
+            'foto' => $this->foto ?: null,
             'alamat' => $this->alamat,
             'no_hp' => $this->no_hp,
             'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),

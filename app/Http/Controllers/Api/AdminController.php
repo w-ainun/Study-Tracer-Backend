@@ -8,6 +8,7 @@ use App\Http\Resources\UserResource;
 use App\Services\AdminService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AdminController extends Controller
 {
@@ -27,6 +28,16 @@ class AdminController extends Controller
             return $this->successResponse($stats);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil statistik dashboard');
+        }
+    }
+
+    public function getUserManagementStats()
+    {
+        try {
+            $stats = $this->adminService->getUserManagementStats();
+            return $this->successResponse($stats);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil statistik pengguna');
         }
     }
 
@@ -123,5 +134,56 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil distribusi geografis');
         }
+    }
+
+    public function exportAlumniCsv(Request $request): StreamedResponse
+    {
+        $filters = $request->only(['status_create', 'id_jurusan', 'search']);
+        $alumni  = $this->adminService->getAllAlumni($filters, 99999);
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="alumni_export_' . now()->format('Ymd_His') . '.csv"',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ];
+
+        $callback = function () use ($alumni) {
+            $handle = fopen('php://output', 'w');
+            // UTF-8 BOM for Excel compatibility
+            fputs($handle, "\xEF\xBB\xBF");
+
+            // Header row
+            fputcsv($handle, [
+                'ID', 'Nama', 'NIS', 'NISN', 'Jenis Kelamin',
+                'Tanggal Lahir', 'Tempat Lahir', 'Tahun Masuk', 'Tahun Lulus',
+                'Alamat', 'No HP', 'Jurusan', 'Status', 'Email', 'Dibuat',
+            ]);
+
+            foreach ($alumni as $item) {
+                fputcsv($handle, [
+                    $item->id_alumni,
+                    $item->nama_alumni,
+                    $item->nis,
+                    $item->nisn,
+                    $item->jenis_kelamin,
+                    $item->tanggal_lahir?->format('Y-m-d'),
+                    $item->tempat_lahir,
+                    $item->tahun_masuk,
+                    $item->tahun_lulus?->format('Y-m-d'),
+                    $item->alamat,
+                    $item->no_hp,
+                    $item->jurusan?->nama_jurusan ?? '-',
+                    $item->status_create,
+                    $item->user?->email ?? '-',
+                    $item->created_at?->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

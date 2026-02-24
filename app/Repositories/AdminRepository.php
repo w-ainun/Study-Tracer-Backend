@@ -86,6 +86,25 @@ class AdminRepository implements AdminRepositoryInterface
         ];
     }
 
+    public function getUserManagementStats(): array
+    {
+        $pending  = Alumni::where('status_create', 'pending')->count();
+        $active   = Alumni::where('status_create', 'ok')->count();
+        $rejected = Alumni::where('status_create', 'rejected')->count();
+        $total    = Alumni::count();
+        $profileUpdated = Alumni::where('updated_at', '>=', now()->subDays(30))
+            ->where('status_create', 'ok')
+            ->count();
+
+        return [
+            'pending'         => $pending,
+            'active'          => $active,
+            'rejected'        => $rejected,
+            'total'           => $total,
+            'profile_updated' => $profileUpdated,
+        ];
+    }
+
     public function getPendingAlumni(int $perPage = 15)
     {
         return Alumni::with(['user', 'jurusan'])
@@ -125,7 +144,10 @@ class AdminRepository implements AdminRepositoryInterface
             $query->where(function ($q) use ($search) {
                 $q->where('nama_alumni', 'like', "%{$search}%")
                   ->orWhere('nis', 'like', "%{$search}%")
-                  ->orWhere('nisn', 'like', "%{$search}%");
+                  ->orWhere('nisn', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($uq) use ($search) {
+                      $uq->where('email', 'like', "%{$search}%");
+                  });
             });
         }
 
