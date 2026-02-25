@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Interfaces\AuthRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -22,6 +23,11 @@ class AuthService
             // Convert year-only values to proper date format for DB
             if (!empty($profileData['tahun_lulus']) && preg_match('/^\d{4}$/', $profileData['tahun_lulus'])) {
                 $profileData['tahun_lulus'] = $profileData['tahun_lulus'] . '-01-01';
+            }
+
+            // Handle foto upload — store to disk and replace with path
+            if (isset($profileData['foto']) && $profileData['foto'] instanceof \Illuminate\Http\UploadedFile) {
+                $profileData['foto'] = $profileData['foto']->store('alumni/foto', 'public');
             }
 
             $user = $this->authRepository->createUser($accountData);

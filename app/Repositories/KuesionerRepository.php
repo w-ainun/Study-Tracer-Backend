@@ -58,6 +58,11 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         $pertanyaan = PertanyaanKuesioner::create([
             'id_kuesioner' => $kuesionerId,
             'pertanyaan' => $data['pertanyaan'],
+            'tipe_pertanyaan' => $data['tipe_pertanyaan'] ?? 'pilihan_tunggal',
+            'status_pertanyaan' => $data['status_pertanyaan'] ?? 'DRAF',
+            'kategori' => $data['kategori'] ?? null,
+            'judul_bagian' => $data['judul_bagian'] ?? null,
+            'urutan' => $data['urutan'] ?? 0,
         ]);
 
         if (!empty($data['opsi'])) {
@@ -75,7 +80,14 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function updatePertanyaan(int $pertanyaanId, array $data)
     {
         $pertanyaan = PertanyaanKuesioner::findOrFail($pertanyaanId);
-        $pertanyaan->update(['pertanyaan' => $data['pertanyaan']]);
+
+        $updateData = ['pertanyaan' => $data['pertanyaan']];
+        foreach (['tipe_pertanyaan', 'status_pertanyaan', 'kategori', 'judul_bagian', 'urutan'] as $field) {
+            if (isset($data[$field])) {
+                $updateData[$field] = $data[$field];
+            }
+        }
+        $pertanyaan->update($updateData);
 
         if (isset($data['opsi'])) {
             // Remove old options and add new ones
@@ -136,5 +148,82 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     {
         return Kuesioner::with(['pertanyaan.opsiJawaban'])
             ->findOrFail($kuesionerId);
+    }
+
+    // ═══════════════════════════════════════════════
+    //  ADMIN JAWABAN
+    // ═══════════════════════════════════════════════
+
+    public function getAlumniJawaban(int $kuesionerId, array $filters = [])
+    {
+        $kuesioner = Kuesioner::findOrFail($kuesionerId);
+
+        $pertanyaanIds = $kuesioner->pertanyaan()->pluck('id_pertanyaanKuis');
+
+        $query = JawabanKuesioner::whereIn('id_pertanyaan', $pertanyaanIds)
+            ->with(['user.alumni', 'pertanyaan', 'opsiJawaban'])
+            ->select('id_user')
+            ->groupBy('id_user');
+
+        // Get grouped alumni who answered
+        $userIds = JawabanKuesioner::whereIn('id_pertanyaan', $pertanyaanIds)
+            ->distinct()
+            ->pluck('id_user');
+
+        $result = [];
+        foreach ($userIds as $userId) {
+            $jawaban = JawabanKuesioner::where('id_user', $userId)
+                ->whereIn('id_pertanyaan', $pertanyaanIds)
+                ->with(['pertanyaan.opsiJawaban', 'opsiJawaban'])
+                ->get();
+
+            $user = \App\Models\User::with('alumni')->find($userId);
+
+            $result[] = [
+                'alumni' => [
+                    'id' => $user?->id_users,
+                    'nama' => $user?->alumni?->nama_depan . ' ' . $user?->alumni?->nama_belakang,
+                    'nim' => $user?->alumni?->nim ?? null,
+                ],
+                'total_jawaban' => $jawaban->count(),
+                'tanggal_submit' => $jawaban->first()?->created_at,
+            ];
+        }
+
+        return $result;
+    }
+
+    public function getAlumniJawabanDetail(int $kuesionerId, int $alumniId)
+    {
+        $kuesioner = Kuesioner::with('pertanyaan.opsiJawaban')->findOrFail($kuesionerId);
+
+        $pertanyaanIds = $kuesioner->pertanyaan()->pluck('id_pertanyaanKuis');
+
+        $jawaban = JawabanKuesioner::where('id_user', $alumniId)
+            ->whereIn('id_pertanyaan', $pertanyaanIds)
+            ->with(['pertanyaan.opsiJawaban', 'opsiJawaban'])
+            ->get();
+
+        $user = \App\Models\User::with('alumni')->find($alumniId);
+
+        return [
+            'alumni' => [
+                'id' => $user?->id_users,
+                'nama' => $user?->alumni?->nama_depan . ' ' . $user?->alumni?->nama_belakang,
+                'nim' => $user?->alumni?->nim ?? null,
+            ],
+            'kuesioner' => [
+                'id' => $kuesioner->id_kuesioner,
+                'judul' => $kuesioner->judul_kuesioner,
+            ],
+            'jawaban' => $jawaban,
+        ];
+    }
+
+    public function updatePertanyaanStatus(int $pertanyaanId, string $status)
+    {
+        $pertanyaan = PertanyaanKuesioner::findOrFail($pertanyaanId);
+        $pertanyaan->update(['status_pertanyaan' => $status]);
+        return $pertanyaan->fresh()->load('opsiJawaban');
     }
 }

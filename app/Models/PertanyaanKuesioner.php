@@ -15,6 +15,11 @@ class PertanyaanKuesioner extends Model
     protected $fillable = [
         'id_kuesioner',
         'pertanyaan',
+        'tipe_pertanyaan',
+        'status_pertanyaan',
+        'kategori',
+        'judul_bagian',
+        'urutan',
     ];
 
     public function kuesioner()
