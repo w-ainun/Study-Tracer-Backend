@@ -182,8 +182,9 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             $result[] = [
                 'alumni' => [
                     'id' => $user?->id_users,
-                    'nama' => $user?->alumni?->nama_depan . ' ' . $user?->alumni?->nama_belakang,
-                    'nim' => $user?->alumni?->nim ?? null,
+                    'nama' => $user?->alumni?->nama_alumni,
+                    'nis' => $user?->alumni?->nis ?? null,
+                    'nisn' => $user?->alumni?->nisn ?? null,
                 ],
                 'total_jawaban' => $jawaban->count(),
                 'tanggal_submit' => $jawaban->first()?->created_at,
@@ -209,8 +210,9 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return [
             'alumni' => [
                 'id' => $user?->id_users,
-                'nama' => $user?->alumni?->nama_depan . ' ' . $user?->alumni?->nama_belakang,
-                'nim' => $user?->alumni?->nim ?? null,
+                'nama' => $user?->alumni?->nama_alumni,
+                'nis' => $user?->alumni?->nis ?? null,
+                'nisn' => $user?->alumni?->nisn ?? null,
             ],
             'kuesioner' => [
                 'id' => $kuesioner->id_kuesioner,

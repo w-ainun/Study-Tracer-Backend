@@ -204,9 +204,9 @@ class MasterDataController extends Controller
 
     public function storeJurusanKuliah(Request $request)
     {
-        $request->validate(['nama_jurusan_kuliah' => 'required|string|max:255|unique:jurusan_kuliah,nama_jurusan_kuliah']);
+        $request->validate(['nama_jurusan' => 'required|string|max:255|unique:jurusan_kuliah,nama_jurusan']);
         try {
-            $data = $this->masterDataService->createJurusanKuliah($request->only('nama_jurusan_kuliah'));
+            $data = $this->masterDataService->createJurusanKuliah($request->only('nama_jurusan'));
             return $this->createdResponse(new JurusanKuliahResource($data), 'Jurusan kuliah berhasil ditambahkan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan jurusan kuliah: ' . $e->getMessage());
@@ -215,9 +215,9 @@ class MasterDataController extends Controller
 
     public function updateJurusanKuliah(Request $request, int $id)
     {
-        $request->validate(['nama_jurusan_kuliah' => 'required|string|max:255']);
+        $request->validate(['nama_jurusan' => 'required|string|max:255']);
         try {
-            $data = $this->masterDataService->updateJurusanKuliah($id, $request->only('nama_jurusan_kuliah'));
+            $data = $this->masterDataService->updateJurusanKuliah($id, $request->only('nama_jurusan'));
             return $this->successResponse(new JurusanKuliahResource($data), 'Jurusan kuliah berhasil diperbarui');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memperbarui jurusan kuliah: ' . $e->getMessage());
@@ -439,13 +439,12 @@ class MasterDataController extends Controller
     {
         $request->validate([
             'nama_perusahaan' => 'required|string|max:255',
-            'id_bidang_usaha' => 'required|exists:bidang_usaha,id_bidang_usaha',
             'id_kota' => 'required|exists:kota,id_kota',
-            'alamat_perusahaan' => 'nullable|string',
+            'jalan' => 'required|string',
         ]);
         try {
             $data = $this->masterDataService->createPerusahaan(
-                $request->only('nama_perusahaan', 'id_bidang_usaha', 'id_kota', 'alamat_perusahaan')
+                $request->only('nama_perusahaan', 'id_kota', 'jalan')
             );
             return $this->createdResponse(new PerusahaanResource($data), 'Perusahaan berhasil ditambahkan');
         } catch (\Exception $e) {
@@ -457,14 +456,13 @@ class MasterDataController extends Controller
     {
         $request->validate([
             'nama_perusahaan' => 'sometimes|string|max:255',
-            'id_bidang_usaha' => 'sometimes|exists:bidang_usaha,id_bidang_usaha',
             'id_kota' => 'sometimes|exists:kota,id_kota',
-            'alamat_perusahaan' => 'nullable|string',
+            'jalan' => 'sometimes|string',
         ]);
         try {
             $data = $this->masterDataService->updatePerusahaan(
                 $id,
-                $request->only('nama_perusahaan', 'id_bidang_usaha', 'id_kota', 'alamat_perusahaan')
+                $request->only('nama_perusahaan', 'id_kota', 'jalan')
             );
             return $this->successResponse(new PerusahaanResource($data), 'Perusahaan berhasil diperbarui');
         } catch (\Exception $e) {

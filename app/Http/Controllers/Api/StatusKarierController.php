@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\BidangUsahaResource;
 use App\Http\Resources\JurusanKuliahResource;
-use App\Http\Resources\PosisiResource;
-use App\Http\Resources\ReferensiUniversitasResource;
+use App\Http\Resources\UniversitasResource;
 use App\Services\StatusKarierService;
 use App\Traits\ApiResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -24,14 +24,14 @@ class StatusKarierController extends Controller
     }
 
     // ═══════════════════════════════════════════════
-    //  REFERENSI UNIVERSITAS
+    //  UNIVERSITAS
     // ═══════════════════════════════════════════════
 
     public function universitas()
     {
         try {
             $data = $this->service->getAllUniversitas();
-            return $this->successResponse(ReferensiUniversitasResource::collection($data));
+            return $this->successResponse(UniversitasResource::collection($data));
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data universitas');
         }
@@ -41,14 +41,12 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:255',
-            'jurusan' => 'nullable|array',
-            'jurusan.*' => 'string|max:255',
         ]);
 
         try {
-            $data = $this->service->createUniversitas($request->only('nama', 'jurusan'));
+            $data = $this->service->createUniversitas($request->only('nama'));
             return $this->createdResponse(
-                new ReferensiUniversitasResource($data),
+                new UniversitasResource($data),
                 'Universitas berhasil ditambahkan'
             );
         } catch (\Exception $e) {
@@ -60,14 +58,12 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama' => 'sometimes|string|max:255',
-            'jurusan' => 'nullable|array',
-            'jurusan.*' => 'string|max:255',
         ]);
 
         try {
-            $data = $this->service->updateUniversitas($id, $request->only('nama', 'jurusan'));
+            $data = $this->service->updateUniversitas($id, $request->only('nama'));
             return $this->successResponse(
-                new ReferensiUniversitasResource($data),
+                new UniversitasResource($data),
                 'Universitas berhasil diperbarui'
             );
         } catch (\Exception $e) {
@@ -102,11 +98,11 @@ class StatusKarierController extends Controller
     public function storeProdi(Request $request)
     {
         $request->validate([
-            'nama' => 'required|string|max:255',
+            'nama_prodi' => 'required|string|max:255',
         ]);
 
         try {
-            $data = $this->service->createProdi($request->only('nama'));
+            $data = $this->service->createProdi($request->only('nama_prodi'));
             return $this->createdResponse(
                 new JurusanKuliahResource($data),
                 'Program studi berhasil ditambahkan'
@@ -119,11 +115,11 @@ class StatusKarierController extends Controller
     public function updateProdi(Request $request, int $id)
     {
         $request->validate([
-            'nama' => 'sometimes|string|max:255',
+            'nama_prodi' => 'sometimes|string|max:255',
         ]);
 
         try {
-            $data = $this->service->updateProdi($id, $request->only('nama'));
+            $data = $this->service->updateProdi($id, $request->only('nama_prodi'));
             return $this->successResponse(
                 new JurusanKuliahResource($data),
                 'Program studi berhasil diperbarui'
@@ -202,60 +198,16 @@ class StatusKarierController extends Controller
     }
 
     // ═══════════════════════════════════════════════
-    //  POSISI PEKERJAAN
+    //  POSISI PEKERJAAN (read-only, distinct from pekerjaan)
     // ═══════════════════════════════════════════════
 
     public function posisi()
     {
         try {
             $data = $this->service->getAllPosisi();
-            return $this->successResponse(PosisiResource::collection($data));
+            return $this->successResponse($data);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data posisi');
-        }
-    }
-
-    public function storePosisi(Request $request)
-    {
-        $request->validate([
-            'nama_posisi' => 'required|string|max:255',
-        ]);
-
-        try {
-            $data = $this->service->createPosisi($request->only('nama_posisi'));
-            return $this->createdResponse(
-                new PosisiResource($data),
-                'Posisi berhasil ditambahkan'
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menambahkan posisi: ' . $e->getMessage());
-        }
-    }
-
-    public function updatePosisi(Request $request, int $id)
-    {
-        $request->validate([
-            'nama_posisi' => 'sometimes|string|max:255',
-        ]);
-
-        try {
-            $data = $this->service->updatePosisi($id, $request->only('nama_posisi'));
-            return $this->successResponse(
-                new PosisiResource($data),
-                'Posisi berhasil diperbarui'
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal memperbarui posisi: ' . $e->getMessage());
-        }
-    }
-
-    public function destroyPosisi(int $id)
-    {
-        try {
-            $this->service->deletePosisi($id);
-            return $this->successResponse(null, 'Posisi berhasil dihapus');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menghapus posisi: ' . $e->getMessage());
         }
     }
 
@@ -273,7 +225,7 @@ class StatusKarierController extends Controller
         }
     }
 
-    public function exportReport(Request $request): StreamedResponse
+    public function exportReport(Request $request)
     {
         $request->validate([
             'type' => 'required|in:universitas,prodi,wirausaha,posisi',
@@ -281,11 +233,37 @@ class StatusKarierController extends Controller
         ]);
 
         $type = $request->input('type');
+        $format = $request->input('format', 'csv');
         $data = $this->service->exportStatusReport($type);
+        $timestamp = now()->format('Ymd_His');
 
+        // ─── PDF Export ───────────────────────────────────
+        if ($format === 'pdf') {
+            $typeLabels = [
+                'universitas' => 'Universitas',
+                'prodi' => 'Program Studi',
+                'wirausaha' => 'Bidang Wirausaha',
+                'posisi' => 'Posisi Pekerjaan',
+            ];
+
+            $columns = $type === 'universitas'
+                ? ['ID', 'Nama Universitas', 'Jurusan']
+                : ['ID', 'Nama'];
+
+            $pdf = Pdf::loadView('exports.status-karier', [
+                'title' => 'Laporan Status Karier — ' . ($typeLabels[$type] ?? $type),
+                'columns' => $columns,
+                'data' => $data,
+                'generatedAt' => now()->format('d M Y H:i'),
+            ]);
+
+            return $pdf->download("status_karier_{$type}_{$timestamp}.pdf");
+        }
+
+        // ─── CSV Export ───────────────────────────────────
         $headers = [
             'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => 'attachment; filename="status_karier_' . $type . '_' . now()->format('Ymd_His') . '.csv"',
+            'Content-Disposition' => 'attachment; filename="status_karier_' . $type . '_' . $timestamp . '.csv"',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
         ];
 
@@ -293,14 +271,12 @@ class StatusKarierController extends Controller
             $handle = fopen('php://output', 'w');
             fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM
 
-            // Header row
             if ($type === 'universitas') {
                 fputcsv($handle, ['ID', 'Nama Universitas', 'Jurusan']);
             } else {
                 fputcsv($handle, ['ID', 'Nama']);
             }
 
-            // Data rows
             foreach ($data as $row) {
                 fputcsv($handle, array_values($row));
             }

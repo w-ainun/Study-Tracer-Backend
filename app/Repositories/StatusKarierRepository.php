@@ -5,39 +5,37 @@ namespace App\Repositories;
 use App\Interfaces\StatusKarierRepositoryInterface;
 use App\Models\BidangUsaha;
 use App\Models\JurusanKuliah;
-use App\Models\Posisi;
-use App\Models\ReferensiUniversitas;
+use App\Models\Pekerjaan;
 use App\Models\RiwayatStatus;
+use App\Models\Universitas;
 
 class StatusKarierRepository implements StatusKarierRepositoryInterface
 {
     // ═══════════════════════════════════════════════
-    //  REFERENSI UNIVERSITAS
+    //  UNIVERSITAS
     // ═══════════════════════════════════════════════
 
     public function getAllUniversitas()
     {
-        return ReferensiUniversitas::orderBy('nama_universitas')->get();
+        return Universitas::with('jurusanKuliah')
+            ->orderBy('nama_universitas')
+            ->get();
     }
 
     public function createUniversitas(array $data)
     {
-        return ReferensiUniversitas::create([
+        return Universitas::create([
             'nama_universitas' => $data['nama'] ?? $data['nama_universitas'],
-            'jurusan' => $data['jurusan'] ?? [],
         ]);
     }
 
     public function updateUniversitas(int $id, array $data)
     {
-        $univ = ReferensiUniversitas::findOrFail($id);
+        $univ = Universitas::findOrFail($id);
         $updateData = [];
 
         if (isset($data['nama']) || isset($data['nama_universitas'])) {
             $updateData['nama_universitas'] = $data['nama'] ?? $data['nama_universitas'];
-        }
-        if (array_key_exists('jurusan', $data)) {
-            $updateData['jurusan'] = $data['jurusan'];
         }
 
         $univ->update($updateData);
@@ -46,7 +44,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
 
     public function deleteUniversitas(int $id)
     {
-        ReferensiUniversitas::findOrFail($id)->delete();
+        Universitas::findOrFail($id)->delete();
         return true;
     }
 
@@ -62,7 +60,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
     public function createProdi(array $data)
     {
         return JurusanKuliah::create([
-            'nama_jurusan' => $data['nama'] ?? $data['nama_jurusan'],
+            'nama_jurusan' => $data['nama_prodi'] ?? $data['nama_jurusan'] ?? $data['nama'],
         ]);
     }
 
@@ -70,7 +68,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
     {
         $prodi = JurusanKuliah::findOrFail($id);
         $prodi->update([
-            'nama_jurusan' => $data['nama'] ?? $data['nama_jurusan'] ?? $prodi->nama_jurusan,
+            'nama_jurusan' => $data['nama_prodi'] ?? $data['nama_jurusan'] ?? $data['nama'] ?? $prodi->nama_jurusan,
         ]);
         return $prodi->fresh();
     }
@@ -113,34 +111,21 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
     }
 
     // ═══════════════════════════════════════════════
-    //  POSISI PEKERJAAN
+    //  POSISI PEKERJAAN (distinct from pekerjaan.posisi)
     // ═══════════════════════════════════════════════
 
     public function getAllPosisi()
     {
-        return Posisi::orderBy('nama_posisi')->get();
-    }
-
-    public function createPosisi(array $data)
-    {
-        return Posisi::create([
-            'nama_posisi' => $data['nama_posisi'] ?? $data['nama'],
-        ]);
-    }
-
-    public function updatePosisi(int $id, array $data)
-    {
-        $posisi = Posisi::findOrFail($id);
-        $posisi->update([
-            'nama_posisi' => $data['nama_posisi'] ?? $data['nama'] ?? $posisi->nama_posisi,
-        ]);
-        return $posisi->fresh();
-    }
-
-    public function deletePosisi(int $id)
-    {
-        Posisi::findOrFail($id)->delete();
-        return true;
+        return Pekerjaan::select('posisi')
+            ->distinct()
+            ->orderBy('posisi')
+            ->pluck('posisi')
+            ->map(fn(string $posisi, int $index) => [
+                'id' => $index + 1,
+                'nama' => $posisi,
+            ])
+            ->values()
+            ->toArray();
     }
 
     // ═══════════════════════════════════════════════
@@ -164,12 +149,13 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
     {
         switch ($type) {
             case 'universitas':
-                return ReferensiUniversitas::orderBy('nama_universitas')
+                return Universitas::with('jurusanKuliah')
+                    ->orderBy('nama_universitas')
                     ->get()
                     ->map(fn($u) => [
-                        'id' => $u->id_ref_univ,
+                        'id' => $u->id_universitas,
                         'nama' => $u->nama_universitas,
-                        'jurusan' => implode(', ', $u->jurusan ?? []),
+                        'jurusan' => $u->jurusanKuliah?->nama_jurusan ?? '-',
                     ])
                     ->toArray();
 
@@ -192,11 +178,14 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->toArray();
 
             case 'posisi':
-                return Posisi::orderBy('nama_posisi')
+                return Pekerjaan::select('posisi')
+                    ->distinct()
+                    ->orderBy('posisi')
                     ->get()
-                    ->map(fn($p) => [
-                        'id' => $p->id_posisi,
-                        'nama' => $p->nama_posisi,
+                    ->values()
+                    ->map(fn($p, $i) => [
+                        'id' => $i + 1,
+                        'nama' => $p->posisi,
                     ])
                     ->toArray();
 

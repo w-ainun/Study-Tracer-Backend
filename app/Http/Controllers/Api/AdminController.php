@@ -176,7 +176,7 @@ class AdminController extends Controller
                     $item->no_hp,
                     $item->jurusan?->nama_jurusan ?? '-',
                     $item->status_create,
-                    $item->user?->email ?? '-',
+                    $item->user?->email_users ?? '-',
                     $item->created_at?->format('Y-m-d H:i:s'),
                 ]);
             }

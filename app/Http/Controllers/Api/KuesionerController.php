@@ -31,7 +31,11 @@ class KuesionerController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['status', 'search']);
+            $filters = $request->only(['status_kuesioner', 'search']);
+            // Map 'status' query param to 'status_kuesioner' for convenience
+            if ($request->has('status') && !$request->has('status_kuesioner')) {
+                $filters['status_kuesioner'] = $request->input('status');
+            }
             $perPage = $request->input('per_page', 15);
             $kuesioner = $this->kuesionerService->getAll($filters, $perPage);
             return $this->successResponse(KuesionerResource::collection($kuesioner)->response()->getData(true));

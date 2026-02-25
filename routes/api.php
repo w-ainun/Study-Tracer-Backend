@@ -127,11 +127,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/bidang-usaha/{id}', [StatusKarierController::class, 'updateBidangUsaha']);
             Route::delete('/bidang-usaha/{id}', [StatusKarierController::class, 'destroyBidangUsaha']);
 
-            // Posisi Pekerjaan
+            // Posisi Pekerjaan (read-only, derived from pekerjaan.posisi)
             Route::get('/posisi', [StatusKarierController::class, 'posisi']);
-            Route::post('/posisi', [StatusKarierController::class, 'storePosisi']);
-            Route::put('/posisi/{id}', [StatusKarierController::class, 'updatePosisi']);
-            Route::delete('/posisi/{id}', [StatusKarierController::class, 'destroyPosisi']);
 
             // Report & Export
             Route::get('/report', [StatusKarierController::class, 'statusDistribution']);
