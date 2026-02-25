@@ -52,9 +52,12 @@ class MasterDataController extends Controller
 
     public function storeProvinsi(Request $request)
     {
-        $request->validate(['nama_provinsi' => 'required|string|max:255|unique:provinsi,nama_provinsi']);
+        $request->validate([
+            'nama_provinsi' => 'required|string|max:255|unique:provinsi,nama_provinsi',
+            'code' => 'required|string|max:10|unique:provinsi,code',
+        ]);
         try {
-            $data = $this->masterDataService->createProvinsi($request->only('nama_provinsi'));
+            $data = $this->masterDataService->createProvinsi($request->only('nama_provinsi', 'code'));
             return $this->createdResponse(new ProvinsiResource($data), 'Provinsi berhasil ditambahkan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan provinsi: ' . $e->getMessage());
@@ -63,9 +66,12 @@ class MasterDataController extends Controller
 
     public function updateProvinsi(Request $request, int $id)
     {
-        $request->validate(['nama_provinsi' => 'required|string|max:255']);
+        $request->validate([
+            'nama_provinsi' => 'required|string|max:255',
+            'code' => 'sometimes|string|max:10|unique:provinsi,code,' . $id . ',id_provinsi',
+        ]);
         try {
-            $data = $this->masterDataService->updateProvinsi($id, $request->only('nama_provinsi'));
+            $data = $this->masterDataService->updateProvinsi($id, $request->only('nama_provinsi', 'code'));
             return $this->successResponse(new ProvinsiResource($data), 'Provinsi berhasil diperbarui');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memperbarui provinsi: ' . $e->getMessage());
@@ -102,10 +108,11 @@ class MasterDataController extends Controller
     {
         $request->validate([
             'nama_kota' => 'required|string|max:255',
+            'code' => 'required|string|max:20|unique:kota,code',
             'id_provinsi' => 'required|exists:provinsi,id_provinsi',
         ]);
         try {
-            $data = $this->masterDataService->createKota($request->only('nama_kota', 'id_provinsi'));
+            $data = $this->masterDataService->createKota($request->only('nama_kota', 'code', 'id_provinsi'));
             return $this->createdResponse(new KotaResource($data), 'Kota berhasil ditambahkan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan kota: ' . $e->getMessage());
@@ -116,10 +123,11 @@ class MasterDataController extends Controller
     {
         $request->validate([
             'nama_kota' => 'required|string|max:255',
+            'code' => 'sometimes|string|max:20|unique:kota,code,' . $id . ',id_kota',
             'id_provinsi' => 'sometimes|exists:provinsi,id_provinsi',
         ]);
         try {
-            $data = $this->masterDataService->updateKota($id, $request->only('nama_kota', 'id_provinsi'));
+            $data = $this->masterDataService->updateKota($id, $request->only('nama_kota', 'code', 'id_provinsi'));
             return $this->successResponse(new KotaResource($data), 'Kota berhasil diperbarui');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memperbarui kota: ' . $e->getMessage());

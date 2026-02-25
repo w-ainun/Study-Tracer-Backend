@@ -13,6 +13,7 @@ class ProvinsiFactory extends Factory
     {
         return [
             'nama_provinsi' => fake()->state(),
+            'code' => strtoupper(fake()->unique()->bothify('??')),
         ];
     }
 }
