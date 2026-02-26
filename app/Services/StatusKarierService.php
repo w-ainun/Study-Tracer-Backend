@@ -76,12 +76,6 @@ class StatusKarierService
         return $this->repository->deleteBidangUsaha($id);
     }
 
-    // Posisi (read-only, distinct from pekerjaan)
-    public function getAllPosisi()
-    {
-        return $this->repository->getAllPosisi();
-    }
-
     // Report / Stats
     public function getStatusDistribution(): array
     {

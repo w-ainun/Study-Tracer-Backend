@@ -72,10 +72,20 @@ class AdminController extends Controller
         }
     }
 
+    public function banUser(int $id)
+    {
+        try {
+            $alumni = $this->adminService->banAlumni($id);
+            return $this->successResponse(new AlumniResource($alumni), 'Alumni berhasil dibanned');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memban alumni: ' . $e->getMessage());
+        }
+    }
+
     public function getAllAlumni(Request $request)
     {
         try {
-            $filters = $request->only(['status_create', 'id_jurusan', 'search']);
+            $filters = $request->only(['status_create', 'id_jurusan', 'search', 'tahun_lulus']);
             $perPage = $request->input('per_page', 15);
             $alumni = $this->adminService->getAllAlumni($filters, $perPage);
 
@@ -138,7 +148,7 @@ class AdminController extends Controller
 
     public function exportAlumniCsv(Request $request): StreamedResponse
     {
-        $filters = $request->only(['status_create', 'id_jurusan', 'search']);
+        $filters = $request->only(['status_create', 'id_jurusan', 'search', 'tahun_lulus']);
         $alumni  = $this->adminService->getAllAlumni($filters, 99999);
 
         $headers = [

@@ -189,31 +189,17 @@ class StatusKarierController extends Controller
         }
     }
 
-    public function destroyBidangUsaha(int $id)
-    {
-        try {
-            $this->service->deleteBidangUsaha($id);
-            return $this->successResponse(null, 'Bidang usaha berhasil dihapus');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menghapus bidang usaha: ' . $e->getMessage());
-        }
+public function destroyBidangUsaha(int $id)
+{
+    try {
+        $this->service->deleteBidangUsaha($id);
+        return $this->successResponse(null, 'Bidang usaha berhasil dihapus');
+    } catch (\Exception $e) {
+        return $this->errorResponse('Gagal menghapus bidang usaha: ' . $e->getMessage());
     }
+}
 
-    // ═══════════════════════════════════════════════
-    //  POSISI PEKERJAAN (read-only, distinct from pekerjaan)
-    // ═══════════════════════════════════════════════
-
-    public function posisi()
-    {
-        try {
-            $data = $this->service->getAllPosisi();
-            return $this->successResponse($data);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil data posisi');
-        }
-    }
-
-    // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
     //  REPORT / EXPORT
     // ═══════════════════════════════════════════════
 
@@ -230,7 +216,7 @@ class StatusKarierController extends Controller
     public function exportReport(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:universitas,prodi,wirausaha,posisi',
+            'type' => 'required|in:universitas,prodi,wirausaha',
             'format' => 'sometimes|in:csv,pdf',
         ]);
 
@@ -245,7 +231,6 @@ class StatusKarierController extends Controller
                 'universitas' => 'Universitas',
                 'prodi' => 'Program Studi',
                 'wirausaha' => 'Bidang Wirausaha',
-                'posisi' => 'Posisi Pekerjaan',
             ];
 
             $columns = $type === 'universitas'

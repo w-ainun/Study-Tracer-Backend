@@ -57,7 +57,7 @@ class UserSeeder extends Seeder
                 'alamat' => fake()->streetAddress() . ', ' . $randomKota,
                 'no_hp' => fake()->phoneNumber(),
                 'id_jurusan' => fake()->randomElement($jurusanIds),
-                'tahun_lulus' => fake()->dateTimeBetween('2010-06-', '2025-06-30')->format('Y-m-d'),
+                'tahun_lulus' => fake()->dateTimeBetween('2010-06-01', '2025-06-30')->format('Y-m-d'),
                 'id_users' => $user->id_users,
                 'status_create' => 'ok',
             ]);

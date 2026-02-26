@@ -188,6 +188,16 @@ class LowonganController extends Controller
         }
     }
 
+    public function repost(int $id)
+    {
+        try {
+            $lowongan = $this->lowonganService->repost($id);
+            return $this->successResponse(new LowonganResource($lowongan), 'Lowongan berhasil diposting ulang');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memposting ulang lowongan: ' . $e->getMessage());
+        }
+    }
+
     /**
      * Get saved job listings for current user
      */

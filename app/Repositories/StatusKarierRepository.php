@@ -117,23 +117,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
         return true;
     }
 
-    // ═══════════════════════════════════════════════
-    //  POSISI PEKERJAAN (distinct from pekerjaan.posisi)
-    // ═══════════════════════════════════════════════
 
-    public function getAllPosisi()
-    {
-        return Pekerjaan::select('posisi')
-            ->distinct()
-            ->orderBy('posisi')
-            ->pluck('posisi')
-            ->map(fn(string $posisi, int $index) => [
-                'id' => $index + 1,
-                'nama' => $posisi,
-            ])
-            ->values()
-            ->toArray();
-    }
 
     // ═══════════════════════════════════════════════
     //  REPORT / STATISTICS
@@ -183,18 +167,6 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->map(fn($b) => [
                         'id' => $b->id_bidang,
                         'nama' => $b->nama_bidang,
-                    ])
-                    ->toArray();
-
-            case 'posisi':
-                return Pekerjaan::select('posisi')
-                    ->distinct()
-                    ->orderBy('posisi')
-                    ->get()
-                    ->values()
-                    ->map(fn($p, $i) => [
-                        'id' => $i + 1,
-                        'nama' => $p->posisi,
                     ])
                     ->toArray();
 

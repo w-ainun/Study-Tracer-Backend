@@ -38,6 +38,11 @@ class AdminService
         return $this->adminRepository->rejectAlumni($alumniId);
     }
 
+    public function banAlumni(int $alumniId)
+    {
+        return $this->adminRepository->banAlumni($alumniId);
+    }
+
     public function getAllAlumni(array $filters = [], int $perPage = 15)
     {
         return $this->adminRepository->getAllAlumni($filters, $perPage);

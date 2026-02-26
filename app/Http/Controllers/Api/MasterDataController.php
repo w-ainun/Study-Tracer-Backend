@@ -528,4 +528,67 @@ class MasterDataController extends Controller
             return $this->errorResponse('Gagal mengambil data tipe pekerjaan');
         }
     }
+
+    // =====================
+    // EXPORT MASTER DATA (jurusan, perusahaan)
+    // =====================
+    public function exportMasterData(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:jurusan,perusahaan',
+            'format' => 'sometimes|in:csv,pdf',
+        ]);
+
+        $type = $request->input('type');
+        $format = $request->input('format', 'csv');
+        $data = $this->masterDataService->exportMasterData($type);
+        $timestamp = now()->format('Ymd_His');
+
+        // ─── PDF Export ───────────────────────────────────
+        if ($format === 'pdf') {
+            $typeLabels = [
+                'jurusan' => 'Data Jurusan',
+                'perusahaan' => 'Data Perusahaan',
+            ];
+
+            $columns = $type === 'perusahaan'
+                ? ['ID', 'Nama Perusahaan', 'Alamat', 'Kota', 'Provinsi']
+                : ['ID', 'Nama Jurusan'];
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.status-karier', [
+                'title' => 'Laporan Master Data — ' . ($typeLabels[$type] ?? $type),
+                'columns' => $columns,
+                'data' => $data,
+                'generatedAt' => now()->format('d M Y H:i'),
+            ]);
+
+            return $pdf->download("master_data_{$type}_{$timestamp}.pdf");
+        }
+
+        // ─── CSV Export ───────────────────────────────────
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="master_data_' . $type . '_' . $timestamp . '.csv"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ];
+
+        $callback = function () use ($data, $type) {
+            $handle = fopen('php://output', 'w');
+            fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM
+
+            if ($type === 'perusahaan') {
+                fputcsv($handle, ['ID', 'Nama Perusahaan', 'Alamat', 'Kota', 'Provinsi']);
+            } else {
+                fputcsv($handle, ['ID', 'Nama Jurusan']);
+            }
+
+            foreach ($data as $row) {
+                fputcsv($handle, array_values($row));
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

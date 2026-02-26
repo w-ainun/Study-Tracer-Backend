@@ -14,5 +14,6 @@ interface AdminRepositoryInterface
     public function rejectAlumni(int $alumniId);
     public function getAllAlumni(array $filters = [], int $perPage = 15);
     public function getAlumniDetail(int $alumniId);
+    public function banAlumni(int $alumniId);
     public function deleteUser(int $userId);
 }

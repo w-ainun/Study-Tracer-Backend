@@ -14,23 +14,26 @@ class AdminRepository implements AdminRepositoryInterface
 {
     public function getDashboardStats(): array
     {
-        $totalUsers = User::where('role', 'alumni')->count();
+        // Only count accepted/active alumni (exclude pending/rejected/banned)
+        $totalUsers = Alumni::where('status_create', 'ok')->count();
         $pendingUsers = Alumni::where('status_create', 'pending')->count();
         $activeKuesioner = Kuesioner::where('status_kuesioner', 'publish')->count();
         $pendingLowongan = Lowongan::where('approval_status', 'pending')->count();
 
-        // Worker percentage
+        // Worker percentage (only accepted alumni)
         $statusBekerja = Status::where('nama_status', 'Bekerja')->first();
         $totalBekerja = $statusBekerja
-            ? RiwayatStatus::where('id_status', $statusBekerja->id_status)->count()
+            ? RiwayatStatus::where('id_status', $statusBekerja->id_status)
+                ->whereHas('alumni', fn ($q) => $q->where('status_create', 'ok'))
+                ->count()
             : 0;
         $workerPercentage = $totalUsers > 0 ? round(($totalBekerja / $totalUsers) * 100) : 0;
 
-        // Users growth: new alumni registered this week
-        $newThisWeek = User::where('role', 'alumni')
+        // Users growth: new accepted alumni this week vs last week
+        $newThisWeek = Alumni::where('status_create', 'ok')
             ->where('created_at', '>=', now()->startOfWeek())
             ->count();
-        $lastWeek = User::where('role', 'alumni')
+        $lastWeek = Alumni::where('status_create', 'ok')
             ->whereBetween('created_at', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
             ->count();
         $usersGrowth = $lastWeek > 0 ? round((($newThisWeek - $lastWeek) / $lastWeek) * 100) : ($newThisWeek > 0 ? 100 : 0);
@@ -42,7 +45,7 @@ class AdminRepository implements AdminRepositoryInterface
         $newLowonganThisWeek = Lowongan::where('created_at', '>=', now()->startOfWeek())->count();
         $totalLowongan = Lowongan::count();
 
-        // Alumni per jurusan stats
+        // Alumni per jurusan stats (accepted only)
         $alumniPerJurusan = Alumni::where('status_create', 'ok')
             ->selectRaw('id_jurusan, count(*) as total')
             ->groupBy('id_jurusan')
@@ -53,9 +56,11 @@ class AdminRepository implements AdminRepositoryInterface
                 'total' => $item->total,
             ]);
 
-        // Status karir distribution
-        $statusDistribution = RiwayatStatus::selectRaw('id_status, count(*) as total')
-            ->groupBy('id_status')
+        // Status karir distribution (only accepted alumni)
+        $statusDistribution = RiwayatStatus::selectRaw('riwayat_status.id_status, count(*) as total')
+            ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
+            ->where('alumni.status_create', 'ok')
+            ->groupBy('riwayat_status.id_status')
             ->with('status')
             ->get()
             ->map(fn ($item) => [
@@ -127,6 +132,13 @@ class AdminRepository implements AdminRepositoryInterface
         return $alumni;
     }
 
+    public function banAlumni(int $alumniId)
+    {
+        $alumni = Alumni::findOrFail($alumniId);
+        $alumni->update(['status_create' => 'banned']);
+        return $alumni;
+    }
+
     public function getAllAlumni(array $filters = [], int $perPage = 15)
     {
         $query = Alumni::with(['user', 'jurusan', 'riwayatStatus.status']);
@@ -149,6 +161,10 @@ class AdminRepository implements AdminRepositoryInterface
                       $uq->where('email', 'like', "%{$search}%");
                   });
             });
+        }
+
+        if (!empty($filters['tahun_lulus'])) {
+            $query->whereYear('tahun_lulus', $filters['tahun_lulus']);
         }
 
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
@@ -228,12 +244,18 @@ class AdminRepository implements AdminRepositoryInterface
 
     public function getGeographicDistribution(): array
     {
-        $total = \App\Models\Pekerjaan::count();
+        $total = \App\Models\Pekerjaan::join('riwayat_status', 'pekerjaan.id_riwayat', '=', 'riwayat_status.id_riwayat')
+            ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
+            ->where('alumni.status_create', 'ok')
+            ->count();
         if ($total === 0) return [];
 
         return \App\Models\Pekerjaan::join('perusahaan', 'pekerjaan.id_perusahaan', '=', 'perusahaan.id_perusahaan')
             ->join('kota', 'perusahaan.id_kota', '=', 'kota.id_kota')
             ->join('provinsi', 'kota.id_provinsi', '=', 'provinsi.id_provinsi')
+            ->join('riwayat_status', 'pekerjaan.id_riwayat', '=', 'riwayat_status.id_riwayat')
+            ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
+            ->where('alumni.status_create', 'ok')
             ->selectRaw('provinsi.nama_provinsi as region, count(*) as total')
             ->groupBy('provinsi.nama_provinsi')
             ->orderByDesc('total')

@@ -57,6 +57,15 @@ class LowonganService
         return $this->lowonganRepository->updateApprovalStatus($id, 'rejected');
     }
 
+    public function repost(int $id)
+    {
+        return $this->lowonganRepository->update($id, [
+            'status' => 'published',
+            'approval_status' => 'approved',
+            'lowongan_selesai' => null,
+        ]);
+    }
+
     public function getApproved(array $filters = [], int $perPage = 15)
     {
         $filters['approval_status'] = 'approved';
