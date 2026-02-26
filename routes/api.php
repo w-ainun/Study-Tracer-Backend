@@ -108,6 +108,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'updatePertanyaan']);
         Route::delete('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'deletePertanyaan']);
 
+        // Section Ques (Judul Pertanyaan) Management
+        Route::post('/section-ques', [KuesionerController::class, 'storeSectionQues']);
+
         // Jawaban Kuesioner (admin view)
         Route::get('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'listJawaban']);
         Route::get('/kuesioner/{kuesionerId}/jawaban/{alumniId}', [KuesionerController::class, 'jawabanDetail']);
