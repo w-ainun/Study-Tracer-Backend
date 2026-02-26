@@ -14,7 +14,6 @@ class KuesionerResource extends JsonResource
             'id_status' => $this->id_status,
             'judul' => $this->judul_kuesioner,
             'deskripsi' => $this->deskripsi_kuesioner,
-            'status_kuesioner' => $this->status_kuesioner,
             'tanggal_publikasi' => $this->tanggal_publikasi?->format('Y-m-d'),
             'status' => $this->whenLoaded('status', function () {
                 return [

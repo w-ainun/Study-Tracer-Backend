@@ -10,7 +10,6 @@ return new class extends Migration
     {
         Schema::create('kuesioner', function (Blueprint $table) {
             $table->id('id_kuesioner');
-            $table->enum('status_kuesioner', ['draft', 'publish', 'close'])->default('draft');
             $table->date('tanggal_publikasi')->nullable();
             $table->timestamps();
         });

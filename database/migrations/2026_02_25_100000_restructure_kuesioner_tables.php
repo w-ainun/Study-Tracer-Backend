@@ -48,13 +48,6 @@ return new class extends Migration
             // Add id_status column
             $table->unsignedBigInteger('id_status')->nullable()->after('id_kuesioner');
             
-            // Change status_kuesioner enum values
-            $table->dropColumn('status_kuesioner');
-        });
-
-        Schema::table('kuesioner', function (Blueprint $table) {
-            $table->enum('status_kuesioner', ['hidden', 'aktif', 'draft'])->default('draft')->after('id_status');
-            
             // Add foreign key to status table
             $table->foreign('id_status')
                   ->references('id_status')
@@ -96,6 +89,9 @@ return new class extends Migration
         Schema::table('pertanyaan', function (Blueprint $table) {
             // Add id_sectionques column
             $table->unsignedBigInteger('id_sectionques')->after('id_pertanyaan');
+            
+            // Add status_pertanyaan column
+            $table->enum('status_pertanyaan', ['publish', 'draft', 'hidden'])->default('draft')->after('isi_pertanyaan');
             
             // Add foreign key to section_ques
             $table->foreign('id_sectionques')
@@ -160,7 +156,7 @@ return new class extends Migration
 
         // Restore pertanyaan structure
         Schema::table('pertanyaan', function (Blueprint $table) {
-            $table->dropColumn('id_sectionques');
+            $table->dropColumn(['id_sectionques', 'status_pertanyaan']);
         });
 
         Schema::table('pertanyaan', function (Blueprint $table) {
@@ -179,11 +175,7 @@ return new class extends Migration
         // Restore kuesioner table
         Schema::table('kuesioner', function (Blueprint $table) {
             $table->dropForeign(['id_status']);
-            $table->dropColumn(['id_status', 'status_kuesioner']);
-        });
-
-        Schema::table('kuesioner', function (Blueprint $table) {
-            $table->enum('status_kuesioner', ['draft', 'publish', 'close'])->default('draft');
+            $table->dropColumn('id_status');
         });
 
         // Drop section_ques table

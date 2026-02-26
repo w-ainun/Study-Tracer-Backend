@@ -19,7 +19,6 @@ class UpdateKuesionerRequest extends FormRequest
             'id_status' => ['sometimes', 'exists:status,id_status'],
             'judul_kuesioner' => ['sometimes', 'string', 'max:255'],
             'deskripsi_kuesioner' => ['sometimes', 'string'],
-            'status_kuesioner' => ['sometimes', 'in:hidden,aktif,draft'],
             'tanggal_publikasi' => ['nullable', 'date'],
         ];
     }

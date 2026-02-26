@@ -15,6 +15,7 @@ class Pertanyaan extends Model
     protected $fillable = [
         'id_sectionques',
         'isi_pertanyaan',
+        'status_pertanyaan',
     ];
 
     /**

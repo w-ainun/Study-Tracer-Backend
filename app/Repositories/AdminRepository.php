@@ -17,7 +17,7 @@ class AdminRepository implements AdminRepositoryInterface
         // Only count accepted/active alumni (exclude pending/rejected/banned)
         $totalUsers = Alumni::where('status_create', 'ok')->count();
         $pendingUsers = Alumni::where('status_create', 'pending')->count();
-        $activeKuesioner = Kuesioner::where('status_kuesioner', 'publish')->count();
+        $activeKuesioner = Kuesioner::count();
         $pendingLowongan = Lowongan::where('approval_status', 'pending')->count();
 
         // Worker percentage (only accepted alumni)

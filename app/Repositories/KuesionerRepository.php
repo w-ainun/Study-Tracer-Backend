@@ -19,10 +19,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         $query = Kuesioner::with(['status', 'sectionQues'])
             ->withCount('pertanyaan');
 
-        if (!empty($filters['status_kuesioner'])) {
-            $query->where('status_kuesioner', $filters['status_kuesioner']);
-        }
-
         if (!empty($filters['id_status'])) {
             $query->where('id_status', $filters['id_status']);
         }
@@ -266,7 +262,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function getPublished(int $perPage = 15)
     {
         return Kuesioner::with(['status', 'sectionQues.pertanyaan.opsiJawaban'])
-            ->where('status_kuesioner', 'aktif')
             ->orderBy('tanggal_publikasi', 'desc')
             ->paginate($perPage);
     }
@@ -277,7 +272,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function getPublishedByStatus(int $statusId)
     {
         return Kuesioner::with(['status', 'sectionQues.pertanyaan.opsiJawaban'])
-            ->where('status_kuesioner', 'aktif')
             ->where('id_status', $statusId)
             ->first();
     }
@@ -387,12 +381,12 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     }
 
     /**
-     * Update kuesioner status (visibility)
+     * Update kuesioner status (visibility) - DEPRECATED: status moved to pertanyaan
      */
     public function updateKuesionerStatus(int $kuesionerId, string $status)
     {
+        // Status now managed at pertanyaan level
         $kuesioner = Kuesioner::findOrFail($kuesionerId);
-        $kuesioner->update(['status_kuesioner' => $status]);
-        return $kuesioner->fresh()->load(['status', 'sectionQues']);
+        return $kuesioner->load(['status', 'sectionQues']);
     }
 }

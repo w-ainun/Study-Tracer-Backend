@@ -26,17 +26,12 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Get all kuesioner (admin view) — supports filters: status_kuesioner, id_status, search
+     * Get all kuesioner (admin view) — supports filters: id_status, search
      */
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['status_kuesioner', 'id_status', 'search']);
-
-            // Map 'status' query param to 'status_kuesioner' for convenience
-            if ($request->has('status') && !$request->has('status_kuesioner')) {
-                $filters['status_kuesioner'] = $request->input('status');
-            }
+            $filters = $request->only(['id_status', 'search']);
 
             $perPage = $request->input('per_page', 15);
             $kuesioner = $this->kuesionerService->getAll($filters, $perPage);
@@ -157,26 +152,11 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Update kuesioner visibility status (hidden/aktif/draft)
+     * Update kuesioner visibility status - DEPRECATED: status moved to pertanyaan level
      */
     public function updateStatus(Request $request, int $id)
     {
-        $request->validate([
-            'status_kuesioner' => 'required|in:hidden,aktif,draft',
-        ]);
-
-        try {
-            $kuesioner = $this->kuesionerService->updateKuesionerStatus(
-                $id,
-                $request->input('status_kuesioner')
-            );
-            return $this->successResponse(
-                new KuesionerResource($kuesioner),
-                'Status kuesioner berhasil diperbarui'
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal memperbarui status kuesioner: ' . $e->getMessage());
-        }
+        return $this->errorResponse('Status kuesioner telah dipindahkan ke level pertanyaan. Gunakan update status_pertanyaan.', 400);
     }
 
     // ═══════════════════════════════════════════════
