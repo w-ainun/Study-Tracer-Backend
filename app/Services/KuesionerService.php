@@ -63,6 +63,11 @@ class KuesionerService
         return $this->kuesionerRepository->getPublished($perPage);
     }
 
+    public function getPublishedByStatus(int $statusId)
+    {
+        return $this->kuesionerRepository->getPublishedByStatus($statusId);
+    }
+
     public function getWithPertanyaan(int $kuesionerId)
     {
         return $this->kuesionerRepository->getKuesionerWithPertanyaan($kuesionerId);
@@ -78,8 +83,8 @@ class KuesionerService
         return $this->kuesionerRepository->getAlumniJawabanDetail($kuesionerId, $alumniId);
     }
 
-    public function updatePertanyaanStatus(int $pertanyaanId, string $status)
+    public function updateKuesionerStatus(int $kuesionerId, string $status)
     {
-        return $this->kuesionerRepository->updatePertanyaanStatus($pertanyaanId, $status);
+        return $this->kuesionerRepository->updateKuesionerStatus($kuesionerId, $status);
     }
 }

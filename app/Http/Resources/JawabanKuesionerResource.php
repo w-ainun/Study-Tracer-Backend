@@ -10,13 +10,12 @@ class JawabanKuesionerResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id_jawabanKuis,
+            'id' => $this->id_jawaban,
             'id_pertanyaan' => $this->id_pertanyaan,
             'pertanyaan' => $this->whenLoaded('pertanyaan', function () {
                 return [
-                    'id' => $this->pertanyaan->id_pertanyaanKuis,
-                    'pertanyaan' => $this->pertanyaan->pertanyaan,
-                    'tipe' => $this->pertanyaan->tipe_pertanyaan,
+                    'id' => $this->pertanyaan->id_pertanyaan,
+                    'isi_pertanyaan' => $this->pertanyaan->isi_pertanyaan,
                     'opsi' => $this->pertanyaan->opsiJawaban->pluck('opsi')->toArray(),
                 ];
             }),

@@ -26,16 +26,18 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Get all kuesioner (admin view)
+     * Get all kuesioner (admin view) — supports filters: status_kuesioner, id_status, search
      */
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['status_kuesioner', 'search']);
+            $filters = $request->only(['status_kuesioner', 'id_status', 'search']);
+
             // Map 'status' query param to 'status_kuesioner' for convenience
             if ($request->has('status') && !$request->has('status_kuesioner')) {
                 $filters['status_kuesioner'] = $request->input('status');
             }
+
             $perPage = $request->input('per_page', 15);
             $kuesioner = $this->kuesionerService->getAll($filters, $perPage);
             return $this->successResponse(KuesionerResource::collection($kuesioner)->response()->getData(true));
@@ -45,7 +47,7 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Get published kuesioner (alumni view)
+     * Get published kuesioner (alumni/public view)
      */
     public function published(Request $request)
     {
@@ -58,6 +60,25 @@ class KuesionerController extends Controller
         }
     }
 
+    /**
+     * Get published kuesioner by status (e.g., kuesioner for "Bekerja")
+     */
+    public function publishedByStatus(int $statusId)
+    {
+        try {
+            $kuesioner = $this->kuesionerService->getPublishedByStatus($statusId);
+            if (!$kuesioner) {
+                return $this->notFoundResponse('Kuesioner untuk status ini belum tersedia');
+            }
+            return $this->successResponse(new KuesionerResource($kuesioner));
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil kuesioner berdasarkan status');
+        }
+    }
+
+    /**
+     * Get kuesioner detail (admin)
+     */
     public function show(int $id)
     {
         try {
@@ -69,7 +90,7 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Get kuesioner with all pertanyaan & opsi jawaban (for filling out)
+     * Get kuesioner with all pertanyaan & opsi jawaban (for alumni filling out)
      */
     public function showWithPertanyaan(int $id)
     {
@@ -81,6 +102,9 @@ class KuesionerController extends Controller
         }
     }
 
+    /**
+     * Create kuesioner (admin)
+     */
     public function store(StoreKuesionerRequest $request)
     {
         try {
@@ -91,6 +115,9 @@ class KuesionerController extends Controller
         }
     }
 
+    /**
+     * Update kuesioner (admin)
+     */
     public function update(UpdateKuesionerRequest $request, int $id)
     {
         try {
@@ -101,6 +128,9 @@ class KuesionerController extends Controller
         }
     }
 
+    /**
+     * Delete kuesioner (admin)
+     */
     public function destroy(int $id)
     {
         try {
@@ -112,7 +142,34 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Add pertanyaan to kuesioner
+     * Update kuesioner visibility status (hidden/aktif/draft)
+     */
+    public function updateStatus(Request $request, int $id)
+    {
+        $request->validate([
+            'status_kuesioner' => 'required|in:hidden,aktif,draft',
+        ]);
+
+        try {
+            $kuesioner = $this->kuesionerService->updateKuesionerStatus(
+                $id,
+                $request->input('status_kuesioner')
+            );
+            return $this->successResponse(
+                new KuesionerResource($kuesioner),
+                'Status kuesioner berhasil diperbarui'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status kuesioner: ' . $e->getMessage());
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    //  PERTANYAAN
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Add pertanyaan to kuesioner (with auto section_ques)
      */
     public function addPertanyaan(StorePertanyaanRequest $request, int $kuesionerId)
     {
@@ -151,8 +208,12 @@ class KuesionerController extends Controller
         }
     }
 
+    // ═══════════════════════════════════════════════
+    //  JAWABAN
+    // ═══════════════════════════════════════════════
+
     /**
-     * Submit answers for a kuesioner
+     * Submit answers for a kuesioner (alumni)
      */
     public function submitAnswers(AnswerKuesionerRequest $request, int $kuesionerId)
     {
@@ -202,29 +263,6 @@ class KuesionerController extends Controller
             return $this->successResponse($data);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil detail jawaban: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Update pertanyaan visibility status (admin)
-     */
-    public function updatePertanyaanStatus(Request $request, int $kuesionerId, int $pertanyaanId)
-    {
-        $request->validate([
-            'status_pertanyaan' => 'required|in:TERLIHAT,TERSEMBUNYI,DRAF',
-        ]);
-
-        try {
-            $pertanyaan = $this->kuesionerService->updatePertanyaanStatus(
-                $pertanyaanId,
-                $request->input('status_pertanyaan')
-            );
-            return $this->successResponse(
-                new PertanyaanResource($pertanyaan),
-                'Status pertanyaan berhasil diperbarui'
-            );
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal memperbarui status pertanyaan: ' . $e->getMessage());
         }
     }
 }

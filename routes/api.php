@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Kuesioner jawaban
         Route::get('/kuesioner/{id}', [KuesionerController::class, 'showWithPertanyaan']);
+        Route::get('/kuesioner/status/{statusId}', [KuesionerController::class, 'publishedByStatus']);
         Route::post('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'submitAnswers']);
     });
 
@@ -96,12 +97,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/kuesioner/{id}', [KuesionerController::class, 'show']);
         Route::put('/kuesioner/{id}', [KuesionerController::class, 'update']);
         Route::delete('/kuesioner/{id}', [KuesionerController::class, 'destroy']);
+        Route::patch('/kuesioner/{id}/status', [KuesionerController::class, 'updateStatus']);
 
         // Pertanyaan within Kuesioner
         Route::post('/kuesioner/{kuesionerId}/pertanyaan', [KuesionerController::class, 'addPertanyaan']);
         Route::put('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'updatePertanyaan']);
         Route::delete('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'deletePertanyaan']);
-        Route::patch('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}/status', [KuesionerController::class, 'updatePertanyaanStatus']);
 
         // Jawaban Kuesioner (admin view)
         Route::get('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'listJawaban']);

@@ -16,9 +16,10 @@ class UpdateKuesionerRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id_status' => ['sometimes', 'exists:status,id_status'],
             'judul_kuesioner' => ['sometimes', 'string', 'max:255'],
             'deskripsi_kuesioner' => ['sometimes', 'string'],
-            'status_kuesioner' => ['sometimes', 'in:draft,publish,close'],
+            'status_kuesioner' => ['sometimes', 'in:hidden,aktif,draft'],
             'tanggal_publikasi' => ['nullable', 'date'],
         ];
     }

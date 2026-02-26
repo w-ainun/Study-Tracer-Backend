@@ -17,7 +17,7 @@ class AnswerKuesionerRequest extends FormRequest
     {
         return [
             'jawaban' => ['required', 'array', 'min:1'],
-            'jawaban.*.id_pertanyaan' => ['required', 'exists:pertanyaan_kuesioner,id_pertanyaanKuis'],
+            'jawaban.*.id_pertanyaan' => ['required', 'exists:pertanyaan,id_pertanyaan'],
             'jawaban.*.id_opsiJawaban' => ['nullable', 'exists:opsi_jawaban,id_opsi'],
             'jawaban.*.jawaban' => ['nullable', 'string'],
         ];

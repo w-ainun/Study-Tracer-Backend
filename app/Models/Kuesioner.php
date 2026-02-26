@@ -14,6 +14,8 @@ class Kuesioner extends Model
 
     protected $fillable = [
         'id_status',
+        'judul_kuesioner',
+        'deskripsi_kuesioner',
         'status_kuesioner',
         'tanggal_publikasi',
     ];

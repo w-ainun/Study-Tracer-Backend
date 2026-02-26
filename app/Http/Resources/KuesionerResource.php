@@ -11,12 +11,19 @@ class KuesionerResource extends JsonResource
     {
         return [
             'id' => $this->id_kuesioner,
+            'id_status' => $this->id_status,
             'judul' => $this->judul_kuesioner,
             'deskripsi' => $this->deskripsi_kuesioner,
-            'status' => $this->status_kuesioner,
+            'status_kuesioner' => $this->status_kuesioner,
             'tanggal_publikasi' => $this->tanggal_publikasi?->format('Y-m-d'),
+            'status' => $this->whenLoaded('status', function () {
+                return [
+                    'id' => $this->status->id_status,
+                    'nama' => $this->status->nama_status,
+                ];
+            }),
             'jumlah_pertanyaan' => $this->whenCounted('pertanyaan'),
-            'pertanyaan' => PertanyaanResource::collection($this->whenLoaded('pertanyaan')),
+            'section_ques' => SectionQuesResource::collection($this->whenLoaded('sectionQues')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

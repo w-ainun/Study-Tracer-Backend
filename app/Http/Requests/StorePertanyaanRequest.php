@@ -16,23 +16,17 @@ class StorePertanyaanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pertanyaan' => ['required', 'string'],
+            'isi_pertanyaan' => ['required', 'string'],
+            'judul_bagian' => ['nullable', 'string', 'max:255'],
             'opsi' => ['nullable', 'array'],
             'opsi.*' => ['string'],
-            'tipe_pertanyaan' => ['sometimes', 'string', 'in:pilihan_tunggal,pilihan_ganda,teks_pendek,skala'],
-            'status_pertanyaan' => ['sometimes', 'string', 'in:TERLIHAT,TERSEMBUNYI,DRAF'],
-            'kategori' => ['nullable', 'string', 'max:100'],
-            'judul_bagian' => ['nullable', 'string', 'max:255'],
-            'urutan' => ['sometimes', 'integer', 'min:0'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'pertanyaan.required' => 'Pertanyaan wajib diisi.',
-            'tipe_pertanyaan.in' => 'Tipe pertanyaan harus: pilihan_tunggal, pilihan_ganda, teks_pendek, atau skala.',
-            'status_pertanyaan.in' => 'Status pertanyaan harus: TERLIHAT, TERSEMBUNYI, atau DRAF.',
+            'isi_pertanyaan.required' => 'Pertanyaan wajib diisi.',
         ];
     }
 
