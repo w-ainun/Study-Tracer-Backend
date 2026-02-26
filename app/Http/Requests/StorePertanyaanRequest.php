@@ -16,6 +16,7 @@ class StorePertanyaanRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'id_sectionques' => ['nullable', 'integer', 'exists:section_ques,id_sectionques'],
             'isi_pertanyaan' => ['required', 'string'],
             'judul_bagian' => ['nullable', 'string', 'max:255'],
             'opsi' => ['nullable', 'array'],
@@ -27,6 +28,7 @@ class StorePertanyaanRequest extends FormRequest
     {
         return [
             'isi_pertanyaan.required' => 'Pertanyaan wajib diisi.',
+            'id_sectionques.exists' => 'Section yang dipilih tidak valid.',
         ];
     }
 

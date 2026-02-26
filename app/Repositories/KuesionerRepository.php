@@ -103,18 +103,59 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return $query->orderBy('created_at', 'desc')->paginate($perPage);
     }
 
-    /**     * Add pertanyaan to a kuesioner
-     * Auto-creates or finds existing section_ques based on judul_bagian
+    /**
+     * Add pertanyaan to a kuesioner
+     * Can use existing id_sectionques OR auto-creates section based on judul_bagian
      */
     public function addPertanyaan(int $kuesionerId, array $data)
     {
-        $section = SectionQues::firstOrCreate([
-            'id_kuesioner' => $kuesionerId,
-            'judul_pertanyaan' => $data['judul_bagian'] ?? 'Umum',
-        ]);
+        // Jika id_sectionques disediakan, gunakan langsung
+        if (!empty($data['id_sectionques'])) {
+            $sectionId = $data['id_sectionques'];
+            
+            // Validasi bahwa section ini memang milik kuesioner yang benar
+            $section = SectionQues::where('id_sectionques', $sectionId)
+                ->where('id_kuesioner', $kuesionerId)
+                ->firstOrFail();
+        } else {
+            // Jika tidak ada id_sectionques, create/find berdasarkan judul_bagian
+            $section = SectionQues::firstOrCreate([
+                'id_kuesioner' => $kuesionerId,
+                'judul_pertanyaan' => $data['judul_bagian'] ?? 'Umum',
+            ]);
+            $sectionId = $section->id_sectionques;
+        }
 
         $pertanyaan = Pertanyaan::create([
-            'id_sectionques' => $section->id_sectionques,
+            'id_sectionques' => $sectionId,
+            'isi_pertanyaan' => $data['isi_pertanyaan'],
+        ]);
+
+        if (!empty($data['opsi'])) {
+            foreach ($data['opsi'] as $opsi) {
+                OpsiJawaban::create([
+                    'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                    'opsi' => $opsi,
+                ]);
+            }
+        }
+
+        return $pertanyaan->load(['opsiJawaban', 'sectionQues']);
+    }
+
+    /**
+     * Store pertanyaan directly using id_sectionques (no kuesioner ID needed)
+     */
+    public function storePertanyaan(array $data)
+    {
+        // id_sectionques harus ada di data
+        $sectionId = $data['id_sectionques'];
+        
+        // Validasi section exists
+        $section = SectionQues::findOrFail($sectionId);
+
+        $pertanyaan = Pertanyaan::create([
+            'id_sectionques' => $sectionId,
             'isi_pertanyaan' => $data['isi_pertanyaan'],
         ]);
 

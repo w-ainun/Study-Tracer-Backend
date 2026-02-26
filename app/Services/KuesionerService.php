@@ -48,6 +48,11 @@ class KuesionerService
         return $this->kuesionerRepository->addPertanyaan($kuesionerId, $data);
     }
 
+    public function storePertanyaan(array $data)
+    {
+        return $this->kuesionerRepository->storePertanyaan($data);
+    }
+
     public function updatePertanyaan(int $pertanyaanId, array $data)
     {
         return $this->kuesionerRepository->updatePertanyaan($pertanyaanId, $data);

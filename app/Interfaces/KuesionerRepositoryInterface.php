@@ -13,6 +13,7 @@ interface KuesionerRepositoryInterface
     // Pertanyaan
     public function getAllPertanyaan(array $filters = [], int $perPage = 15);
     public function addPertanyaan(int $kuesionerId, array $data);
+    public function storePertanyaan(array $data); // Direct store using id_sectionques
     public function updatePertanyaan(int $pertanyaanId, array $data);
     public function deletePertanyaan(int $pertanyaanId);
     public function addOpsiJawaban(int $pertanyaanId, array $opsiList);

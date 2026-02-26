@@ -103,6 +103,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Pertanyaan Management
         Route::get('/pertanyaan', [KuesionerController::class, 'getAllPertanyaan']);
+        Route::post('/pertanyaan', [KuesionerController::class, 'storePertanyaan']); // New: Direct pertanyaan without kuesioner ID
         Route::post('/kuesioner/{kuesionerId}/pertanyaan', [KuesionerController::class, 'addPertanyaan']);
         Route::put('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'updatePertanyaan']);
         Route::delete('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'deletePertanyaan']);

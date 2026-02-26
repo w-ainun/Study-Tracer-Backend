@@ -198,6 +198,26 @@ class KuesionerController extends Controller
     }
 
     /**
+     * Store pertanyaan directly (using id_sectionques from body)
+     */
+    public function storePertanyaan(StorePertanyaanRequest $request)
+    {
+        try {
+            $data = $request->validated();
+            
+            // Validasi id_sectionques harus ada
+            if (empty($data['id_sectionques'])) {
+                return $this->errorResponse('id_sectionques wajib diisi', 422);
+            }
+            
+            $pertanyaan = $this->kuesionerService->storePertanyaan($data);
+            return $this->createdResponse(new PertanyaanResource($pertanyaan), 'Pertanyaan berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menambahkan pertanyaan: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Update pertanyaan
      */
     public function updatePertanyaan(StorePertanyaanRequest $request, int $kuesionerId, int $pertanyaanId)
