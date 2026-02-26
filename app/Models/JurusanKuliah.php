@@ -14,10 +14,22 @@ class JurusanKuliah extends Model
 
     protected $fillable = [
         'nama_jurusan',
+        'id_universitas',
     ];
 
+    /**
+     * Universitas tempat jurusan ini berada.
+     */
     public function universitas()
     {
-        return $this->hasMany(Universitas::class, 'id_jurusanKuliah', 'id_jurusanKuliah');
+        return $this->belongsTo(Universitas::class, 'id_universitas', 'id_universitas');
+    }
+
+    /**
+     * Record kuliah yang mengambil jurusan ini.
+     */
+    public function kuliah()
+    {
+        return $this->hasMany(Kuliah::class, 'id_jurusanKuliah', 'id_jurusanKuliah');
     }
 }

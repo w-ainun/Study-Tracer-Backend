@@ -17,7 +17,6 @@ class JurusanSeeder extends Seeder
             'ATU',
             'APHP',
             'TKR',
-            'RPL',
         ];
 
         foreach ($jurusanList as $jurusan) {

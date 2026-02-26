@@ -107,7 +107,7 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllJurusanKuliah()
     {
-        return JurusanKuliah::orderBy('nama_jurusan')->get();
+        return JurusanKuliah::with('universitas')->orderBy('nama_jurusan')->get();
     }
 
     public function createJurusanKuliah(array $data)
@@ -278,5 +278,37 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     public function createUniversitas(array $data)
     {
         return Universitas::create($data);
+    }
+
+    // ─── Export ──────────────────────────────────────────
+
+    public function exportMasterData(string $type): array
+    {
+        switch ($type) {
+            case 'jurusan':
+                return Jurusan::orderBy('nama_jurusan')
+                    ->get()
+                    ->map(fn($j) => [
+                        'id' => $j->id_jurusan,
+                        'nama' => $j->nama_jurusan,
+                    ])
+                    ->toArray();
+
+            case 'perusahaan':
+                return Perusahaan::with(['kota.provinsi'])
+                    ->orderBy('nama_perusahaan')
+                    ->get()
+                    ->map(fn($p) => [
+                        'id' => $p->id_perusahaan,
+                        'nama' => $p->nama_perusahaan,
+                        'alamat' => $p->jalan ?? '-',
+                        'kota' => $p->kota?->nama_kota ?? '-',
+                        'provinsi' => $p->kota?->provinsi?->nama_provinsi ?? '-',
+                    ])
+                    ->toArray();
+
+            default:
+                return [];
+        }
     }
 }

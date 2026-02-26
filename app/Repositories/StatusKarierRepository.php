@@ -54,23 +54,30 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
 
     public function getAllProdi()
     {
-        return JurusanKuliah::orderBy('nama_jurusan')->get();
+        return JurusanKuliah::with('universitas')
+            ->orderBy('nama_jurusan')
+            ->get();
     }
 
     public function createProdi(array $data)
     {
         return JurusanKuliah::create([
             'nama_jurusan' => $data['nama_prodi'] ?? $data['nama_jurusan'] ?? $data['nama'],
+            'id_universitas' => $data['id_universitas'] ?? null,
         ]);
     }
 
     public function updateProdi(int $id, array $data)
     {
         $prodi = JurusanKuliah::findOrFail($id);
-        $prodi->update([
+        $updateData = [
             'nama_jurusan' => $data['nama_prodi'] ?? $data['nama_jurusan'] ?? $data['nama'] ?? $prodi->nama_jurusan,
-        ]);
-        return $prodi->fresh();
+        ];
+        if (array_key_exists('id_universitas', $data)) {
+            $updateData['id_universitas'] = $data['id_universitas'];
+        }
+        $prodi->update($updateData);
+        return $prodi->fresh('universitas');
     }
 
     public function deleteProdi(int $id)
@@ -110,23 +117,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
         return true;
     }
 
-    // ═══════════════════════════════════════════════
-    //  POSISI PEKERJAAN (distinct from pekerjaan.posisi)
-    // ═══════════════════════════════════════════════
 
-    public function getAllPosisi()
-    {
-        return Pekerjaan::select('posisi')
-            ->distinct()
-            ->orderBy('posisi')
-            ->pluck('posisi')
-            ->map(fn(string $posisi, int $index) => [
-                'id' => $index + 1,
-                'nama' => $posisi,
-            ])
-            ->values()
-            ->toArray();
-    }
 
     // ═══════════════════════════════════════════════
     //  REPORT / STATISTICS
@@ -155,16 +146,18 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->map(fn($u) => [
                         'id' => $u->id_universitas,
                         'nama' => $u->nama_universitas,
-                        'jurusan' => $u->jurusanKuliah?->nama_jurusan ?? '-',
+                        'jurusan' => $u->jurusanKuliah->pluck('nama_jurusan')->implode(', ') ?: '-',
                     ])
                     ->toArray();
 
             case 'prodi':
-                return JurusanKuliah::orderBy('nama_jurusan')
+                return JurusanKuliah::with('universitas')
+                    ->orderBy('nama_jurusan')
                     ->get()
                     ->map(fn($p) => [
                         'id' => $p->id_jurusanKuliah,
                         'nama' => $p->nama_jurusan,
+                        'universitas' => $p->universitas?->nama_universitas ?? '-',
                     ])
                     ->toArray();
 
@@ -174,18 +167,6 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->map(fn($b) => [
                         'id' => $b->id_bidang,
                         'nama' => $b->nama_bidang,
-                    ])
-                    ->toArray();
-
-            case 'posisi':
-                return Pekerjaan::select('posisi')
-                    ->distinct()
-                    ->orderBy('posisi')
-                    ->get()
-                    ->values()
-                    ->map(fn($p, $i) => [
-                        'id' => $i + 1,
-                        'nama' => $p->posisi,
                     ])
                     ->toArray();
 

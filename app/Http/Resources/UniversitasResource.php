@@ -12,9 +12,12 @@ class UniversitasResource extends JsonResource
         return [
             'id' => $this->id_universitas,
             'nama' => $this->nama_universitas,
-            'jurusan' => $this->jurusanKuliah?->nama_jurusan,
-            'jalur_masuk' => $this->jalur_masuk,
-            'jenjang' => $this->jenjang,
+            'jurusan_kuliah' => $this->whenLoaded('jurusanKuliah', function () {
+                return $this->jurusanKuliah->map(fn($j) => [
+                    'id' => $j->id_jurusanKuliah,
+                    'nama' => $j->nama_jurusan,
+                ]);
+            }),
         ];
     }
 }

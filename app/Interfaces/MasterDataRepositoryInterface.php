@@ -64,4 +64,7 @@ interface MasterDataRepositoryInterface
     // Universitas
     public function getAllUniversitas();
     public function createUniversitas(array $data);
+
+    // Export
+    public function exportMasterData(string $type): array;
 }

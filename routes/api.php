@@ -77,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending-users', [AdminController::class, 'getPendingUsers']);
         Route::post('/approve-user/{id}', [AdminController::class, 'approveUser']);
         Route::post('/reject-user/{id}', [AdminController::class, 'rejectUser']);
+        Route::post('/ban-user/{id}', [AdminController::class, 'banUser']);
         Route::get('/alumni/export', [AdminController::class, 'exportAlumniCsv']); // before {id}
         Route::get('/alumni', [AdminController::class, 'getAllAlumni']);
         Route::get('/alumni/{id}', [AdminController::class, 'getAlumniDetail']);
@@ -90,6 +91,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/lowongan/{id}', [LowonganController::class, 'destroy']);
         Route::post('/lowongan/{id}/approve', [LowonganController::class, 'approve']);
         Route::post('/lowongan/{id}/reject', [LowonganController::class, 'reject']);
+        Route::post('/lowongan/{id}/repost', [LowonganController::class, 'repost']);
 
         // Kuesioner Management
         Route::get('/kuesioner', [KuesionerController::class, 'index']);
@@ -128,9 +130,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/bidang-usaha', [StatusKarierController::class, 'storeBidangUsaha']);
             Route::put('/bidang-usaha/{id}', [StatusKarierController::class, 'updateBidangUsaha']);
             Route::delete('/bidang-usaha/{id}', [StatusKarierController::class, 'destroyBidangUsaha']);
-
-            // Posisi Pekerjaan (read-only, derived from pekerjaan.posisi)
-            Route::get('/posisi', [StatusKarierController::class, 'posisi']);
 
             // Report & Export
             Route::get('/report', [StatusKarierController::class, 'statusDistribution']);

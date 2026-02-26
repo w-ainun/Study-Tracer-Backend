@@ -204,9 +204,12 @@ class MasterDataController extends Controller
 
     public function storeJurusanKuliah(Request $request)
     {
-        $request->validate(['nama_jurusan' => 'required|string|max:255|unique:jurusan_kuliah,nama_jurusan']);
+        $request->validate([
+            'nama_jurusan' => 'required|string|max:255|unique:jurusan_kuliah,nama_jurusan',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
+        ]);
         try {
-            $data = $this->masterDataService->createJurusanKuliah($request->only('nama_jurusan'));
+            $data = $this->masterDataService->createJurusanKuliah($request->only('nama_jurusan', 'id_universitas'));
             return $this->createdResponse(new JurusanKuliahResource($data), 'Jurusan kuliah berhasil ditambahkan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan jurusan kuliah: ' . $e->getMessage());
@@ -215,9 +218,12 @@ class MasterDataController extends Controller
 
     public function updateJurusanKuliah(Request $request, int $id)
     {
-        $request->validate(['nama_jurusan' => 'required|string|max:255']);
+        $request->validate([
+            'nama_jurusan' => 'required|string|max:255',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
+        ]);
         try {
-            $data = $this->masterDataService->updateJurusanKuliah($id, $request->only('nama_jurusan'));
+            $data = $this->masterDataService->updateJurusanKuliah($id, $request->only('nama_jurusan', 'id_universitas'));
             return $this->successResponse(new JurusanKuliahResource($data), 'Jurusan kuliah berhasil diperbarui');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memperbarui jurusan kuliah: ' . $e->getMessage());
@@ -487,7 +493,7 @@ class MasterDataController extends Controller
     {
         try {
             $data = $this->masterDataService->getAllUniversitas();
-            return $this->successResponse($data);
+            return $this->successResponse(\App\Http\Resources\UniversitasResource::collection($data));
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data universitas');
         }
@@ -521,5 +527,68 @@ class MasterDataController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data tipe pekerjaan');
         }
+    }
+
+    // =====================
+    // EXPORT MASTER DATA (jurusan, perusahaan)
+    // =====================
+    public function exportMasterData(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:jurusan,perusahaan',
+            'format' => 'sometimes|in:csv,pdf',
+        ]);
+
+        $type = $request->input('type');
+        $format = $request->input('format', 'csv');
+        $data = $this->masterDataService->exportMasterData($type);
+        $timestamp = now()->format('Ymd_His');
+
+        // ─── PDF Export ───────────────────────────────────
+        if ($format === 'pdf') {
+            $typeLabels = [
+                'jurusan' => 'Data Jurusan',
+                'perusahaan' => 'Data Perusahaan',
+            ];
+
+            $columns = $type === 'perusahaan'
+                ? ['ID', 'Nama Perusahaan', 'Alamat', 'Kota', 'Provinsi']
+                : ['ID', 'Nama Jurusan'];
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.status-karier', [
+                'title' => 'Laporan Master Data — ' . ($typeLabels[$type] ?? $type),
+                'columns' => $columns,
+                'data' => $data,
+                'generatedAt' => now()->format('d M Y H:i'),
+            ]);
+
+            return $pdf->download("master_data_{$type}_{$timestamp}.pdf");
+        }
+
+        // ─── CSV Export ───────────────────────────────────
+        $headers = [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="master_data_' . $type . '_' . $timestamp . '.csv"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        ];
+
+        $callback = function () use ($data, $type) {
+            $handle = fopen('php://output', 'w');
+            fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM
+
+            if ($type === 'perusahaan') {
+                fputcsv($handle, ['ID', 'Nama Perusahaan', 'Alamat', 'Kota', 'Provinsi']);
+            } else {
+                fputcsv($handle, ['ID', 'Nama Jurusan']);
+            }
+
+            foreach ($data as $row) {
+                fputcsv($handle, array_values($row));
+            }
+
+            fclose($handle);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

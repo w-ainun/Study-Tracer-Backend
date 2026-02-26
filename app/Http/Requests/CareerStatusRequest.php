@@ -28,11 +28,11 @@ class CareerStatusRequest extends FormRequest
             'pekerjaan.jalan' => ['nullable', 'string'],
 
             // If Kuliah
-            'universitas' => ['nullable', 'array'],
-            'universitas.nama_universitas' => ['required_with:universitas', 'string'],
-            'universitas.id_jurusanKuliah' => ['required_with:universitas', 'exists:jurusan_kuliah,id_jurusanKuliah'],
-            'universitas.jalur_masuk' => ['required_with:universitas', 'in:SNBP,SNBT,Mandiri,Beasiswa,lainnya'],
-            'universitas.jenjang' => ['required_with:universitas', 'in:D3,D4,S1,S2,S3'],
+            'kuliah' => ['nullable', 'array'],
+            'kuliah.id_universitas' => ['required_with:kuliah', 'exists:universitas,id_universitas'],
+            'kuliah.id_jurusanKuliah' => ['required_with:kuliah', 'exists:jurusan_kuliah,id_jurusanKuliah'],
+            'kuliah.jalur_masuk' => ['required_with:kuliah', 'in:SNBP,SNBT,Mandiri,Beasiswa,lainnya'],
+            'kuliah.jenjang' => ['required_with:kuliah', 'in:D3,D4,S1,S2,S3'],
 
             // If Wirausaha
             'wirausaha' => ['nullable', 'array'],

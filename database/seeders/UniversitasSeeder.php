@@ -1,15 +1,13 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Seeders;
 
 use App\Models\Universitas;
-use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Database\Seeder;
 
-class UniversitasFactory extends Factory
+class UniversitasSeeder extends Seeder
 {
-    protected $model = Universitas::class;
-
-    public function definition(): array
+    public function run(): void
     {
         $universitasList = [
             'Universitas Indonesia',
@@ -20,10 +18,12 @@ class UniversitasFactory extends Factory
             'Universitas Airlangga',
             'Institut Teknologi Sepuluh Nopember',
             'Universitas Padjadjaran',
+            'Universitas Sebelas Maret',
+            'Universitas Hasanuddin',
         ];
 
-        return [
-            'nama_universitas' => fake()->unique()->randomElement($universitasList),
-        ];
+        foreach ($universitasList as $nama) {
+            Universitas::create(['nama_universitas' => $nama]);
+        }
     }
 }

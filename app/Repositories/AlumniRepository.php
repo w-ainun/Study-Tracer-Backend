@@ -12,7 +12,7 @@ class AlumniRepository implements AlumniRepositoryInterface
 {
     public function getAlumniByUserId(int $userId)
     {
-        return Alumni::with(['jurusan', 'skills', 'socialMedia', 'riwayatStatus.status', 'riwayatStatus.pekerjaan.perusahaan', 'riwayatStatus.universitas.jurusanKuliah', 'riwayatStatus.wirausaha.bidangUsaha'])
+        return Alumni::with(['jurusan', 'skills', 'socialMedia', 'riwayatStatus.status', 'riwayatStatus.pekerjaan.perusahaan', 'riwayatStatus.kuliah.universitas', 'riwayatStatus.kuliah.jurusanKuliah', 'riwayatStatus.wirausaha.bidangUsaha'])
             ->where('id_users', $userId)
             ->first();
     }

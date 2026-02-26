@@ -12,10 +12,14 @@ class PerusahaanFactory extends Factory
 
     public function definition(): array
     {
+        $kota = Kota::inRandomOrder()->first();
+        $kotaId = $kota ? $kota->id_kota : Kota::factory();
+        $kotaName = $kota ? $kota->nama_kota : fake()->city();
+
         return [
             'nama_perusahaan' => fake()->company(),
-            'id_kota' => Kota::factory(),
-            'jalan' => fake()->streetAddress(),
+            'id_kota' => $kotaId,
+            'jalan' => fake()->streetAddress() . ', ' . $kotaName,
         ];
     }
 }

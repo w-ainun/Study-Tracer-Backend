@@ -30,22 +30,10 @@ return new class extends Migration
             $table->string('judul_bagian')->nullable()->after('kategori');
             $table->integer('urutan')->default(0)->after('judul_bagian');
         });
-
-        // ─── Make universitas FK columns nullable (admin can create name-only entries) ───
-        DB::statement("ALTER TABLE universitas MODIFY id_jurusanKuliah BIGINT UNSIGNED NULL");
-        DB::statement("ALTER TABLE universitas MODIFY jalur_masuk ENUM('SNBP','SNBT','Mandiri','Beasiswa','lainnya') NULL");
-        DB::statement("ALTER TABLE universitas MODIFY id_riwayat BIGINT UNSIGNED NULL");
-        DB::statement("ALTER TABLE universitas MODIFY jenjang ENUM('D3','D4','S1','S2','S3') NULL");
     }
 
     public function down(): void
     {
-        // Restore universitas columns to NOT NULL
-        DB::statement("ALTER TABLE universitas MODIFY jenjang ENUM('D3','D4','S1','S2','S3') NOT NULL");
-        DB::statement("ALTER TABLE universitas MODIFY id_riwayat BIGINT UNSIGNED NOT NULL");
-        DB::statement("ALTER TABLE universitas MODIFY jalur_masuk ENUM('SNBP','SNBT','Mandiri','Beasiswa','lainnya') NOT NULL");
-        DB::statement("ALTER TABLE universitas MODIFY id_jurusanKuliah BIGINT UNSIGNED NOT NULL");
-
         Schema::table('pertanyaan_kuesioner', function (Blueprint $table) {
             $table->dropColumn(['tipe_pertanyaan', 'status_pertanyaan', 'kategori', 'judul_bagian', 'urutan']);
         });

@@ -237,4 +237,11 @@ class MasterDataService
     {
         return $this->masterDataRepository->createUniversitas($data);
     }
+
+    // ─── Export ──────────────────────────────────────────
+
+    public function exportMasterData(string $type): array
+    {
+        return $this->masterDataRepository->exportMasterData($type);
+    }
 }

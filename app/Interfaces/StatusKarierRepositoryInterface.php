@@ -22,9 +22,6 @@ interface StatusKarierRepositoryInterface
     public function updateBidangUsaha(int $id, array $data);
     public function deleteBidangUsaha(int $id);
 
-    // Posisi Pekerjaan (distinct values from pekerjaan.posisi)
-    public function getAllPosisi();
-
     // Report / Stats
     public function getStatusDistribution(): array;
     public function exportStatusReport(string $type): array;

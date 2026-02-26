@@ -27,17 +27,20 @@ class RiwayatStatusResource extends JsonResource
                     'perusahaan' => $this->pekerjaan->perusahaan ? new PerusahaanResource($this->pekerjaan->perusahaan) : null,
                 ];
             }),
-            'universitas' => $this->whenLoaded('universitas', function () {
-                if (!$this->universitas) return null;
+            'kuliah' => $this->whenLoaded('kuliah', function () {
+                if (!$this->kuliah) return null;
                 return [
-                    'id' => $this->universitas->id_universitas,
-                    'nama' => $this->universitas->nama_universitas,
-                    'jurusan_kuliah' => $this->universitas->jurusanKuliah ? [
-                        'id' => $this->universitas->jurusanKuliah->id_jurusanKuliah,
-                        'nama' => $this->universitas->jurusanKuliah->nama_jurusan,
+                    'id' => $this->kuliah->id_kuliah,
+                    'universitas' => $this->kuliah->universitas ? [
+                        'id' => $this->kuliah->universitas->id_universitas,
+                        'nama' => $this->kuliah->universitas->nama_universitas,
                     ] : null,
-                    'jalur_masuk' => $this->universitas->jalur_masuk,
-                    'jenjang' => $this->universitas->jenjang,
+                    'jurusan_kuliah' => $this->kuliah->jurusanKuliah ? [
+                        'id' => $this->kuliah->jurusanKuliah->id_jurusanKuliah,
+                        'nama' => $this->kuliah->jurusanKuliah->nama_jurusan,
+                    ] : null,
+                    'jalur_masuk' => $this->kuliah->jalur_masuk,
+                    'jenjang' => $this->kuliah->jenjang,
                 ];
             }),
             'wirausaha' => $this->whenLoaded('wirausaha', function () {

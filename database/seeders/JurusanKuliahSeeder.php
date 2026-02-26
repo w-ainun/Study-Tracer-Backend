@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\JurusanKuliah;
+use App\Models\Universitas;
 use Illuminate\Database\Seeder;
 
 class JurusanKuliahSeeder extends Seeder
@@ -24,8 +25,13 @@ class JurusanKuliahSeeder extends Seeder
             'Farmasi',
         ];
 
+        $univIds = Universitas::pluck('id_universitas')->toArray();
+
         foreach ($jurusanList as $jurusan) {
-            JurusanKuliah::create(['nama_jurusan' => $jurusan]);
+            JurusanKuliah::create([
+                'nama_jurusan' => $jurusan,
+                'id_universitas' => !empty($univIds) ? fake()->randomElement($univIds) : null,
+            ]);
         }
     }
 }

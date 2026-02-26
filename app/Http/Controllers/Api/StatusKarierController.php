@@ -99,10 +99,11 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama_prodi' => 'required|string|max:255',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
         ]);
 
         try {
-            $data = $this->service->createProdi($request->only('nama_prodi'));
+            $data = $this->service->createProdi($request->only('nama_prodi', 'id_universitas'));
             return $this->createdResponse(
                 new JurusanKuliahResource($data),
                 'Program studi berhasil ditambahkan'
@@ -116,10 +117,11 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama_prodi' => 'sometimes|string|max:255',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
         ]);
 
         try {
-            $data = $this->service->updateProdi($id, $request->only('nama_prodi'));
+            $data = $this->service->updateProdi($id, $request->only('nama_prodi', 'id_universitas'));
             return $this->successResponse(
                 new JurusanKuliahResource($data),
                 'Program studi berhasil diperbarui'
@@ -187,31 +189,17 @@ class StatusKarierController extends Controller
         }
     }
 
-    public function destroyBidangUsaha(int $id)
-    {
-        try {
-            $this->service->deleteBidangUsaha($id);
-            return $this->successResponse(null, 'Bidang usaha berhasil dihapus');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menghapus bidang usaha: ' . $e->getMessage());
-        }
+public function destroyBidangUsaha(int $id)
+{
+    try {
+        $this->service->deleteBidangUsaha($id);
+        return $this->successResponse(null, 'Bidang usaha berhasil dihapus');
+    } catch (\Exception $e) {
+        return $this->errorResponse('Gagal menghapus bidang usaha: ' . $e->getMessage());
     }
+}
 
-    // ═══════════════════════════════════════════════
-    //  POSISI PEKERJAAN (read-only, distinct from pekerjaan)
-    // ═══════════════════════════════════════════════
-
-    public function posisi()
-    {
-        try {
-            $data = $this->service->getAllPosisi();
-            return $this->successResponse($data);
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil data posisi');
-        }
-    }
-
-    // ═══════════════════════════════════════════════
+// ═══════════════════════════════════════════════
     //  REPORT / EXPORT
     // ═══════════════════════════════════════════════
 
@@ -228,7 +216,7 @@ class StatusKarierController extends Controller
     public function exportReport(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:universitas,prodi,wirausaha,posisi',
+            'type' => 'required|in:universitas,prodi,wirausaha',
             'format' => 'sometimes|in:csv,pdf',
         ]);
 
@@ -243,7 +231,6 @@ class StatusKarierController extends Controller
                 'universitas' => 'Universitas',
                 'prodi' => 'Program Studi',
                 'wirausaha' => 'Bidang Wirausaha',
-                'posisi' => 'Posisi Pekerjaan',
             ];
 
             $columns = $type === 'universitas'

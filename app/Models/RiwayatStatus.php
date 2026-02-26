@@ -34,9 +34,9 @@ class RiwayatStatus extends Model
         return $this->hasOne(Pekerjaan::class, 'id_riwayat', 'id_riwayat');
     }
 
-    public function universitas()
+    public function kuliah()
     {
-        return $this->hasOne(Universitas::class, 'id_riwayat', 'id_riwayat');
+        return $this->hasOne(Kuliah::class, 'id_riwayat', 'id_riwayat');
     }
 
     public function wirausaha()
