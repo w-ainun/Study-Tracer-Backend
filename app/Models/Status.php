@@ -16,8 +16,19 @@ class Status extends Model
         'nama_status',
     ];
 
+    /**
+     * Relasi ke Riwayat Status
+     */
     public function riwayatStatus()
     {
         return $this->hasMany(RiwayatStatus::class, 'id_status', 'id_status');
+    }
+
+    /**
+     * Relasi ke Kuesioner
+     */
+    public function kuesioner()
+    {
+        return $this->hasMany(Kuesioner::class, 'id_status', 'id_status');
     }
 }

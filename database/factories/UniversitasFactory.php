@@ -32,4 +32,17 @@ class UniversitasFactory extends Factory
             'jenjang' => fake()->randomElement(['D3', 'D4', 'S1', 'S2', 'S3']),
         ];
     }
+
+    /**
+     * Admin-created entry (name only, no FK relations).
+     */
+    public function adminEntry(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'id_jurusanKuliah' => null,
+            'jalur_masuk' => null,
+            'id_riwayat' => null,
+            'jenjang' => null,
+        ]);
+    }
 }

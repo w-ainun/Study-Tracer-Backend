@@ -12,16 +12,25 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            ProvinsiSeeder::class,
-            KotaSeeder::class,
+            // Master data (no dependencies)
             JurusanSeeder::class,
             JurusanKuliahSeeder::class,
             SkillSeeder::class,
             SocialMediaSeeder::class,
             StatusSeeder::class,
             BidangUsahaSeeder::class,
+
+            // Geographic data (fetched from wilayah.id API)
+            ProvinsiSeeder::class,
+            KotaSeeder::class,
+
+            // Users & Alumni (depends on Jurusan, Skills, SocialMedia)
             UserSeeder::class,
+
+            // Career data (depends on Alumni, Status, master data)
             RiwayatStatusSeeder::class,
+
+            // Content (depends on Perusahaan from RiwayatStatus)
             LowonganSeeder::class,
             KuesionerSeeder::class,
         ]);

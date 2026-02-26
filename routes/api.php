@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\LowonganController;
 use App\Http\Controllers\Api\KuesionerController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\StatusKarierController;
 
 // ╔══════════════════════════════════════════════════════╗
 // ║                  PUBLIC ROUTES                       ║
@@ -100,6 +101,39 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/kuesioner/{kuesionerId}/pertanyaan', [KuesionerController::class, 'addPertanyaan']);
         Route::put('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'updatePertanyaan']);
         Route::delete('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'deletePertanyaan']);
+        Route::patch('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}/status', [KuesionerController::class, 'updatePertanyaanStatus']);
+
+        // Jawaban Kuesioner (admin view)
+        Route::get('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'listJawaban']);
+        Route::get('/kuesioner/{kuesionerId}/jawaban/{alumniId}', [KuesionerController::class, 'jawabanDetail']);
+
+        // Status Karier Management
+        Route::prefix('status-karier')->group(function () {
+            // Universitas
+            Route::get('/universitas', [StatusKarierController::class, 'universitas']);
+            Route::post('/universitas', [StatusKarierController::class, 'storeUniversitas']);
+            Route::put('/universitas/{id}', [StatusKarierController::class, 'updateUniversitas']);
+            Route::delete('/universitas/{id}', [StatusKarierController::class, 'destroyUniversitas']);
+
+            // Program Studi
+            Route::get('/prodi', [StatusKarierController::class, 'prodi']);
+            Route::post('/prodi', [StatusKarierController::class, 'storeProdi']);
+            Route::put('/prodi/{id}', [StatusKarierController::class, 'updateProdi']);
+            Route::delete('/prodi/{id}', [StatusKarierController::class, 'destroyProdi']);
+
+            // Bidang Wirausaha
+            Route::get('/bidang-usaha', [StatusKarierController::class, 'bidangUsaha']);
+            Route::post('/bidang-usaha', [StatusKarierController::class, 'storeBidangUsaha']);
+            Route::put('/bidang-usaha/{id}', [StatusKarierController::class, 'updateBidangUsaha']);
+            Route::delete('/bidang-usaha/{id}', [StatusKarierController::class, 'destroyBidangUsaha']);
+
+            // Posisi Pekerjaan (read-only, derived from pekerjaan.posisi)
+            Route::get('/posisi', [StatusKarierController::class, 'posisi']);
+
+            // Report & Export
+            Route::get('/report', [StatusKarierController::class, 'statusDistribution']);
+            Route::get('/export', [StatusKarierController::class, 'exportReport']);
+        });
 
         // Master Data CRUD (admin only)
         Route::prefix('master')->group(function () {

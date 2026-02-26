@@ -4,27 +4,31 @@ namespace Database\Seeders;
 
 use App\Models\Provinsi;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Http;
 
 class ProvinsiSeeder extends Seeder
 {
     public function run(): void
     {
-        $provinsiList = [
-            'Aceh', 'Sumatera Utara', 'Sumatera Barat', 'Riau', 'Jambi',
-            'Sumatera Selatan', 'Bengkulu', 'Lampung', 'Kepulauan Bangka Belitung',
-            'Kepulauan Riau', 'DKI Jakarta', 'Jawa Barat', 'Jawa Tengah',
-            'DI Yogyakarta', 'Jawa Timur', 'Banten', 'Bali',
-            'Nusa Tenggara Barat', 'Nusa Tenggara Timur', 'Kalimantan Barat',
-            'Kalimantan Tengah', 'Kalimantan Selatan', 'Kalimantan Timur',
-            'Kalimantan Utara', 'Sulawesi Utara', 'Sulawesi Tengah',
-            'Sulawesi Selatan', 'Sulawesi Tenggara', 'Gorontalo',
-            'Sulawesi Barat', 'Maluku', 'Maluku Utara', 'Papua',
-            'Papua Barat', 'Papua Selatan', 'Papua Tengah', 'Papua Pegunungan',
-            'Papua Barat Daya',
-        ];
+        // Disable SSL verification untuk development
+        $response = Http::withOptions([
+            'verify' => false
+        ])->get('https://wilayah.id/api/provinces.json');
 
-        foreach ($provinsiList as $provinsi) {
-            Provinsi::create(['nama_provinsi' => $provinsi]);
+        if ($response->failed()) {
+            $this->command->error('Failed to fetch provinsi data from wilayah.id API');
+            return;
         }
+
+        $provinsis = $response->json('data');
+
+        foreach ($provinsis as $p) {
+            Provinsi::updateOrCreate(
+                ['code' => $p['code']],
+                ['nama_provinsi' => $p['name']]
+            );
+        }
+
+        $this->command->info('Imported ' . count($provinsis) . ' provinsi from API');
     }
 }

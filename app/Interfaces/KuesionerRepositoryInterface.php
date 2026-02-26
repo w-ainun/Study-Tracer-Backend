@@ -16,4 +16,9 @@ interface KuesionerRepositoryInterface
     public function submitJawaban(int $userId, array $jawabanData);
     public function getPublished(int $perPage = 15);
     public function getKuesionerWithPertanyaan(int $kuesionerId);
+
+    // Admin jawaban
+    public function getAlumniJawaban(int $kuesionerId, array $filters = []);
+    public function getAlumniJawabanDetail(int $kuesionerId, int $alumniId);
+    public function updatePertanyaanStatus(int $pertanyaanId, string $status);
 }

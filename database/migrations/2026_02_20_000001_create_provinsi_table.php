@@ -11,6 +11,7 @@ return new class extends Migration
         Schema::create('provinsi', function (Blueprint $table) {
             $table->id('id_provinsi');
             $table->string('nama_provinsi');
+            $table->string('code')->unique();
             $table->timestamps();
         });
     }

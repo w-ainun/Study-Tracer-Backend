@@ -8,6 +8,7 @@ use App\Http\Requests\StoreKuesionerRequest;
 use App\Http\Requests\StorePertanyaanRequest;
 use App\Http\Requests\UpdateKuesionerRequest;
 use App\Http\Resources\KuesionerResource;
+use App\Http\Resources\JawabanKuesionerResource;
 use App\Http\Resources\PertanyaanResource;
 use App\Services\KuesionerService;
 use App\Traits\ApiResponse;
@@ -30,7 +31,11 @@ class KuesionerController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['status', 'search']);
+            $filters = $request->only(['status_kuesioner', 'search']);
+            // Map 'status' query param to 'status_kuesioner' for convenience
+            if ($request->has('status') && !$request->has('status_kuesioner')) {
+                $filters['status_kuesioner'] = $request->input('status');
+            }
             $perPage = $request->input('per_page', 15);
             $kuesioner = $this->kuesionerService->getAll($filters, $perPage);
             return $this->successResponse(KuesionerResource::collection($kuesioner)->response()->getData(true));
@@ -160,6 +165,66 @@ class KuesionerController extends Controller
             return $this->successResponse(null, 'Jawaban berhasil disimpan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menyimpan jawaban: ' . $e->getMessage());
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    //  ADMIN – JAWABAN VIEWING
+    // ═══════════════════════════════════════════════
+
+    /**
+     * List alumni who answered a kuesioner (admin)
+     */
+    public function listJawaban(Request $request, int $kuesionerId)
+    {
+        try {
+            $filters = $request->only(['search']);
+            $data = $this->kuesionerService->getAlumniJawaban($kuesionerId, $filters);
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil data jawaban: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get detail jawaban from a specific alumni (admin)
+     */
+    public function jawabanDetail(int $kuesionerId, int $alumniId)
+    {
+        try {
+            $data = $this->kuesionerService->getAlumniJawabanDetail($kuesionerId, $alumniId);
+
+            // Transform jawaban using resource
+            if (isset($data['jawaban'])) {
+                $data['jawaban'] = JawabanKuesionerResource::collection($data['jawaban']);
+            }
+
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil detail jawaban: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update pertanyaan visibility status (admin)
+     */
+    public function updatePertanyaanStatus(Request $request, int $kuesionerId, int $pertanyaanId)
+    {
+        $request->validate([
+            'status_pertanyaan' => 'required|in:TERLIHAT,TERSEMBUNYI,DRAF',
+        ]);
+
+        try {
+            $pertanyaan = $this->kuesionerService->updatePertanyaanStatus(
+                $pertanyaanId,
+                $request->input('status_pertanyaan')
+            );
+            return $this->successResponse(
+                new PertanyaanResource($pertanyaan),
+                'Status pertanyaan berhasil diperbarui'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status pertanyaan: ' . $e->getMessage());
         }
     }
 }

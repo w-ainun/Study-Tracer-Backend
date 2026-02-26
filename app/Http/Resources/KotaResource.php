@@ -12,6 +12,7 @@ class KotaResource extends JsonResource
         return [
             'id' => $this->id_kota,
             'nama' => $this->nama_kota,
+            'code' => $this->code,
             'provinsi' => new ProvinsiResource($this->whenLoaded('provinsi')),
         ];
     }

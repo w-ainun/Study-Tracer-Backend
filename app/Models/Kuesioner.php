@@ -13,8 +13,7 @@ class Kuesioner extends Model
     protected $primaryKey = 'id_kuesioner';
 
     protected $fillable = [
-        'judul_kuesioner',
-        'deskripsi_kuesioner',
+        'id_status',
         'status_kuesioner',
         'tanggal_publikasi',
     ];
@@ -26,8 +25,34 @@ class Kuesioner extends Model
         ];
     }
 
+    /**
+     * Relasi ke Status
+     */
+    public function status()
+    {
+        return $this->belongsTo(Status::class, 'id_status', 'id_status');
+    }
+
+    /**
+     * Relasi ke Section Ques
+     */
+    public function sectionQues()
+    {
+        return $this->hasMany(SectionQues::class, 'id_kuesioner', 'id_kuesioner');
+    }
+
+    /**
+     * Get all pertanyaan through section_ques
+     */
     public function pertanyaan()
     {
-        return $this->hasMany(PertanyaanKuesioner::class, 'id_kuesioner', 'id_kuesioner');
+        return $this->hasManyThrough(
+            Pertanyaan::class,
+            SectionQues::class,
+            'id_kuesioner', // Foreign key on section_ques table
+            'id_sectionques', // Foreign key on pertanyaan table
+            'id_kuesioner', // Local key on kuesioner table
+            'id_sectionques' // Local key on section_ques table
+        );
     }
 }

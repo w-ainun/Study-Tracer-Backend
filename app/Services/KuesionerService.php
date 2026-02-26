@@ -67,4 +67,19 @@ class KuesionerService
     {
         return $this->kuesionerRepository->getKuesionerWithPertanyaan($kuesionerId);
     }
+
+    public function getAlumniJawaban(int $kuesionerId, array $filters = [])
+    {
+        return $this->kuesionerRepository->getAlumniJawaban($kuesionerId, $filters);
+    }
+
+    public function getAlumniJawabanDetail(int $kuesionerId, int $alumniId)
+    {
+        return $this->kuesionerRepository->getAlumniJawabanDetail($kuesionerId, $alumniId);
+    }
+
+    public function updatePertanyaanStatus(int $pertanyaanId, string $status)
+    {
+        return $this->kuesionerRepository->updatePertanyaanStatus($pertanyaanId, $status);
+    }
 }

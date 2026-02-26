@@ -15,7 +15,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
         ]);
-
         // Removed statefulApi() - not needed for Bearer Token API
         
         // Trust all proxies to handle HTTPS and Headers correctly behind ngrok

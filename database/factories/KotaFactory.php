@@ -14,6 +14,7 @@ class KotaFactory extends Factory
     {
         return [
             'nama_kota' => fake()->city(),
+            'code' => strtoupper(fake()->unique()->numerify('##.##')),
             'id_provinsi' => Provinsi::factory(),
         ];
     }

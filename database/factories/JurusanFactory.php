@@ -14,12 +14,12 @@ class JurusanFactory extends Factory
         $jurusanList = [
             'TKJ',
             'RPL',
-            'Multimedia',
-            'Akuntansi',
-            'AP',
-            'Pemasaran',
+            'ATPH',
+            'TBSM',
+            'ATU',
+            'APHP',
             'TKR',
-            'TEI',
+            'RPL',
         ];
 
         return [

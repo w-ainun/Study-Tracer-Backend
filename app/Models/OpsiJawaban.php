@@ -17,13 +17,19 @@ class OpsiJawaban extends Model
         'opsi',
     ];
 
+    /**
+     * Relasi ke Pertanyaan
+     */
     public function pertanyaan()
     {
-        return $this->belongsTo(PertanyaanKuesioner::class, 'id_pertanyaan', 'id_pertanyaanKuis');
+        return $this->belongsTo(Pertanyaan::class, 'id_pertanyaan', 'id_pertanyaan');
     }
 
+    /**
+     * Relasi ke Jawaban
+     */
     public function jawaban()
     {
-        return $this->hasMany(JawabanKuesioner::class, 'id_opsiJawaban', 'id_opsi');
+        return $this->hasMany(Jawaban::class, 'id_opsiJawaban', 'id_opsi');
     }
 }
