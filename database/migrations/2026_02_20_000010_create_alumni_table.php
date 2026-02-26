@@ -23,7 +23,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_jurusan');
             $table->date('tahun_lulus')->nullable();
             $table->unsignedBigInteger('id_users')->unique();
-            $table->enum('status_create', ['pending', 'ok', 'rejected'])->default('pending');
+            $table->enum('status_create', ['pending', 'ok', 'rejected', "banned"])->default('pending');
             $table->foreign('id_jurusan')->references('id_jurusan')->on('jurusan')->onDelete('cascade');
             $table->foreign('id_users')->references('id_users')->on('users')->onDelete('cascade');
             $table->timestamps();
