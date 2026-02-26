@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\Alumni;
 use App\Models\Jurusan;
 use App\Models\User;
+use App\Models\Kota;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class AlumniFactory extends Factory
@@ -13,16 +14,19 @@ class AlumniFactory extends Factory
 
     public function definition(): array
     {
+        $kota = Kota::inRandomOrder()->first();
+        $kotaName = $kota ? $kota->nama_kota : fake()->city();
+
         return [
             'nama_alumni' => fake()->name(),
             'nis' => fake()->numerify('######'),
             'nisn' => fake()->numerify('##########'),
             'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
             'tanggal_lahir' => fake()->date('Y-m-d', '2005-12-31'),
-            'tempat_lahir' => fake()->city(),
+            'tempat_lahir' => $kotaName,
             'tahun_masuk' => fake()->year(),
             'foto' => null,
-            'alamat' => fake()->address(),
+            'alamat' => fake()->streetAddress() . ', ' . $kotaName,
             'no_hp' => fake()->phoneNumber(),
             'id_jurusan' => Jurusan::factory(),
             'tahun_lulus' => fake()->date('Y-m-d'),

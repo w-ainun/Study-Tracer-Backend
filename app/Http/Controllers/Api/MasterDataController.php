@@ -204,9 +204,12 @@ class MasterDataController extends Controller
 
     public function storeJurusanKuliah(Request $request)
     {
-        $request->validate(['nama_jurusan' => 'required|string|max:255|unique:jurusan_kuliah,nama_jurusan']);
+        $request->validate([
+            'nama_jurusan' => 'required|string|max:255|unique:jurusan_kuliah,nama_jurusan',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
+        ]);
         try {
-            $data = $this->masterDataService->createJurusanKuliah($request->only('nama_jurusan'));
+            $data = $this->masterDataService->createJurusanKuliah($request->only('nama_jurusan', 'id_universitas'));
             return $this->createdResponse(new JurusanKuliahResource($data), 'Jurusan kuliah berhasil ditambahkan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan jurusan kuliah: ' . $e->getMessage());
@@ -215,9 +218,12 @@ class MasterDataController extends Controller
 
     public function updateJurusanKuliah(Request $request, int $id)
     {
-        $request->validate(['nama_jurusan' => 'required|string|max:255']);
+        $request->validate([
+            'nama_jurusan' => 'required|string|max:255',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
+        ]);
         try {
-            $data = $this->masterDataService->updateJurusanKuliah($id, $request->only('nama_jurusan'));
+            $data = $this->masterDataService->updateJurusanKuliah($id, $request->only('nama_jurusan', 'id_universitas'));
             return $this->successResponse(new JurusanKuliahResource($data), 'Jurusan kuliah berhasil diperbarui');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memperbarui jurusan kuliah: ' . $e->getMessage());
@@ -487,7 +493,7 @@ class MasterDataController extends Controller
     {
         try {
             $data = $this->masterDataService->getAllUniversitas();
-            return $this->successResponse($data);
+            return $this->successResponse(\App\Http\Resources\UniversitasResource::collection($data));
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data universitas');
         }

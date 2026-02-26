@@ -10,6 +10,7 @@ use App\Models\AlumniSkill;
 use App\Models\AlumniSocialMedia;
 use App\Models\Skill;
 use App\Models\SocialMedia;
+use App\Models\Kota;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -33,6 +34,7 @@ class UserSeeder extends Seeder
         $jurusanIds = Jurusan::pluck('id_jurusan')->toArray();
         $skillIds = Skill::pluck('id_skills')->toArray();
         $sosmedIds = SocialMedia::pluck('id_sosmed')->toArray();
+        $kotaNames = Kota::pluck('nama_kota')->toArray();
 
         for ($i = 1; $i <= 100; $i++) {
             $user = User::create([
@@ -41,16 +43,18 @@ class UserSeeder extends Seeder
                 'role' => 'alumni',
             ]);
 
+            $randomKota = !empty($kotaNames) ? fake()->randomElement($kotaNames) : fake()->city();
+
             $alumni = Alumni::create([
                 'nama_alumni' => fake()->name(),
                 'nis' => fake()->numerify('######'),
                 'nisn' => fake()->numerify('##########'),
                 'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
                 'tanggal_lahir' => fake()->date('Y-m-d', '2005-12-31'),
-                'tempat_lahir' => fake()->city(),
+                'tempat_lahir' => $randomKota,
                 'tahun_masuk' => fake()->numberBetween(2007, 2023),
                 'foto' => null,
-                'alamat' => fake()->address(),
+                'alamat' => fake()->streetAddress() . ', ' . $randomKota,
                 'no_hp' => fake()->phoneNumber(),
                 'id_jurusan' => fake()->randomElement($jurusanIds),
                 'tahun_lulus' => fake()->dateTimeBetween('2010-06-', '2025-06-30')->format('Y-m-d'),

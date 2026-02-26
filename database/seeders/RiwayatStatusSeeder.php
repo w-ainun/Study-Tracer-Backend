@@ -23,7 +23,8 @@ class RiwayatStatusSeeder extends Seeder
         $statusBekerja = Status::where('nama_status', 'Bekerja')->first();
         $statusKuliah = Status::where('nama_status', 'Kuliah')->first();
         $statusWirausaha = Status::where('nama_status', 'Wirausaha')->first();
-        $kotaIds = Kota::pluck('id_kota')->toArray();
+        $kotas = Kota::all()->keyBy('id_kota');
+        $kotaIds = $kotas->keys()->toArray();
         $univIds = Universitas::pluck('id_universitas')->toArray();
         $jurusanKuliahIds = JurusanKuliah::pluck('id_jurusanKuliah')->toArray();
         $bidangIds = BidangUsaha::pluck('id_bidang')->toArray();
@@ -39,10 +40,13 @@ class RiwayatStatusSeeder extends Seeder
                     'tahun_selesai' => null,
                 ]);
 
+                $randomKotaId = fake()->randomElement($kotaIds);
+                $kotaName = $kotas[$randomKotaId]->nama_kota ?? '';
+
                 $perusahaan = Perusahaan::create([
                     'nama_perusahaan' => fake()->company(),
-                    'id_kota' => fake()->randomElement($kotaIds),
-                    'jalan' => fake()->streetAddress(),
+                    'id_kota' => $randomKotaId,
+                    'jalan' => fake()->streetAddress() . ($kotaName ? ', ' . $kotaName : ''),
                 ]);
 
                 Pekerjaan::create([

@@ -99,10 +99,11 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama_prodi' => 'required|string|max:255',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
         ]);
 
         try {
-            $data = $this->service->createProdi($request->only('nama_prodi'));
+            $data = $this->service->createProdi($request->only('nama_prodi', 'id_universitas'));
             return $this->createdResponse(
                 new JurusanKuliahResource($data),
                 'Program studi berhasil ditambahkan'
@@ -116,10 +117,11 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama_prodi' => 'sometimes|string|max:255',
+            'id_universitas' => 'nullable|exists:universitas,id_universitas',
         ]);
 
         try {
-            $data = $this->service->updateProdi($id, $request->only('nama_prodi'));
+            $data = $this->service->updateProdi($id, $request->only('nama_prodi', 'id_universitas'));
             return $this->successResponse(
                 new JurusanKuliahResource($data),
                 'Program studi berhasil diperbarui'

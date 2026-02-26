@@ -3,9 +3,9 @@
 namespace App\Services;
 
 use App\Interfaces\AlumniRepositoryInterface;
+use App\Models\Kuliah;
 use App\Models\Pekerjaan;
 use App\Models\Perusahaan;
-use App\Models\Universitas;
 use App\Models\Wirausaha;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -97,14 +97,14 @@ class AlumniService
                 ]);
             }
 
-            if (!empty($data['universitas'])) {
+            if (!empty($data['kuliah'])) {
                 // Kuliah
-                Universitas::create([
-                    'nama_universitas' => $data['universitas']['nama_universitas'],
-                    'id_jurusanKuliah' => $data['universitas']['id_jurusanKuliah'],
-                    'jalur_masuk' => $data['universitas']['jalur_masuk'],
+                Kuliah::create([
+                    'id_universitas' => $data['kuliah']['id_universitas'],
+                    'id_jurusanKuliah' => $data['kuliah']['id_jurusanKuliah'],
+                    'jalur_masuk' => $data['kuliah']['jalur_masuk'],
+                    'jenjang' => $data['kuliah']['jenjang'],
                     'id_riwayat' => $riwayat->id_riwayat,
-                    'jenjang' => $data['universitas']['jenjang'],
                 ]);
             }
 
@@ -117,7 +117,7 @@ class AlumniService
                 ]);
             }
 
-            return $riwayat->load(['status', 'pekerjaan.perusahaan', 'universitas.jurusanKuliah', 'wirausaha.bidangUsaha']);
+            return $riwayat->load(['status', 'pekerjaan.perusahaan', 'kuliah.universitas', 'kuliah.jurusanKuliah', 'wirausaha.bidangUsaha']);
         });
     }
 }

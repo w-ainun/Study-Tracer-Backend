@@ -107,7 +107,7 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllJurusanKuliah()
     {
-        return JurusanKuliah::orderBy('nama_jurusan')->get();
+        return JurusanKuliah::with('universitas')->orderBy('nama_jurusan')->get();
     }
 
     public function createJurusanKuliah(array $data)
