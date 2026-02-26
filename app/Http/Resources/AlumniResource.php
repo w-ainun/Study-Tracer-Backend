@@ -9,6 +9,24 @@ class AlumniResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $socialMedia = $this->whenLoaded('socialMedia');
+        $instagram = null;
+        $linkedin = null;
+        $github = null;
+        $facebook = null;
+        $website = null;
+
+        if ($socialMedia && is_iterable($socialMedia)) {
+            foreach ($socialMedia as $sm) {
+                $name = strtolower($sm->nama_sosmed);
+                if (str_contains($name, 'instagram')) $instagram = $sm->pivot->url ?? null;
+                elseif (str_contains($name, 'linkedin')) $linkedin = $sm->pivot->url ?? null;
+                elseif (str_contains($name, 'github')) $github = $sm->pivot->url ?? null;
+                elseif (str_contains($name, 'facebook')) $facebook = $sm->pivot->url ?? null;
+                elseif (str_contains($name, 'website') || str_contains($name, 'web')) $website = $sm->pivot->url ?? null;
+            }
+        }
+
         return [
             'id' => $this->id_alumni,
             'nama' => $this->nama_alumni,
@@ -26,6 +44,11 @@ class AlumniResource extends JsonResource
             'jurusan' => new JurusanResource($this->whenLoaded('jurusan')),
             'skills' => SkillResource::collection($this->whenLoaded('skills')),
             'social_media' => SocialMediaResource::collection($this->whenLoaded('socialMedia')),
+            'instagram' => $instagram,
+            'linkedin' => $linkedin,
+            'github' => $github,
+            'facebook' => $facebook,
+            'website' => $website,
             'riwayat_status' => RiwayatStatusResource::collection($this->whenLoaded('riwayatStatus')),
             'user' => new UserResource($this->whenLoaded('user')),
             'created_at' => $this->created_at,

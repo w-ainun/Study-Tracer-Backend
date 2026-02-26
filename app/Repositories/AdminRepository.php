@@ -24,6 +24,7 @@ class AdminRepository implements AdminRepositoryInterface
         $statusBekerja = Status::where('nama_status', 'Bekerja')->first();
         $totalBekerja = $statusBekerja
             ? RiwayatStatus::where('id_status', $statusBekerja->id_status)
+                ->whereNull('tahun_selesai')
                 ->whereHas('alumni', fn ($q) => $q->where('status_create', 'ok'))
                 ->count()
             : 0;
@@ -60,6 +61,7 @@ class AdminRepository implements AdminRepositoryInterface
         $statusDistribution = RiwayatStatus::selectRaw('riwayat_status.id_status, count(*) as total')
             ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
             ->where('alumni.status_create', 'ok')
+            ->whereNull('riwayat_status.tahun_selesai')
             ->groupBy('riwayat_status.id_status')
             ->with('status')
             ->get()
@@ -179,7 +181,8 @@ class AdminRepository implements AdminRepositoryInterface
             'socialMedia',
             'riwayatStatus.status',
             'riwayatStatus.pekerjaan.perusahaan.kota.provinsi',
-            'riwayatStatus.universitas.jurusanKuliah',
+            'riwayatStatus.kuliah.universitas',
+            'riwayatStatus.kuliah.jurusanKuliah',
             'riwayatStatus.wirausaha.bidangUsaha',
         ])->findOrFail($alumniId);
     }

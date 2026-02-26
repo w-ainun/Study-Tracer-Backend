@@ -87,7 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/lowongan', [LowonganController::class, 'index']);
         Route::get('/lowongan/pending', [LowonganController::class, 'pending']);
         Route::post('/lowongan', [LowonganController::class, 'store']);
-        Route::put('/lowongan/{id}', [LowonganController::class, 'update']);
+        Route::post('/lowongan/{id}', [LowonganController::class, 'update']);
         Route::delete('/lowongan/{id}', [LowonganController::class, 'destroy']);
         Route::post('/lowongan/{id}/approve', [LowonganController::class, 'approve']);
         Route::post('/lowongan/{id}/reject', [LowonganController::class, 'reject']);

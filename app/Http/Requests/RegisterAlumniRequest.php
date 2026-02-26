@@ -30,9 +30,9 @@ class RegisterAlumniRequest extends FormRequest
             'tahun_masuk' => ['nullable', 'string', 'digits:4'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'alamat' => ['nullable', 'string'],
-            'no_hp' => ['nullable', 'string', 'max:20'],
+            'no_hp' => ['nullable', 'string', 'min:10', 'max:13'],
             'id_jurusan' => ['required', 'exists:jurusan,id_jurusan'],
-            'tahun_lulus' => ['nullable', 'string', 'digits:4'],
+            'tahun_lulus' => ['nullable', 'string', 'digits:4', 'gte:tahun_masuk'],
 
             // Skills & Social Media
             'skills' => ['nullable', 'array'],
@@ -79,6 +79,9 @@ class RegisterAlumniRequest extends FormRequest
             'jenis_kelamin.required' => 'Jenis kelamin wajib diisi.',
             'id_jurusan.required' => 'Jurusan wajib dipilih.',
             'id_jurusan.exists' => 'Jurusan tidak valid.',
+            'no_hp.min' => 'Nomor HP minimal 10 karakter.',
+            'no_hp.max' => 'Nomor HP maksimal 13 karakter.',
+            'tahun_lulus.gte' => 'Tahun lulus harus lebih besar atau sama dengan tahun masuk.',
         ];
     }
 
