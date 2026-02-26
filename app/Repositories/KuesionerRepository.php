@@ -179,6 +179,10 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             $updateData['isi_pertanyaan'] = $data['isi_pertanyaan'];
         }
 
+        if (isset($data['status_pertanyaan'])) {
+            $updateData['status_pertanyaan'] = $data['status_pertanyaan'];
+        }
+
         // If judul_bagian changed, move to different section
         if (isset($data['judul_bagian'])) {
             $kuesionerId = $pertanyaan->sectionQues->id_kuesioner;

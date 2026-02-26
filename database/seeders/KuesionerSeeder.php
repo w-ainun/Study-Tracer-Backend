@@ -212,6 +212,11 @@ class KuesionerSeeder extends Seeder
             ],
         ];
 
+        $kuesioner4 = Kuesioner::create([
+            'id_status' => 4, // Kuliah
+            'tanggal_publikasi' => null,
+        ]);
+
         foreach ($pertanyaanSection3_1 as $item) {
             $pertanyaan = Pertanyaan::create([
                 'id_sectionques' => $section3_1->id_sectionques,

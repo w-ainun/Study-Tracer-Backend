@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AnswerKuesionerRequest;
 use App\Http\Requests\StoreKuesionerRequest;
 use App\Http\Requests\StorePertanyaanRequest;
+use App\Http\Requests\StoreSectionQuesRequest;
+use App\Http\Requests\UpdatePertanyaanRequest;
 use App\Http\Requests\UpdateKuesionerRequest;
 use App\Http\Resources\KuesionerResource;
 use App\Http\Resources\JawabanKuesionerResource;
@@ -200,7 +202,7 @@ class KuesionerController extends Controller
     /**
      * Update pertanyaan
      */
-    public function updatePertanyaan(StorePertanyaanRequest $request, int $kuesionerId, int $pertanyaanId)
+    public function updatePertanyaan(UpdatePertanyaanRequest $request, int $kuesionerId, int $pertanyaanId)
     {
         try {
             $pertanyaan = $this->kuesionerService->updatePertanyaan($pertanyaanId, $request->validated());
@@ -220,6 +222,23 @@ class KuesionerController extends Controller
             return $this->successResponse(null, 'Pertanyaan berhasil dihapus');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus pertanyaan: ' . $e->getMessage());
+        }
+    }
+
+    // ═══════════════════════════════════════════════
+    //  SECTION QUES
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Create section_ques (judul pertanyaan)
+     */
+    public function storeSectionQues(StoreSectionQuesRequest $request)
+    {
+        try {
+            $section = $this->kuesionerService->createSectionQues($request->validated());
+            return $this->createdResponse($section, 'Judul pertanyaan berhasil ditambahkan');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menambahkan judul pertanyaan: ' . $e->getMessage());
         }
     }
 
