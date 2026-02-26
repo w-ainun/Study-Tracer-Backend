@@ -6,6 +6,7 @@ use App\Models\Alumni;
 use App\Models\RiwayatStatus;
 use App\Models\Status;
 use App\Models\Pekerjaan;
+use App\Models\Kuliah;
 use App\Models\Universitas;
 use App\Models\Wirausaha;
 use App\Models\Perusahaan;
@@ -23,6 +24,7 @@ class RiwayatStatusSeeder extends Seeder
         $statusKuliah = Status::where('nama_status', 'Kuliah')->first();
         $statusWirausaha = Status::where('nama_status', 'Wirausaha')->first();
         $kotaIds = Kota::pluck('id_kota')->toArray();
+        $univIds = Universitas::pluck('id_universitas')->toArray();
         $jurusanKuliahIds = JurusanKuliah::pluck('id_jurusanKuliah')->toArray();
         $bidangIds = BidangUsaha::pluck('id_bidang')->toArray();
 
@@ -56,17 +58,12 @@ class RiwayatStatusSeeder extends Seeder
                     'tahun_selesai' => null,
                 ]);
 
-                Universitas::create([
-                    'nama_universitas' => fake()->randomElement([
-                        'Universitas Indonesia', 'Institut Teknologi Bandung',
-                        'Universitas Gadjah Mada', 'Universitas Brawijaya',
-                        'Universitas Diponegoro', 'Universitas Airlangga',
-                        'Institut Teknologi Sepuluh Nopember', 'Universitas Padjadjaran',
-                    ]),
+                Kuliah::create([
+                    'id_universitas' => fake()->randomElement($univIds),
                     'id_jurusanKuliah' => fake()->randomElement($jurusanKuliahIds),
                     'jalur_masuk' => fake()->randomElement(['SNBP', 'SNBT', 'Mandiri', 'Beasiswa', 'lainnya']),
-                    'id_riwayat' => $riwayat->id_riwayat,
                     'jenjang' => fake()->randomElement(['D3', 'D4', 'S1', 'S2', 'S3']),
+                    'id_riwayat' => $riwayat->id_riwayat,
                 ]);
             } elseif ($statusType === 'wirausaha' && $statusWirausaha) {
                 $riwayat = RiwayatStatus::create([

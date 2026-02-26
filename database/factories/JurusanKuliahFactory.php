@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\JurusanKuliah;
+use App\Models\Universitas;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class JurusanKuliahFactory extends Factory
@@ -26,6 +27,17 @@ class JurusanKuliahFactory extends Factory
 
         return [
             'nama_jurusan' => fake()->randomElement($jurusanList),
+            'id_universitas' => Universitas::factory(),
         ];
+    }
+
+    /**
+     * Jurusan without universitas (standalone master data).
+     */
+    public function standalone(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'id_universitas' => null,
+        ]);
     }
 }

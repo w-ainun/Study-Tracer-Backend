@@ -54,23 +54,30 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
 
     public function getAllProdi()
     {
-        return JurusanKuliah::orderBy('nama_jurusan')->get();
+        return JurusanKuliah::with('universitas')
+            ->orderBy('nama_jurusan')
+            ->get();
     }
 
     public function createProdi(array $data)
     {
         return JurusanKuliah::create([
             'nama_jurusan' => $data['nama_prodi'] ?? $data['nama_jurusan'] ?? $data['nama'],
+            'id_universitas' => $data['id_universitas'] ?? null,
         ]);
     }
 
     public function updateProdi(int $id, array $data)
     {
         $prodi = JurusanKuliah::findOrFail($id);
-        $prodi->update([
+        $updateData = [
             'nama_jurusan' => $data['nama_prodi'] ?? $data['nama_jurusan'] ?? $data['nama'] ?? $prodi->nama_jurusan,
-        ]);
-        return $prodi->fresh();
+        ];
+        if (array_key_exists('id_universitas', $data)) {
+            $updateData['id_universitas'] = $data['id_universitas'];
+        }
+        $prodi->update($updateData);
+        return $prodi->fresh('universitas');
     }
 
     public function deleteProdi(int $id)
@@ -155,16 +162,18 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->map(fn($u) => [
                         'id' => $u->id_universitas,
                         'nama' => $u->nama_universitas,
-                        'jurusan' => $u->jurusanKuliah?->nama_jurusan ?? '-',
+                        'jurusan' => $u->jurusanKuliah->pluck('nama_jurusan')->implode(', ') ?: '-',
                     ])
                     ->toArray();
 
             case 'prodi':
-                return JurusanKuliah::orderBy('nama_jurusan')
+                return JurusanKuliah::with('universitas')
+                    ->orderBy('nama_jurusan')
                     ->get()
                     ->map(fn($p) => [
                         'id' => $p->id_jurusanKuliah,
                         'nama' => $p->nama_jurusan,
+                        'universitas' => $p->universitas?->nama_universitas ?? '-',
                     ])
                     ->toArray();
 

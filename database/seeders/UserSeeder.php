@@ -34,7 +34,7 @@ class UserSeeder extends Seeder
         $skillIds = Skill::pluck('id_skills')->toArray();
         $sosmedIds = SocialMedia::pluck('id_sosmed')->toArray();
 
-        for ($i = 1; $i <= 20; $i++) {
+        for ($i = 1; $i <= 100; $i++) {
             $user = User::create([
                 'email_users' => "alumni{$i}@tracerstudy.com",
                 'password' => Hash::make('password'),
@@ -48,12 +48,12 @@ class UserSeeder extends Seeder
                 'jenis_kelamin' => fake()->randomElement(['Laki-laki', 'Perempuan']),
                 'tanggal_lahir' => fake()->date('Y-m-d', '2005-12-31'),
                 'tempat_lahir' => fake()->city(),
-                'tahun_masuk' => fake()->numberBetween(2018, 2023),
+                'tahun_masuk' => fake()->numberBetween(2007, 2023),
                 'foto' => null,
                 'alamat' => fake()->address(),
                 'no_hp' => fake()->phoneNumber(),
                 'id_jurusan' => fake()->randomElement($jurusanIds),
-                'tahun_lulus' => fake()->date('Y-m-d', '2025-06-30'),
+                'tahun_lulus' => fake()->dateTimeBetween('2010-06-', '2025-06-30')->format('Y-m-d'),
                 'id_users' => $user->id_users,
                 'status_create' => 'ok',
             ]);

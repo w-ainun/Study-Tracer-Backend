@@ -14,19 +14,21 @@ class Universitas extends Model
 
     protected $fillable = [
         'nama_universitas',
-        'id_jurusanKuliah',
-        'jalur_masuk',
-        'id_riwayat',
-        'jenjang',
     ];
 
+    /**
+     * Jurusan kuliah yang tersedia di universitas ini.
+     */
     public function jurusanKuliah()
     {
-        return $this->belongsTo(JurusanKuliah::class, 'id_jurusanKuliah', 'id_jurusanKuliah');
+        return $this->hasMany(JurusanKuliah::class, 'id_universitas', 'id_universitas');
     }
 
-    public function riwayatStatus()
+    /**
+     * Record kuliah yang mereferensi universitas ini.
+     */
+    public function kuliah()
     {
-        return $this->belongsTo(RiwayatStatus::class, 'id_riwayat', 'id_riwayat');
+        return $this->hasMany(Kuliah::class, 'id_universitas', 'id_universitas');
     }
 }

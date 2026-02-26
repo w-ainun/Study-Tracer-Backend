@@ -14,7 +14,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             // Master data (no dependencies)
             JurusanSeeder::class,
-            JurusanKuliahSeeder::class,
             SkillSeeder::class,
             SocialMediaSeeder::class,
             StatusSeeder::class,
@@ -23,6 +22,10 @@ class DatabaseSeeder extends Seeder
             // Geographic data (fetched from wilayah.id API)
             ProvinsiSeeder::class,
             KotaSeeder::class,
+
+            // Universitas master data (before JurusanKuliah)
+            UniversitasSeeder::class,
+            JurusanKuliahSeeder::class,
 
             // Users & Alumni (depends on Jurusan, Skills, SocialMedia)
             UserSeeder::class,
