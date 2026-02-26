@@ -99,7 +99,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/kuesioner/{id}', [KuesionerController::class, 'destroy']);
         Route::patch('/kuesioner/{id}/status', [KuesionerController::class, 'updateStatus']);
 
-        // Pertanyaan within Kuesioner
+        // Pertanyaan Management
+        Route::get('/pertanyaan', [KuesionerController::class, 'getAllPertanyaan']);
         Route::post('/kuesioner/{kuesionerId}/pertanyaan', [KuesionerController::class, 'addPertanyaan']);
         Route::put('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'updatePertanyaan']);
         Route::delete('/kuesioner/{kuesionerId}/pertanyaan/{pertanyaanId}', [KuesionerController::class, 'deletePertanyaan']);

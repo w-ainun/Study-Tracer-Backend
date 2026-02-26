@@ -17,7 +17,22 @@ class PertanyaanResource extends JsonResource
                 return [
                     'id' => $this->sectionQues->id_sectionques,
                     'judul' => $this->sectionQues->judul_pertanyaan,
+                    'id_kuesioner' => $this->sectionQues->id_kuesioner,
                 ];
+            }),
+            'kuesioner' => $this->whenLoaded('sectionQues', function () {
+                if ($this->sectionQues && $this->sectionQues->relationLoaded('kuesioner')) {
+                    $kuesioner = $this->sectionQues->kuesioner;
+                    return [
+                        'id' => $kuesioner->id_kuesioner,
+                        'judul' => $kuesioner->judul_kuesioner,
+                        'status' => $kuesioner->relationLoaded('status') && $kuesioner->status ? [
+                            'id_status' => $kuesioner->status->id_status,
+                            'nama_status' => $kuesioner->status->nama_status,
+                        ] : null,
+                    ];
+                }
+                return null;
             }),
             'opsi' => OpsiJawabanResource::collection($this->whenLoaded('opsiJawaban')),
             'created_at' => $this->created_at,

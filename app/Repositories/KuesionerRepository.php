@@ -76,8 +76,34 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return true;
     }
 
-    /**
-     * Add pertanyaan to a kuesioner
+    /**     * Get all pertanyaan with filters and pagination
+     */
+    public function getAllPertanyaan(array $filters = [], int $perPage = 15)
+    {
+        $query = Pertanyaan::with(['sectionQues.kuesioner.status', 'opsiJawaban']);
+
+        // Filter by kuesioner ID
+        if (!empty($filters['id_kuesioner'])) {
+            $query->whereHas('sectionQues', function ($q) use ($filters) {
+                $q->where('id_kuesioner', $filters['id_kuesioner']);
+            });
+        }
+
+        // Filter by section ID
+        if (!empty($filters['id_sectionques'])) {
+            $query->where('id_sectionques', $filters['id_sectionques']);
+        }
+
+        // Search by pertanyaan text
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where('isi_pertanyaan', 'like', "%{$search}%");
+        }
+
+        return $query->orderBy('created_at', 'desc')->paginate($perPage);
+    }
+
+    /**     * Add pertanyaan to a kuesioner
      * Auto-creates or finds existing section_ques based on judul_bagian
      */
     public function addPertanyaan(int $kuesionerId, array $data)

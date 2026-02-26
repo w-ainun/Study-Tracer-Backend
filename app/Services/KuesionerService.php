@@ -38,6 +38,11 @@ class KuesionerService
         return $this->kuesionerRepository->delete($id);
     }
 
+    public function getAllPertanyaan(array $filters = [], int $perPage = 15)
+    {
+        return $this->kuesionerRepository->getAllPertanyaan($filters, $perPage);
+    }
+
     public function addPertanyaan(int $kuesionerId, array $data)
     {
         return $this->kuesionerRepository->addPertanyaan($kuesionerId, $data);

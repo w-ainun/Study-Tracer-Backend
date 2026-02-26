@@ -90,6 +90,21 @@ class KuesionerController extends Controller
     }
 
     /**
+     * Get all pertanyaan with filters (admin)
+     */
+    public function getAllPertanyaan(Request $request)
+    {
+        try {
+            $filters = $request->only(['id_kuesioner', 'id_sectionques', 'search']);
+            $perPage = $request->input('per_page', 15);
+            $pertanyaan = $this->kuesionerService->getAllPertanyaan($filters, $perPage);
+            return $this->successResponse(PertanyaanResource::collection($pertanyaan)->response()->getData(true));
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil data pertanyaan');
+        }
+    }
+
+    /**
      * Get kuesioner with all pertanyaan & opsi jawaban (for alumni filling out)
      */
     public function showWithPertanyaan(int $id)

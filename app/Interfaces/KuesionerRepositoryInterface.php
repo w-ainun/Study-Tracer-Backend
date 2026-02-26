@@ -11,6 +11,7 @@ interface KuesionerRepositoryInterface
     public function delete(int $id);
 
     // Pertanyaan
+    public function getAllPertanyaan(array $filters = [], int $perPage = 15);
     public function addPertanyaan(int $kuesionerId, array $data);
     public function updatePertanyaan(int $pertanyaanId, array $data);
     public function deletePertanyaan(int $pertanyaanId);
