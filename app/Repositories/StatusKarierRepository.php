@@ -158,7 +158,6 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->map(fn($p) => [
                         'id' => $p->id_jurusanKuliah,
                         'nama' => $p->nama_jurusan,
-                        'universitas' => $p->universitas?->nama_universitas ?? '-',
                     ])
                     ->toArray();
 
