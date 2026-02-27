@@ -183,8 +183,12 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             $updateData['status_pertanyaan'] = $data['status_pertanyaan'];
         }
 
-        // If judul_bagian changed, move to different section
-        if (isset($data['judul_bagian'])) {
+        // If id_sectionques provided, update directly
+        if (isset($data['id_sectionques'])) {
+            $updateData['id_sectionques'] = $data['id_sectionques'];
+        }
+        // Or if judul_bagian changed, move to different section (legacy support)
+        elseif (isset($data['judul_bagian'])) {
             $kuesionerId = $pertanyaan->sectionQues->id_kuesioner;
             $section = SectionQues::firstOrCreate([
                 'id_kuesioner' => $kuesionerId,
