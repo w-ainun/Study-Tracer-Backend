@@ -24,7 +24,21 @@ class RiwayatStatusResource extends JsonResource
                 return [
                     'id' => $this->pekerjaan->id_pekerjaan,
                     'posisi' => $this->pekerjaan->posisi,
-                    'perusahaan' => $this->pekerjaan->perusahaan ? new PerusahaanResource($this->pekerjaan->perusahaan) : null,
+                    'perusahaan' => $this->pekerjaan->perusahaan ? [
+                        'id' => $this->pekerjaan->perusahaan->id_perusahaan,
+                        'nama' => $this->pekerjaan->perusahaan->nama_perusahaan,
+                    ] : null,
+                ];
+            }),
+            'universitas' => $this->whenLoaded('kuliah', function () {
+                if (!$this->kuliah || !$this->kuliah->universitas) return null;
+                return [
+                    'id' => $this->kuliah->universitas->id_universitas,
+                    'nama' => $this->kuliah->universitas->nama_universitas,
+                    'jurusan_kuliah' => $this->kuliah->jurusanKuliah ? [
+                        'id' => $this->kuliah->jurusanKuliah->id_jurusanKuliah,
+                        'nama' => $this->kuliah->jurusanKuliah->nama_jurusan,
+                    ] : null,
                 ];
             }),
             'kuliah' => $this->whenLoaded('kuliah', function () {

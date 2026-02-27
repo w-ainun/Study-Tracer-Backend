@@ -13,9 +13,7 @@ class SocialMediaResource extends JsonResource
             'id' => $this->id_sosmed,
             'nama' => $this->nama_sosmed,
             'icon' => $this->icon_sosmed,
-            'url' => $this->whenPivotLoaded('alumni_social_media', function () {
-                return $this->pivot->url;
-            }),
+            'url' => $this->pivot ? $this->pivot->url : null,
         ];
     }
 }

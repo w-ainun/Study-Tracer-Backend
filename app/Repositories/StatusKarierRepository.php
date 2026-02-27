@@ -126,6 +126,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
     public function getStatusDistribution(): array
     {
         return RiwayatStatus::selectRaw('id_status, count(*) as total')
+            ->whereNull('tahun_selesai')
             ->groupBy('id_status')
             ->with('status')
             ->get()

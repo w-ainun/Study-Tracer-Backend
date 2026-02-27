@@ -25,21 +25,35 @@ class RegisterAlumniRequest extends FormRequest
             'nis' => ['nullable', 'string', 'max:20'],
             'nisn' => ['nullable', 'string', 'max:20'],
             'jenis_kelamin' => ['required', 'in:Laki-laki,Perempuan'],
-            'tanggal_lahir' => ['nullable', 'date'],
+            'tanggal_lahir' => ['nullable', 'date', function ($attribute, $value, $fail) {
+                $tahunMasuk = request()->input('tahun_masuk');
+                if ($tahunMasuk && $value) {
+                    $birthDate = \Carbon\Carbon::parse($value);
+                    $masukDate = \Carbon\Carbon::createFromDate((int) $tahunMasuk, 1, 1);
+                    if ($birthDate->gte($masukDate)) {
+                        $fail('Tanggal lahir harus sebelum tahun masuk.');
+                    }
+                }
+            }],
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tahun_masuk' => ['nullable', 'string', 'digits:4'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'alamat' => ['nullable', 'string'],
-            'no_hp' => ['nullable', 'string', 'max:20'],
+            'no_hp' => ['nullable', 'string', 'min:10', 'max:13'],
             'id_jurusan' => ['required', 'exists:jurusan,id_jurusan'],
-            'tahun_lulus' => ['nullable', 'string', 'digits:4'],
+            'tahun_lulus' => ['nullable', 'string', 'digits:4', 'gte:tahun_masuk', function ($attribute, $value, $fail) {
+                $tahunMasuk = request()->input('tahun_masuk');
+                if ($tahunMasuk && $value && ($value - $tahunMasuk) < 3) {
+                    $fail('Tahun lulus harus minimal 3 tahun setelah tahun masuk.');
+                }
+            }],
 
             // Skills & Social Media
             'skills' => ['nullable', 'array'],
             'skills.*' => ['exists:skills,id_skills'],
             'social_media' => ['nullable', 'array'],
             'social_media.*.id_sosmed' => ['required_with:social_media', 'exists:social_media,id_sosmed'],
-            'social_media.*.url' => ['required_with:social_media', 'string', 'url'],
+            'social_media.*.url' => ['required_with:social_media', 'string'],
 
             // Step 3: Career Status
             'id_status' => ['nullable', 'exists:status,id_status'],
@@ -79,6 +93,10 @@ class RegisterAlumniRequest extends FormRequest
             'jenis_kelamin.required' => 'Jenis kelamin wajib diisi.',
             'id_jurusan.required' => 'Jurusan wajib dipilih.',
             'id_jurusan.exists' => 'Jurusan tidak valid.',
+            'no_hp.min' => 'Nomor HP minimal 10 karakter.',
+            'no_hp.max' => 'Nomor HP maksimal 13 karakter.',
+            'tahun_lulus.gte' => 'Tahun lulus harus lebih besar atau sama dengan tahun masuk.',
+            'tanggal_lahir.before' => 'Tanggal lahir harus sebelum tahun masuk.',
         ];
     }
 
