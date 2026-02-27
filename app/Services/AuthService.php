@@ -98,9 +98,22 @@ class AuthService
 
                 // Detail Jika Status Kuliah
                 if (!empty($universitasData)) {
+                    $namaAtauIdUniversitas = $universitasData['nama_universitas'];
+                    $idUniversitas = null;
+
+                    // Cek apakah data yang dikirim adalah ID (numerik) atau nama universitas baru
+                    if (is_numeric($namaAtauIdUniversitas)) {
+                        $idUniversitas = $namaAtauIdUniversitas;
+                    } else {
+                        // Jika teks (nama universitas baru), cari atau buat data universitas baru
+                        $universitas = \App\Models\Universitas::firstOrCreate([
+                            'nama_universitas' => $namaAtauIdUniversitas
+                        ]);
+                        $idUniversitas = $universitas->id_universitas;
+                    }
+
                     Kuliah::create([
-                        // ID universitas di-passing dari frontend menggunakan field nama_universitas
-                        'id_universitas' => $universitasData['nama_universitas'], 
+                        'id_universitas' => $idUniversitas, 
                         'id_jurusanKuliah' => $universitasData['id_jurusanKuliah'],
                         'jalur_masuk' => $universitasData['jalur_masuk'],
                         'jenjang' => $universitasData['jenjang'],
