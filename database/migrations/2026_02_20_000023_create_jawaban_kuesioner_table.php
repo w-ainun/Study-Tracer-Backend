@@ -13,6 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('id_pertanyaan');
             $table->unsignedBigInteger('id_user');
             $table->unsignedBigInteger('id_opsiJawaban')->nullable();
+            $table->enum('status', ['Selesai', 'Belum Selesai']);
             $table->text('jawaban')->nullable();
             $table->foreign('id_pertanyaan')->references('id_pertanyaanKuis')->on('pertanyaan_kuesioner')->onDelete('cascade');
             $table->foreign('id_user')->references('id_users')->on('users')->onDelete('cascade');

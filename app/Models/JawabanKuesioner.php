@@ -16,6 +16,8 @@ class JawabanKuesioner extends Model
         'id_pertanyaan',
         'id_user',
         'id_opsiJawaban',
+        'status',
+        'created_at',
         'jawaban',
     ];
 

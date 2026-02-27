@@ -315,6 +315,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             $jawaban = Jawaban::where('id_user', $userId)
                 ->whereIn('id_pertanyaan', $pertanyaanIds)
                 ->with(['pertanyaan.opsiJawaban', 'opsiJawaban'])
+                ->orderBy('created_at', 'desc')
                 ->get();
 
             $user = \App\Models\User::with('alumni.jurusan')->find($userId);
@@ -328,9 +329,13 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                 }
             }
 
+            // Get latest jawaban for status
+            $latestJawaban = $jawaban->first();
+
             $result[] = [
                 'alumni' => [
                     'id' => $user?->id_users,
+                    'foto' => $user?->alumni?->foto,
                     'nama' => $user?->alumni?->nama_alumni,
                     'nis' => $user?->alumni?->nis ?? null,
                     'nisn' => $user?->alumni?->nisn ?? null,
@@ -338,8 +343,8 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                     'tahun_lulus' => $user?->alumni?->tahun_lulus,
                 ],
                 'total_jawaban' => $jawaban->count(),
-                'tanggal_submit' => $jawaban->first()?->created_at,
-                'status' => $jawaban->count() >= $pertanyaanIds->count() ? 'Selesai' : 'Belum Selesai',
+                'tanggal_submit' => $latestJawaban?->created_at,
+                'status' => $latestJawaban?->status ?? 'Belum Selesai',
             ];
         }
 

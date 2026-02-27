@@ -17,6 +17,7 @@ class Jawaban extends Model
         'id_user',
         'id_opsiJawaban',
         'jawaban',
+        'status',
     ];
 
     /**
