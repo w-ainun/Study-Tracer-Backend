@@ -3,9 +3,12 @@
 namespace App\Services;
 
 use App\Interfaces\AuthRepositoryInterface;
+use App\Models\Kuliah;
+use App\Models\Pekerjaan;
+use App\Models\Perusahaan;
+use App\Models\Wirausaha;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -30,8 +33,90 @@ class AuthService
                 $profileData['foto'] = $profileData['foto']->store('alumni/foto', 'public');
             }
 
+            // --- 1. EKSTRAK DATA RELASI & KARIER SEBELUM MEMBUAT ALUMNI ---
+            $skills = $profileData['skills'] ?? null;
+            $socialMedia = $profileData['social_media'] ?? null;
+            
+            $idStatus = $profileData['id_status'] ?? null;
+            $tahunMulai = $profileData['tahun_mulai'] ?? null;
+            $tahunSelesai = $profileData['tahun_selesai'] ?? null;
+            
+            $pekerjaanData = $profileData['pekerjaan'] ?? null;
+            $universitasData = $profileData['universitas'] ?? null;
+            $wirausahaData = $profileData['wirausaha'] ?? null;
+
+            // Hapus data relasi dari array $profileData agar tidak terjadi error mass-assignment di model Alumni
+            unset(
+                $profileData['skills'], $profileData['social_media'],
+                $profileData['id_status'], $profileData['tahun_mulai'], $profileData['tahun_selesai'],
+                $profileData['pekerjaan'], $profileData['universitas'], $profileData['wirausaha']
+            );
+
+            // --- 2. CREATE USER & ALUMNI ---
             $user = $this->authRepository->createUser($accountData);
-            $this->authRepository->createAlumniProfile($user->id_users, $profileData);
+            $alumni = $this->authRepository->createAlumniProfile($user->id_users, $profileData);
+
+            // --- 3. SIMPAN SKILLS & SOCIAL MEDIA ---
+            if (!empty($skills)) {
+                $alumni->skills()->sync($skills);
+            }
+
+            if (!empty($socialMedia)) {
+                $syncData = [];
+                foreach ($socialMedia as $sm) {
+                    if (isset($sm['id_sosmed']) && isset($sm['url'])) {
+                        $syncData[$sm['id_sosmed']] = ['url' => $sm['url']];
+                    }
+                }
+                $alumni->socialMedia()->sync($syncData);
+            }
+
+            // --- 4. SIMPAN STATUS KARIER (Riwayat Status) ---
+            if ($idStatus) {
+                $riwayat = $alumni->riwayatStatus()->create([
+                    'id_status' => $idStatus,
+                    'tahun_mulai' => $tahunMulai,
+                    'tahun_selesai' => $tahunSelesai,
+                ]);
+
+                // Detail Jika Status Bekerja
+                if (!empty($pekerjaanData)) {
+                    $perusahaan = Perusahaan::firstOrCreate(
+                        ['nama_perusahaan' => $pekerjaanData['nama_perusahaan']],
+                        [
+                            'id_kota' => $pekerjaanData['id_kota'],
+                            'jalan' => $pekerjaanData['jalan'] ?? '',
+                        ]
+                    );
+
+                    Pekerjaan::create([
+                        'posisi' => $pekerjaanData['posisi'],
+                        'id_perusahaan' => $perusahaan->id_perusahaan,
+                        'id_riwayat' => $riwayat->id_riwayat,
+                    ]);
+                }
+
+                // Detail Jika Status Kuliah
+                if (!empty($universitasData)) {
+                    Kuliah::create([
+                        // ID universitas di-passing dari frontend menggunakan field nama_universitas
+                        'id_universitas' => $universitasData['nama_universitas'], 
+                        'id_jurusanKuliah' => $universitasData['id_jurusanKuliah'],
+                        'jalur_masuk' => $universitasData['jalur_masuk'],
+                        'jenjang' => $universitasData['jenjang'],
+                        'id_riwayat' => $riwayat->id_riwayat,
+                    ]);
+                }
+
+                // Detail Jika Status Wirausaha
+                if (!empty($wirausahaData)) {
+                    Wirausaha::create([
+                        'id_bidang' => $wirausahaData['id_bidang'],
+                        'nama_usaha' => $wirausahaData['nama_usaha'],
+                        'id_riwayat' => $riwayat->id_riwayat,
+                    ]);
+                }
+            }
 
             return $user->createToken('auth_token')->plainTextToken;
         });
