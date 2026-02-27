@@ -299,6 +299,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
 
     /**
      * Get list of alumni who answered a kuesioner
+     * Optimized: single query with grouping instead of N+1 per-user loop
      */
     public function getAlumniJawaban(int $kuesionerId, array $filters = [])
     {
@@ -306,45 +307,45 @@ class KuesionerRepository implements KuesionerRepositoryInterface
 
         $pertanyaanIds = $kuesioner->pertanyaan()->pluck('pertanyaan.id_pertanyaan');
 
-        $userIds = Jawaban::whereIn('id_pertanyaan', $pertanyaanIds)
-            ->distinct()
-            ->pluck('id_user');
+        // Single aggregated query: get counts + latest date + status per user
+        $jawabanStats = Jawaban::whereIn('id_pertanyaan', $pertanyaanIds)
+            ->selectRaw('id_user, COUNT(*) as total_jawaban, MAX(created_at) as tanggal_submit, MAX(status) as status')
+            ->groupBy('id_user')
+            ->get()
+            ->keyBy('id_user');
+
+        $userIds = $jawabanStats->keys()->toArray();
+
+        // Single query to load all users with alumni + jurusan
+        $usersQuery = \App\Models\User::with('alumni.jurusan')
+            ->whereIn('id_users', $userIds);
+
+        // Apply search filter at DB level
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $usersQuery->whereHas('alumni', function ($q) use ($search) {
+                $q->where('nama_alumni', 'like', "%{$search}%");
+            });
+        }
+
+        $users = $usersQuery->get()->keyBy('id_users');
 
         $result = [];
-        foreach ($userIds as $userId) {
-            $jawaban = Jawaban::where('id_user', $userId)
-                ->whereIn('id_pertanyaan', $pertanyaanIds)
-                ->with(['pertanyaan.opsiJawaban', 'opsiJawaban'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            $user = \App\Models\User::with('alumni.jurusan')->find($userId);
-
-            // Apply search filter
-            if (!empty($filters['search'])) {
-                $search = strtolower($filters['search']);
-                $nama = strtolower($user?->alumni?->nama_alumni ?? '');
-                if (!str_contains($nama, $search)) {
-                    continue;
-                }
-            }
-
-            // Get latest jawaban for status
-            $latestJawaban = $jawaban->first();
-
+        foreach ($users as $userId => $user) {
+            $stats = $jawabanStats->get($userId);
             $result[] = [
                 'alumni' => [
-                    'id' => $user?->id_users,
-                    'foto' => $user?->alumni?->foto,
-                    'nama' => $user?->alumni?->nama_alumni,
-                    'nis' => $user?->alumni?->nis ?? null,
-                    'nisn' => $user?->alumni?->nisn ?? null,
-                    'jurusan' => $user?->alumni?->jurusan?->nama_jurusan ?? null,
-                    'tahun_lulus' => $user?->alumni?->tahun_lulus,
+                    'id' => $user->id_users,
+                    'foto' => $user->alumni?->foto,
+                    'nama' => $user->alumni?->nama_alumni,
+                    'nis' => $user->alumni?->nis ?? null,
+                    'nisn' => $user->alumni?->nisn ?? null,
+                    'jurusan' => $user->alumni?->jurusan?->nama_jurusan ?? null,
+                    'tahun_lulus' => $user->alumni?->tahun_lulus,
                 ],
-                'total_jawaban' => $jawaban->count(),
-                'tanggal_submit' => $latestJawaban?->created_at,
-                'status' => $latestJawaban?->status ?? 'Belum Selesai',
+                'total_jawaban' => $stats->total_jawaban,
+                'tanggal_submit' => $stats->tanggal_submit,
+                'status' => $stats->status ?? 'Belum Selesai',
             ];
         }
 

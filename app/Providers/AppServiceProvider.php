@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 
 use App\Interfaces\AuthRepositoryInterface;
@@ -44,6 +45,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Prevent lazy loading in non-production to catch N+1 queries early
+        Model::preventLazyLoading(!app()->environment('production'));
+
+        // Prevent silently discarding attributes not in $fillable
+        Model::preventSilentlyDiscardingAttributes(!app()->environment('production'));
     }
 }

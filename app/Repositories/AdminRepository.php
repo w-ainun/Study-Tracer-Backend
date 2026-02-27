@@ -9,88 +9,96 @@ use App\Models\Lowongan;
 use App\Models\Kuesioner;
 use App\Models\RiwayatStatus;
 use App\Models\Status;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class AdminRepository implements AdminRepositoryInterface
 {
     public function getDashboardStats(): array
     {
-        // Only count accepted/active alumni (exclude pending/rejected/banned)
-        $totalUsers = Alumni::where('status_create', 'ok')->count();
-        $pendingUsers = Alumni::where('status_create', 'pending')->count();
-        $activeKuesioner = Kuesioner::count();
-        $pendingLowongan = Lowongan::where('approval_status', 'pending')->count();
+        return Cache::remember('admin.dashboard_stats', 60, function () {
+            // Batch alumni counts in a single query
+            $alumniCounts = Alumni::selectRaw("
+                SUM(CASE WHEN status_create = 'ok' THEN 1 ELSE 0 END) as total_ok,
+                SUM(CASE WHEN status_create = 'pending' THEN 1 ELSE 0 END) as total_pending,
+                SUM(CASE WHEN status_create = 'ok' AND created_at >= ? THEN 1 ELSE 0 END) as new_this_week,
+                SUM(CASE WHEN status_create = 'ok' AND created_at >= ? AND created_at <= ? THEN 1 ELSE 0 END) as last_week
+            ", [
+                now()->startOfWeek(),
+                now()->subWeek()->startOfWeek(),
+                now()->subWeek()->endOfWeek(),
+            ])->first();
 
-        // Worker percentage (only accepted alumni)
-        $statusBekerja = Status::where('nama_status', 'Bekerja')->first();
-        $totalBekerja = $statusBekerja
-            ? RiwayatStatus::where('id_status', $statusBekerja->id_status)
-                ->whereNull('tahun_selesai')
-                ->whereHas('alumni', fn ($q) => $q->where('status_create', 'ok'))
-                ->count()
-            : 0;
-        $workerPercentage = $totalUsers > 0 ? round(($totalBekerja / $totalUsers) * 100) : 0;
+            $totalUsers = (int) ($alumniCounts->total_ok ?? 0);
+            $pendingUsers = (int) ($alumniCounts->total_pending ?? 0);
+            $newThisWeek = (int) ($alumniCounts->new_this_week ?? 0);
+            $lastWeek = (int) ($alumniCounts->last_week ?? 0);
 
-        // Users growth: new accepted alumni this week vs last week
-        $newThisWeek = Alumni::where('status_create', 'ok')
-            ->where('created_at', '>=', now()->startOfWeek())
-            ->count();
-        $lastWeek = Alumni::where('status_create', 'ok')
-            ->whereBetween('created_at', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
-            ->count();
-        $usersGrowth = $lastWeek > 0 ? round((($newThisWeek - $lastWeek) / $lastWeek) * 100) : ($newThisWeek > 0 ? 100 : 0);
+            // Batch lowongan counts in a single query
+            $lowonganCounts = Lowongan::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'published' AND approval_status = 'approved' THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN approval_status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as new_this_week,
+                SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as expired
+            ", [now()->startOfWeek()])->first();
 
-        // Lowongan stats
-        $activeLowongan = Lowongan::where('status', 'published')
-            ->where('approval_status', 'approved')
-            ->count();
-        $newLowonganThisWeek = Lowongan::where('created_at', '>=', now()->startOfWeek())->count();
-        $totalLowongan = Lowongan::count();
+            $activeKuesioner = Kuesioner::count();
+            $pendingLowongan = (int) ($lowonganCounts->pending ?? 0);
 
-        // Alumni per jurusan stats (accepted only)
-        $alumniPerJurusan = Alumni::where('status_create', 'ok')
-            ->selectRaw('id_jurusan, count(*) as total')
-            ->groupBy('id_jurusan')
-            ->with('jurusan')
-            ->get()
-            ->map(fn ($item) => [
-                'jurusan' => $item->jurusan->nama_jurusan ?? 'Unknown',
-                'total' => $item->total,
-            ]);
+            // Worker percentage
+            $statusBekerja = Status::where('nama_status', 'Bekerja')->first();
+            $totalBekerja = $statusBekerja
+                ? RiwayatStatus::where('id_status', $statusBekerja->id_status)
+                    ->whereNull('tahun_selesai')
+                    ->whereHas('alumni', fn ($q) => $q->where('status_create', 'ok'))
+                    ->count()
+                : 0;
+            $workerPercentage = $totalUsers > 0 ? round(($totalBekerja / $totalUsers) * 100) : 0;
 
-        // Status karir distribution (only accepted alumni)
-        $statusDistribution = RiwayatStatus::selectRaw('riwayat_status.id_status, count(*) as total')
-            ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
-            ->where('alumni.status_create', 'ok')
-            ->whereNull('riwayat_status.tahun_selesai')
-            ->groupBy('riwayat_status.id_status')
-            ->with('status')
-            ->get()
-            ->map(fn ($item) => [
-                'status' => $item->status->nama_status ?? 'Unknown',
-                'total' => $item->total,
-            ]);
+            $usersGrowth = $lastWeek > 0 ? round((($newThisWeek - $lastWeek) / $lastWeek) * 100) : ($newThisWeek > 0 ? 100 : 0);
 
-        return [
-            // Frontend-compatible field names
-            'total_users' => $totalUsers,
-            'users_growth' => $usersGrowth,
-            'worker_percentage' => $workerPercentage,
-            'active_kuesioner' => $activeKuesioner,
-            'pending_count' => $pendingUsers + $pendingLowongan,
+            // Alumni per jurusan (accepted only)
+            $alumniPerJurusan = Alumni::where('status_create', 'ok')
+                ->selectRaw('id_jurusan, count(*) as total')
+                ->groupBy('id_jurusan')
+                ->with('jurusan')
+                ->get()
+                ->map(fn ($item) => [
+                    'jurusan' => $item->jurusan->nama_jurusan ?? 'Unknown',
+                    'total' => $item->total,
+                ]);
 
-            // Detailed stats
-            'pending_users' => $pendingUsers,
-            'pending_lowongan' => $pendingLowongan,
-            'percent_bekerja' => $workerPercentage,
-            'active_lowongan' => $activeLowongan,
-            'new_lowongan_this_week' => $newLowonganThisWeek,
-            'total_lowongan' => $totalLowongan,
-            'new_users_this_week' => $newThisWeek,
+            // Status distribution (only active riwayat of accepted alumni)
+            $statusDistribution = RiwayatStatus::selectRaw('riwayat_status.id_status, count(*) as total')
+                ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
+                ->where('alumni.status_create', 'ok')
+                ->whereNull('riwayat_status.tahun_selesai')
+                ->groupBy('riwayat_status.id_status')
+                ->with('status')
+                ->get()
+                ->map(fn ($item) => [
+                    'status' => $item->status->nama_status ?? 'Unknown',
+                    'total' => $item->total,
+                ]);
 
-            // Chart data
-            'alumni_per_jurusan' => $alumniPerJurusan,
-            'status_distribution' => $statusDistribution,
-        ];
+            return [
+                'total_users' => $totalUsers,
+                'users_growth' => $usersGrowth,
+                'worker_percentage' => $workerPercentage,
+                'active_kuesioner' => $activeKuesioner,
+                'pending_count' => $pendingUsers + $pendingLowongan,
+                'pending_users' => $pendingUsers,
+                'pending_lowongan' => $pendingLowongan,
+                'percent_bekerja' => $workerPercentage,
+                'active_lowongan' => (int) ($lowonganCounts->active ?? 0),
+                'new_lowongan_this_week' => (int) ($lowonganCounts->new_this_week ?? 0),
+                'total_lowongan' => (int) ($lowonganCounts->total ?? 0),
+                'new_users_this_week' => $newThisWeek,
+                'alumni_per_jurusan' => $alumniPerJurusan,
+                'status_distribution' => $statusDistribution,
+            ];
+        });
     }
 
     public function getUserManagementStats(): array
@@ -196,78 +204,83 @@ class AdminRepository implements AdminRepositoryInterface
 
     public function getLowonganStats(): array
     {
-        $activeLowongan = Lowongan::where('status', 'published')
-            ->where('approval_status', 'approved')
-            ->count();
-        $pendingLowongan = Lowongan::where('approval_status', 'pending')->count();
-        $newThisWeek = Lowongan::where('created_at', '>=', now()->startOfWeek())->count();
-        $totalLowongan = Lowongan::count();
-        $expiredLowongan = Lowongan::where('status', 'closed')->count();
+        return Cache::remember('admin.lowongan_stats', 120, function () {
+            $counts = Lowongan::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status = 'published' AND approval_status = 'approved' THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN approval_status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN created_at >= ? THEN 1 ELSE 0 END) as new_this_week,
+                SUM(CASE WHEN status = 'closed' THEN 1 ELSE 0 END) as expired
+            ", [now()->startOfWeek()])->first();
 
-        // Categories count
-        $categories = Lowongan::whereNotNull('tipe_pekerjaan')
-            ->selectRaw('tipe_pekerjaan, count(*) as total')
-            ->groupBy('tipe_pekerjaan')
-            ->orderByDesc('total')
-            ->get()
-            ->map(fn ($item) => [
-                'name' => $item->tipe_pekerjaan,
-                'count' => $item->total,
-            ])
-            ->toArray();
+            $categories = Lowongan::whereNotNull('tipe_pekerjaan')
+                ->selectRaw('tipe_pekerjaan, count(*) as total')
+                ->groupBy('tipe_pekerjaan')
+                ->orderByDesc('total')
+                ->get()
+                ->map(fn ($item) => [
+                    'name' => $item->tipe_pekerjaan,
+                    'count' => $item->total,
+                ])
+                ->toArray();
 
-        return [
-            'active' => $activeLowongan,
-            'pending' => $pendingLowongan,
-            'new_this_week' => $newThisWeek,
-            'total' => $totalLowongan,
-            'expired' => $expiredLowongan,
-            'categories' => $categories,
-        ];
+            return [
+                'active' => (int) ($counts->active ?? 0),
+                'pending' => (int) ($counts->pending ?? 0),
+                'new_this_week' => (int) ($counts->new_this_week ?? 0),
+                'total' => (int) ($counts->total ?? 0),
+                'expired' => (int) ($counts->expired ?? 0),
+                'categories' => $categories,
+            ];
+        });
     }
 
     public function getTopCompanies(int $limit = 5): array
     {
-        return \App\Models\Pekerjaan::selectRaw('id_perusahaan, count(*) as alumni_count')
-            ->groupBy('id_perusahaan')
-            ->orderByDesc('alumni_count')
-            ->limit($limit)
-            ->with('perusahaan.kota')
-            ->get()
-            ->map(function ($item) {
-                $perusahaan = $item->perusahaan;
-                return [
-                    'nama' => $perusahaan?->nama_perusahaan ?? 'Unknown',
-                    'lokasi' => $perusahaan?->kota?->nama_kota ?? '-',
-                    'alumni_count' => $item->alumni_count,
-                ];
-            })
-            ->toArray();
+        return Cache::remember("admin.top_companies.{$limit}", 300, function () use ($limit) {
+            return \App\Models\Pekerjaan::selectRaw('id_perusahaan, count(*) as alumni_count')
+                ->groupBy('id_perusahaan')
+                ->orderByDesc('alumni_count')
+                ->limit($limit)
+                ->with('perusahaan.kota')
+                ->get()
+                ->map(function ($item) {
+                    $perusahaan = $item->perusahaan;
+                    return [
+                        'nama' => $perusahaan?->nama_perusahaan ?? 'Unknown',
+                        'lokasi' => $perusahaan?->kota?->nama_kota ?? '-',
+                        'alumni_count' => $item->alumni_count,
+                    ];
+                })
+                ->toArray();
+        });
     }
 
     public function getGeographicDistribution(): array
     {
-        $total = \App\Models\Pekerjaan::join('riwayat_status', 'pekerjaan.id_riwayat', '=', 'riwayat_status.id_riwayat')
-            ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
-            ->where('alumni.status_create', 'ok')
-            ->count();
-        if ($total === 0) return [];
+        return Cache::remember('admin.geographic_distribution', 300, function () {
+            $total = \App\Models\Pekerjaan::join('riwayat_status', 'pekerjaan.id_riwayat', '=', 'riwayat_status.id_riwayat')
+                ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
+                ->where('alumni.status_create', 'ok')
+                ->count();
+            if ($total === 0) return [];
 
-        return \App\Models\Pekerjaan::join('perusahaan', 'pekerjaan.id_perusahaan', '=', 'perusahaan.id_perusahaan')
-            ->join('kota', 'perusahaan.id_kota', '=', 'kota.id_kota')
-            ->join('provinsi', 'kota.id_provinsi', '=', 'provinsi.id_provinsi')
-            ->join('riwayat_status', 'pekerjaan.id_riwayat', '=', 'riwayat_status.id_riwayat')
-            ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
-            ->where('alumni.status_create', 'ok')
-            ->selectRaw('provinsi.nama_provinsi as region, count(*) as total')
-            ->groupBy('provinsi.nama_provinsi')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get()
-            ->map(fn ($item) => [
-                'region' => $item->region,
-                'percentage' => round(($item->total / $total) * 100),
-            ])
-            ->toArray();
+            return \App\Models\Pekerjaan::join('perusahaan', 'pekerjaan.id_perusahaan', '=', 'perusahaan.id_perusahaan')
+                ->join('kota', 'perusahaan.id_kota', '=', 'kota.id_kota')
+                ->join('provinsi', 'kota.id_provinsi', '=', 'provinsi.id_provinsi')
+                ->join('riwayat_status', 'pekerjaan.id_riwayat', '=', 'riwayat_status.id_riwayat')
+                ->join('alumni', 'riwayat_status.id_alumni', '=', 'alumni.id_alumni')
+                ->where('alumni.status_create', 'ok')
+                ->selectRaw('provinsi.nama_provinsi as region, count(*) as total')
+                ->groupBy('provinsi.nama_provinsi')
+                ->orderByDesc('total')
+                ->limit(5)
+                ->get()
+                ->map(fn ($item) => [
+                    'region' => $item->region,
+                    'percentage' => round(($item->total / $total) * 100),
+                ])
+                ->toArray();
+        });
     }
 }

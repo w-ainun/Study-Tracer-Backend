@@ -13,14 +13,21 @@ use App\Models\Status;
 use App\Models\BidangUsaha;
 use App\Models\Perusahaan;
 use App\Models\Universitas;
+use Illuminate\Support\Facades\Cache;
 
 class MasterDataRepository implements MasterDataRepositoryInterface
 {
+    /**
+     * Cache TTL in seconds (1 hour for master data)
+     */
+    private int $cacheTtl = 3600;
     // ─── Provinsi ────────────────────────────────────────
 
     public function getAllProvinsi()
     {
-        return Provinsi::orderBy('nama_provinsi')->get();
+        return Cache::remember('master.provinsi', $this->cacheTtl, function () {
+            return Provinsi::orderBy('nama_provinsi')->get();
+        });
     }
 
     public function getProvinsiById(int $id)
@@ -30,13 +37,16 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getKotaByProvinsi(int $provinsiId)
     {
-        return Kota::where('id_provinsi', $provinsiId)
-            ->orderBy('nama_kota')
-            ->get();
+        return Cache::remember("master.kota.provinsi.{$provinsiId}", $this->cacheTtl, function () use ($provinsiId) {
+            return Kota::where('id_provinsi', $provinsiId)
+                ->orderBy('nama_kota')
+                ->get();
+        });
     }
 
     public function createProvinsi(array $data)
     {
+        Cache::forget('master.provinsi');
         return Provinsi::create($data);
     }
 
@@ -44,12 +54,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $provinsi = Provinsi::findOrFail($id);
         $provinsi->update($data);
+        Cache::forget('master.provinsi');
         return $provinsi->fresh();
     }
 
     public function deleteProvinsi(int $id)
     {
         Provinsi::findOrFail($id)->delete();
+        Cache::forget('master.provinsi');
         return true;
     }
 
@@ -57,11 +69,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllKota()
     {
-        return Kota::with('provinsi')->orderBy('nama_kota')->get();
+        return Cache::remember('master.kota.all', $this->cacheTtl, function () {
+            return Kota::with('provinsi')->orderBy('nama_kota')->get();
+        });
     }
 
     public function createKota(array $data)
     {
+        $this->clearKotaCache();
         return Kota::create($data);
     }
 
@@ -69,24 +84,39 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $kota = Kota::findOrFail($id);
         $kota->update($data);
+        $this->clearKotaCache();
         return $kota->fresh();
     }
 
     public function deleteKota(int $id)
     {
         Kota::findOrFail($id)->delete();
+        $this->clearKotaCache();
         return true;
+    }
+
+    private function clearKotaCache(): void
+    {
+        Cache::forget('master.kota.all');
+        // Clear provinsi-specific kota caches
+        $provinsiIds = Provinsi::pluck('id_provinsi');
+        foreach ($provinsiIds as $id) {
+            Cache::forget("master.kota.provinsi.{$id}");
+        }
     }
 
     // ─── Jurusan (SMK) ──────────────────────────────────
 
     public function getAllJurusan()
     {
-        return Jurusan::orderBy('nama_jurusan')->get();
+        return Cache::remember('master.jurusan', $this->cacheTtl, function () {
+            return Jurusan::orderBy('nama_jurusan')->get();
+        });
     }
 
     public function createJurusan(array $data)
     {
+        Cache::forget('master.jurusan');
         return Jurusan::create($data);
     }
 
@@ -94,12 +124,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $jurusan = Jurusan::findOrFail($id);
         $jurusan->update($data);
+        Cache::forget('master.jurusan');
         return $jurusan->fresh();
     }
 
     public function deleteJurusan(int $id)
     {
         Jurusan::findOrFail($id)->delete();
+        Cache::forget('master.jurusan');
         return true;
     }
 
@@ -132,11 +164,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllSkills()
     {
-        return Skill::orderBy('name_skills')->get();
+        return Cache::remember('master.skills', $this->cacheTtl, function () {
+            return Skill::orderBy('name_skills')->get();
+        });
     }
 
     public function createSkill(array $data)
     {
+        Cache::forget('master.skills');
         return Skill::create($data);
     }
 
@@ -144,12 +179,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $skill = Skill::findOrFail($id);
         $skill->update($data);
+        Cache::forget('master.skills');
         return $skill->fresh();
     }
 
     public function deleteSkill(int $id)
     {
         Skill::findOrFail($id)->delete();
+        Cache::forget('master.skills');
         return true;
     }
 
@@ -157,11 +194,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllSocialMedia()
     {
-        return SocialMedia::orderBy('nama_sosmed')->get();
+        return Cache::remember('master.social_media', $this->cacheTtl, function () {
+            return SocialMedia::orderBy('nama_sosmed')->get();
+        });
     }
 
     public function createSocialMedia(array $data)
     {
+        Cache::forget('master.social_media');
         return SocialMedia::create($data);
     }
 
@@ -169,12 +209,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $socialMedia = SocialMedia::findOrFail($id);
         $socialMedia->update($data);
+        Cache::forget('master.social_media');
         return $socialMedia->fresh();
     }
 
     public function deleteSocialMedia(int $id)
     {
         SocialMedia::findOrFail($id)->delete();
+        Cache::forget('master.social_media');
         return true;
     }
 
@@ -182,11 +224,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllStatus()
     {
-        return Status::all();
+        return Cache::remember('master.status', $this->cacheTtl, function () {
+            return Status::all();
+        });
     }
 
     public function createStatus(array $data)
     {
+        Cache::forget('master.status');
         return Status::create($data);
     }
 
@@ -194,12 +239,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $status = Status::findOrFail($id);
         $status->update($data);
+        Cache::forget('master.status');
         return $status->fresh();
     }
 
     public function deleteStatus(int $id)
     {
         Status::findOrFail($id)->delete();
+        Cache::forget('master.status');
         return true;
     }
 
@@ -207,11 +254,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllBidangUsaha()
     {
-        return BidangUsaha::orderBy('nama_bidang')->get();
+        return Cache::remember('master.bidang_usaha', $this->cacheTtl, function () {
+            return BidangUsaha::orderBy('nama_bidang')->get();
+        });
     }
 
     public function createBidangUsaha(array $data)
     {
+        Cache::forget('master.bidang_usaha');
         return BidangUsaha::create($data);
     }
 
@@ -219,12 +269,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $bidang = BidangUsaha::findOrFail($id);
         $bidang->update($data);
+        Cache::forget('master.bidang_usaha');
         return $bidang->fresh();
     }
 
     public function deleteBidangUsaha(int $id)
     {
         BidangUsaha::findOrFail($id)->delete();
+        Cache::forget('master.bidang_usaha');
         return true;
     }
 
