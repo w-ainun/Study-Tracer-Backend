@@ -28,6 +28,7 @@ Route::prefix('master')->group(function () {
     Route::get('/bidang-usaha', [MasterDataController::class, 'bidangUsaha']);
     Route::get('/universitas', [MasterDataController::class, 'universitas']);
     Route::get('/tipe-pekerjaan', [MasterDataController::class, 'tipePekerjaan']);
+    Route::get('/perusahaan', [MasterDataController::class, 'perusahaan']); 
 });
 
 // Public approved lowongan

@@ -19,6 +19,7 @@ class JawabanKuesionerFactory extends Factory
             'id_user' => User::factory(),
             'id_opsiJawaban' => OpsiJawaban::factory(),
             'jawaban' => fake()->optional()->sentence(),
+            'status' => fake()->randomElement(['Selesai', 'Belum Selesai']),
         ];
     }
 }

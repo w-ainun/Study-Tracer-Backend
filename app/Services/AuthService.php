@@ -84,13 +84,13 @@ class AuthService
                     $perusahaan = Perusahaan::firstOrCreate(
                         ['nama_perusahaan' => $pekerjaanData['nama_perusahaan']],
                         [
-                            'id_kota' => $pekerjaanData['id_kota'],
+                            'id_kota' => $pekerjaanData['id_kota'] ??null,
                             'jalan' => $pekerjaanData['jalan'] ?? '',
                         ]
                     );
 
                     Pekerjaan::create([
-                        'posisi' => $pekerjaanData['posisi'],
+                        'posisi' => $pekerjaanData['posisi'] ?? '-',
                         'id_perusahaan' => $perusahaan->id_perusahaan,
                         'id_riwayat' => $riwayat->id_riwayat,
                     ]);

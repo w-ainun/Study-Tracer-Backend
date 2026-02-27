@@ -36,6 +36,9 @@ class DatabaseSeeder extends Seeder
             // Content (depends on Perusahaan from RiwayatStatus)
             LowonganSeeder::class,
             KuesionerSeeder::class,
+
+            // Jawaban (depends on Kuesioner + Users)
+            JawabanSeeder::class,
         ]);
     }
 }
