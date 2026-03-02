@@ -3,12 +3,14 @@
 namespace App\Services;
 
 use App\Interfaces\AuthRepositoryInterface;
+use App\Mail\ResetPasswordMail;
 use App\Models\Kuliah;
 use App\Models\Pekerjaan;
 use App\Models\Perusahaan;
 use App\Models\Wirausaha;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -161,5 +163,59 @@ class AuthService
     public function getAuthenticatedUser($user)
     {
         return $this->authRepository->findUserById($user->id_users);
+    }
+
+    /**
+     * Send a password reset OTP to the user's email.
+     */
+    public function forgotPassword(string $email): void
+    {
+        $user = $this->authRepository->findUserByEmail($email);
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Email tidak ditemukan dalam sistem.'],
+            ]);
+        }
+
+        // Generate 6-digit OTP token
+        $token = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $this->authRepository->createPasswordResetToken($user->email_users, $token);
+
+        // Send email with OTP
+        $frontendUrl = config('app.frontend_url', 'http://localhost:5173');
+        Mail::to($user->email_users)->send(new ResetPasswordMail($token, $frontendUrl));
+    }
+
+    /**
+     * Verify the OTP token and reset the user's password.
+     */
+    public function resetPassword(string $email, string $token, string $newPassword): void
+    {
+        $user = $this->authRepository->findUserByEmail($email);
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Email tidak ditemukan dalam sistem.'],
+            ]);
+        }
+
+        $resetRecord = $this->authRepository->findPasswordResetToken($user->email_users, $token);
+
+        if (!$resetRecord) {
+            throw ValidationException::withMessages([
+                'token' => ['Kode OTP tidak valid atau sudah kadaluarsa.'],
+            ]);
+        }
+
+        // Update password
+        $this->authRepository->updatePassword($user->id_users, $newPassword);
+
+        // Delete used token
+        $this->authRepository->deletePasswordResetToken($user->email_users);
+
+        // Revoke all existing tokens (force re-login)
+        $user->tokens()->delete();
     }
 }

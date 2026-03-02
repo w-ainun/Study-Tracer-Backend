@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\StatusKarierController;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Public master data (for registration form dropdowns)
 Route::prefix('master')->group(function () {

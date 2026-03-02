@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterAlumniRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\ForgotPasswordRequest;
+use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
 use App\Traits\ApiResponse;
@@ -75,6 +77,39 @@ class AuthController extends Controller
             return $this->successResponse(null, 'Logout berhasil');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal logout');
+        }
+    }
+
+    /**
+     * Send a password reset OTP to the user's email.
+     */
+    public function forgotPassword(ForgotPasswordRequest $request)
+    {
+        try {
+            $this->authService->forgotPassword($request->validated()['email']);
+
+            return $this->successResponse(null, 'Kode OTP telah dikirim ke email Anda.');
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengirim email reset password: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Verify OTP and reset password.
+     */
+    public function resetPassword(ResetPasswordRequest $request)
+    {
+        try {
+            $data = $request->validated();
+            $this->authService->resetPassword($data['email'], $data['token'], $data['password']);
+
+            return $this->successResponse(null, 'Password berhasil direset. Silakan login dengan password baru.');
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mereset password: ' . $e->getMessage());
         }
     }
 }
