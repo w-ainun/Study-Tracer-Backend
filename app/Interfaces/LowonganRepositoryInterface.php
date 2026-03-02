@@ -13,4 +13,6 @@ interface LowonganRepositoryInterface
     public function updateApprovalStatus(int $id, string $status);
     public function getSavedByUser(int $userId, int $perPage = 15);
     public function toggleSave(int $userId, int $lowonganId): bool;
+    public function syncSkills(int $lowonganId, array $skillIds): void;
+    public function getPublishedSortedBySkillMatch(array $alumniSkillIds, array $filters = [], int $perPage = 15);
 }

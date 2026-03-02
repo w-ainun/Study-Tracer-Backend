@@ -54,6 +54,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/profile', [AlumniController::class, 'updateProfile']);
         Route::post('/career-status', [AlumniController::class, 'updateCareerStatus']);
 
+        // Lowongan for alumni (sorted by skill match)
+        Route::get('/lowongan', [LowonganController::class, 'publishedForAlumni']);
+
         // Saved lowongan
         Route::get('/saved-lowongan', [LowonganController::class, 'savedByUser']);
         Route::post('/lowongan/{id}/toggle-save', [LowonganController::class, 'toggleSave']);

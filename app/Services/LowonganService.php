@@ -25,12 +25,32 @@ class LowonganService
 
     public function create(array $data)
     {
-        return $this->lowonganRepository->create($data);
+        $skillIds = $data['skills'] ?? [];
+        unset($data['skills']);
+
+        $lowongan = $this->lowonganRepository->create($data);
+
+        if (!empty($skillIds)) {
+            $this->lowonganRepository->syncSkills($lowongan->id_lowongan, $skillIds);
+            $lowongan->load('skills');
+        }
+
+        return $lowongan;
     }
 
     public function update(int $id, array $data)
     {
-        return $this->lowonganRepository->update($id, $data);
+        $skillIds = $data['skills'] ?? null;
+        unset($data['skills']);
+
+        $lowongan = $this->lowonganRepository->update($id, $data);
+
+        if ($skillIds !== null) {
+            $this->lowonganRepository->syncSkills($id, $skillIds);
+            $lowongan->load('skills');
+        }
+
+        return $lowongan;
     }
 
     public function delete(int $id)
@@ -81,5 +101,10 @@ class LowonganService
     public function toggleSave(int $userId, int $lowonganId): bool
     {
         return $this->lowonganRepository->toggleSave($userId, $lowonganId);
+    }
+
+    public function getPublishedForAlumni(array $alumniSkillIds, array $filters = [], int $perPage = 15)
+    {
+        return $this->lowonganRepository->getPublishedSortedBySkillMatch($alumniSkillIds, $filters, $perPage);
     }
 }

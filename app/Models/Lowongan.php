@@ -20,6 +20,8 @@ class Lowongan extends Model
         'status',
         'approval_status',
         'lowongan_selesai',
+        'jam_mulai',
+        'jam_berakhir',
         'id_pekerjaan',
         'foto_lowongan',
         'id_perusahaan',
@@ -28,6 +30,8 @@ class Lowongan extends Model
 
     protected $casts = [
         'lowongan_selesai' => 'date',
+        'jam_mulai' => 'string',
+        'jam_berakhir' => 'string',
     ];
 
     public function pekerjaan()
@@ -48,5 +52,11 @@ class Lowongan extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_users', 'id_users');
+    }
+
+    public function skills()
+    {
+        return $this->belongsToMany(Skill::class, 'lowongan_skills', 'id_lowongan', 'id_skills')
+            ->withTimestamps();
     }
 }

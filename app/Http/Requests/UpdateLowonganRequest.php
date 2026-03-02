@@ -37,10 +37,15 @@ class UpdateLowonganRequest extends FormRequest
             'lokasi' => ['nullable', 'string', 'max:255'],
             'status' => ['sometimes', 'in:draft,published,closed'],
             'lowongan_selesai' => ['nullable', 'date'],
+            'jam_mulai' => ['nullable', 'date_format:H:i'],
+            'jam_berakhir' => ['nullable', 'date_format:H:i', 'after:jam_mulai'],
             'id_pekerjaan' => ['nullable', 'exists:pekerjaan,id_pekerjaan'],
             'foto_lowongan' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'id_perusahaan' => ['nullable', 'exists:perusahaan,id_perusahaan'],
             'nama_perusahaan' => ['nullable', 'string', 'max:255'],
+            // Skills (opsional, array of skill IDs)
+            'skills' => ['nullable', 'array'],
+            'skills.*' => ['integer', 'exists:skills,id_skills'],
         ];
     }
 

@@ -20,4 +20,10 @@ class Skill extends Model
     {
         return $this->belongsToMany(Alumni::class, 'alumni_skills', 'id_skills', 'id_alumni');
     }
+
+    public function lowongan()
+    {
+        return $this->belongsToMany(Lowongan::class, 'lowongan_skills', 'id_skills', 'id_lowongan')
+            ->withTimestamps();
+    }
 }

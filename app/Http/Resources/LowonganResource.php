@@ -18,6 +18,8 @@ class LowonganResource extends JsonResource
             'status' => $this->status,
             'approval_status' => $this->approval_status,
             'lowongan_selesai' => $this->lowongan_selesai?->format('Y-m-d'),
+            'jam_mulai' => $this->jam_mulai,
+            'jam_berakhir' => $this->jam_berakhir,
             'foto' => $this->foto_lowongan,
             'perusahaan' => new PerusahaanResource($this->whenLoaded('perusahaan')),
             'pekerjaan' => $this->whenLoaded('pekerjaan', function () {
@@ -26,6 +28,7 @@ class LowonganResource extends JsonResource
                     'posisi' => $this->pekerjaan->posisi,
                 ];
             }),
+            'skills' => SkillResource::collection($this->whenLoaded('skills')),
             'posted_by' => $this->whenLoaded('user', function () {
                 return [
                     'id' => $this->user->id_users,

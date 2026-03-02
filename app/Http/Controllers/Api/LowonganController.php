@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreLowonganRequest;
 use App\Http\Requests\UpdateLowonganRequest;
 use App\Http\Resources\LowonganResource;
+use App\Models\Alumni;
 use App\Services\LowonganService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -223,6 +224,33 @@ class LowonganController extends Controller
             return $this->successResponse(['saved' => $saved], $message);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menyimpan lowongan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get published lowongan sorted by skill match for logged-in alumni.
+     * Alumni with matching skills see relevant lowongan first.
+     * Alumni without skills see random order.
+     */
+    public function publishedForAlumni(Request $request)
+    {
+        try {
+            $filters = $request->only(['search']);
+            $perPage = $request->input('per_page', 15);
+
+            $user = $request->user();
+            $alumni = Alumni::where('id_users', $user->id_users)->first();
+
+            $alumniSkillIds = [];
+            if ($alumni) {
+                $alumniSkillIds = $alumni->skills()->pluck('skills.id_skills')->toArray();
+            }
+
+            $lowongan = $this->lowonganService->getPublishedForAlumni($alumniSkillIds, $filters, $perPage);
+
+            return $this->successResponse(LowonganResource::collection($lowongan)->response()->getData(true));
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil data lowongan: ' . $e->getMessage());
         }
     }
 }
