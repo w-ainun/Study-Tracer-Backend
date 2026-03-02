@@ -25,7 +25,7 @@ class KuesionerResource extends JsonResource
                 ];
             }),
             'jumlah_pertanyaan' => $this->whenCounted('pertanyaan'),
-            'section_ques' => SectionQuesResource::collection($this->whenLoaded('sectionQues')),
+            'pertanyaan' => PertanyaanResource::collection($this->whenLoaded('pertanyaan')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

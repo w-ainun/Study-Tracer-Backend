@@ -16,10 +16,9 @@ class UpdatePertanyaanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_sectionques' => ['sometimes', 'integer', 'exists:section_ques,id_sectionques'],
+            'id_kuesioner' => ['sometimes', 'integer', 'exists:kuesioner,id_kuesioner'],
             'isi_pertanyaan' => ['sometimes', 'string'],
             'status_pertanyaan' => ['sometimes', 'in:publish,draft,hidden'],
-            'judul_bagian' => ['sometimes', 'string', 'max:255'],
             'opsi' => ['sometimes', 'array'],
             'opsi.*' => ['string'],
         ];
@@ -28,7 +27,7 @@ class UpdatePertanyaanRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'id_sectionques.exists' => 'Section yang dipilih tidak valid.',
+            'id_kuesioner.exists' => 'Kuesioner yang dipilih tidak valid.',
             'status_pertanyaan.in' => 'Status pertanyaan harus: publish, draft, atau hidden.',
         ];
     }

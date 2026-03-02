@@ -4,7 +4,6 @@ namespace App\Repositories;
 
 use App\Interfaces\KuesionerRepositoryInterface;
 use App\Models\Kuesioner;
-use App\Models\SectionQues;
 use App\Models\Pertanyaan;
 use App\Models\OpsiJawaban;
 use App\Models\Jawaban;
@@ -16,7 +15,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getAll(array $filters = [], int $perPage = 15)
     {
-        $query = Kuesioner::with(['statusKarir', 'sectionQues'])
+        $query = Kuesioner::with(['statusKarir'])
             ->withCount('pertanyaan');
 
         if (!empty($filters['id_status'])) {
@@ -44,7 +43,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getById(int $id)
     {
-        return Kuesioner::with(['statusKarir', 'sectionQues.pertanyaan.opsiJawaban'])
+        return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
             ->findOrFail($id);
     }
 
@@ -81,18 +80,11 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getAllPertanyaan(array $filters = [], int $perPage = 15)
     {
-        $query = Pertanyaan::with(['sectionQues.kuesioner.statusKarir', 'opsiJawaban']);
+        $query = Pertanyaan::with(['kuesioner.statusKarir', 'opsiJawaban']);
 
         // Filter by kuesioner ID
         if (!empty($filters['id_kuesioner'])) {
-            $query->whereHas('sectionQues', function ($q) use ($filters) {
-                $q->where('id_kuesioner', $filters['id_kuesioner']);
-            });
-        }
-
-        // Filter by section ID
-        if (!empty($filters['id_sectionques'])) {
-            $query->where('id_sectionques', $filters['id_sectionques']);
+            $query->where('id_kuesioner', $filters['id_kuesioner']);
         }
 
         // Search by pertanyaan text
@@ -106,30 +98,16 @@ class KuesionerRepository implements KuesionerRepositoryInterface
 
     /**
      * Add pertanyaan to a kuesioner
-     * Can use existing id_sectionques OR auto-creates section based on judul_bagian
      */
     public function addPertanyaan(int $kuesionerId, array $data)
     {
-        // Jika id_sectionques disediakan, gunakan langsung
-        if (!empty($data['id_sectionques'])) {
-            $sectionId = $data['id_sectionques'];
-            
-            // Validasi bahwa section ini memang milik kuesioner yang benar
-            $section = SectionQues::where('id_sectionques', $sectionId)
-                ->where('id_kuesioner', $kuesionerId)
-                ->firstOrFail();
-        } else {
-            // Jika tidak ada id_sectionques, create/find berdasarkan judul_bagian
-            $section = SectionQues::firstOrCreate([
-                'id_kuesioner' => $kuesionerId,
-                'judul_pertanyaan' => $data['judul_bagian'] ?? 'Umum',
-            ]);
-            $sectionId = $section->id_sectionques;
-        }
+        // Validate kuesioner exists
+        Kuesioner::findOrFail($kuesionerId);
 
         $pertanyaan = Pertanyaan::create([
-            'id_sectionques' => $sectionId,
+            'id_kuesioner' => $kuesionerId,
             'isi_pertanyaan' => $data['isi_pertanyaan'],
+            'status_pertanyaan' => $data['status_pertanyaan'] ?? 'draft',
         ]);
 
         if (!empty($data['opsi'])) {
@@ -141,35 +119,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             }
         }
 
-        return $pertanyaan->load(['opsiJawaban', 'sectionQues']);
-    }
-
-    /**
-     * Store pertanyaan directly using id_sectionques (no kuesioner ID needed)
-     */
-    public function storePertanyaan(array $data)
-    {
-        // id_sectionques harus ada di data
-        $sectionId = $data['id_sectionques'];
-        
-        // Validasi section exists
-        $section = SectionQues::findOrFail($sectionId);
-
-        $pertanyaan = Pertanyaan::create([
-            'id_sectionques' => $sectionId,
-            'isi_pertanyaan' => $data['isi_pertanyaan'],
-        ]);
-
-        if (!empty($data['opsi'])) {
-            foreach ($data['opsi'] as $opsi) {
-                OpsiJawaban::create([
-                    'id_pertanyaan' => $pertanyaan->id_pertanyaan,
-                    'opsi' => $opsi,
-                ]);
-            }
-        }
-
-        return $pertanyaan->load(['opsiJawaban', 'sectionQues']);
+        return $pertanyaan->load(['opsiJawaban', 'kuesioner']);
     }
 
     /**
@@ -188,18 +138,10 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             $updateData['status_pertanyaan'] = $data['status_pertanyaan'];
         }
 
-        // If id_sectionques provided, update directly
-        if (isset($data['id_sectionques'])) {
-            $updateData['id_sectionques'] = $data['id_sectionques'];
-        }
-        // Or if judul_bagian changed, move to different section (legacy support)
-        elseif (isset($data['judul_bagian'])) {
-            $kuesionerId = $pertanyaan->sectionQues->id_kuesioner;
-            $section = SectionQues::firstOrCreate([
-                'id_kuesioner' => $kuesionerId,
-                'judul_pertanyaan' => $data['judul_bagian'],
-            ]);
-            $updateData['id_sectionques'] = $section->id_sectionques;
+        // If id_kuesioner provided, move to different kuesioner
+        if (isset($data['id_kuesioner'])) {
+            Kuesioner::findOrFail($data['id_kuesioner']);
+            $updateData['id_kuesioner'] = $data['id_kuesioner'];
         }
 
         $pertanyaan->update($updateData);
@@ -215,25 +157,16 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             }
         }
 
-        return $pertanyaan->fresh()->load(['opsiJawaban', 'sectionQues']);
+        return $pertanyaan->fresh()->load(['opsiJawaban', 'kuesioner']);
     }
 
     /**
-     * Delete pertanyaan and clean up empty sections
+     * Delete pertanyaan
      */
     public function deletePertanyaan(int $pertanyaanId)
     {
         $pertanyaan = Pertanyaan::findOrFail($pertanyaanId);
-        $sectionId = $pertanyaan->id_sectionques;
-
         $pertanyaan->delete();
-
-        // Clean up empty sections
-        $remaining = Pertanyaan::where('id_sectionques', $sectionId)->count();
-        if ($remaining === 0) {
-            SectionQues::where('id_sectionques', $sectionId)->delete();
-        }
-
         return true;
     }
 
@@ -274,7 +207,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getPublished(int $perPage = 15)
     {
-        return Kuesioner::with(['statusKarir', 'sectionQues.pertanyaan.opsiJawaban'])
+        return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_publikasi')
             ->where(function ($query) {
@@ -294,7 +227,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getPublishedByStatus(int $statusId)
     {
-        return Kuesioner::with(['statusKarir', 'sectionQues.pertanyaan.opsiJawaban'])
+        return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
             ->where('id_status', $statusId)
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_publikasi')
@@ -314,7 +247,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getKuesionerWithPertanyaan(int $kuesionerId)
     {
-        return Kuesioner::with(['statusKarir', 'sectionQues.pertanyaan.opsiJawaban'])
+        return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
             ->findOrFail($kuesionerId);
     }
 
@@ -390,7 +323,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function getAlumniJawabanDetail(int $kuesionerId, int $alumniId)
     {
-        $kuesioner = Kuesioner::with(['statusKarir', 'sectionQues.pertanyaan.opsiJawaban'])->findOrFail($kuesionerId);
+        $kuesioner = Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])->findOrFail($kuesionerId);
 
         $pertanyaanIds = $kuesioner->pertanyaan()->pluck('pertanyaan.id_pertanyaan');
 
@@ -426,6 +359,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     {
         $kuesioner = Kuesioner::findOrFail($kuesionerId);
         $kuesioner->update(['status' => $status]);
-        return $kuesioner->fresh()->load(['statusKarir', 'sectionQues']);
+        return $kuesioner->fresh()->load('statusKarir');
     }
 }

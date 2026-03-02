@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AnswerKuesionerRequest;
 use App\Http\Requests\StoreKuesionerRequest;
 use App\Http\Requests\StorePertanyaanRequest;
-use App\Http\Requests\StoreSectionQuesRequest;
 use App\Http\Requests\UpdatePertanyaanRequest;
 use App\Http\Requests\UpdateKuesionerRequest;
 use App\Http\Requests\UpdateKuesionerStatusRequest;
@@ -93,7 +92,7 @@ class KuesionerController extends Controller
     public function getAllPertanyaan(Request $request)
     {
         try {
-            $filters = $request->only(['id_kuesioner', 'id_sectionques', 'search']);
+            $filters = $request->only(['id_kuesioner', 'search']);
             $perPage = $request->input('per_page', 15);
             $pertanyaan = $this->kuesionerService->getAllPertanyaan($filters, $perPage);
             return $this->successResponse(PertanyaanResource::collection($pertanyaan)->response()->getData(true));
@@ -172,33 +171,13 @@ class KuesionerController extends Controller
     // ═══════════════════════════════════════════════
 
     /**
-     * Add pertanyaan to kuesioner (with auto section_ques)
+     * Add pertanyaan to kuesioner
      */
     public function addPertanyaan(StorePertanyaanRequest $request, int $kuesionerId)
     {
         try {
             $data = $request->validated();
             $pertanyaan = $this->kuesionerService->addPertanyaan($kuesionerId, $data);
-            return $this->createdResponse(new PertanyaanResource($pertanyaan), 'Pertanyaan berhasil ditambahkan');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menambahkan pertanyaan: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Store pertanyaan directly (using id_sectionques from body)
-     */
-    public function storePertanyaan(StorePertanyaanRequest $request)
-    {
-        try {
-            $data = $request->validated();
-            
-            // Validasi id_sectionques harus ada
-            if (empty($data['id_sectionques'])) {
-                return $this->errorResponse('id_sectionques wajib diisi', 422);
-            }
-            
-            $pertanyaan = $this->kuesionerService->storePertanyaan($data);
             return $this->createdResponse(new PertanyaanResource($pertanyaan), 'Pertanyaan berhasil ditambahkan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan pertanyaan: ' . $e->getMessage());
@@ -228,23 +207,6 @@ class KuesionerController extends Controller
             return $this->successResponse(null, 'Pertanyaan berhasil dihapus');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus pertanyaan: ' . $e->getMessage());
-        }
-    }
-
-    // ═══════════════════════════════════════════════
-    //  SECTION QUES
-    // ═══════════════════════════════════════════════
-
-    /**
-     * Create section_ques (judul pertanyaan)
-     */
-    public function storeSectionQues(StoreSectionQuesRequest $request)
-    {
-        try {
-            $section = $this->kuesionerService->createSectionQues($request->validated());
-            return $this->createdResponse($section, 'Judul pertanyaan berhasil ditambahkan');
-        } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menambahkan judul pertanyaan: ' . $e->getMessage());
         }
     }
 

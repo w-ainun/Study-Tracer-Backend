@@ -3,19 +3,15 @@
 namespace App\Services;
 
 use App\Interfaces\KuesionerRepositoryInterface;
-use App\Interfaces\SectionQuesRepositoryInterface;
 
 class KuesionerService
 {
     private KuesionerRepositoryInterface $kuesionerRepository;
-    private SectionQuesRepositoryInterface $sectionQuesRepository;
 
     public function __construct(
-        KuesionerRepositoryInterface $kuesionerRepository,
-        SectionQuesRepositoryInterface $sectionQuesRepository
+        KuesionerRepositoryInterface $kuesionerRepository
     ) {
         $this->kuesionerRepository = $kuesionerRepository;
-        $this->sectionQuesRepository = $sectionQuesRepository;
     }
 
     public function getAll(array $filters = [], int $perPage = 15)
@@ -51,11 +47,6 @@ class KuesionerService
     public function addPertanyaan(int $kuesionerId, array $data)
     {
         return $this->kuesionerRepository->addPertanyaan($kuesionerId, $data);
-    }
-
-    public function storePertanyaan(array $data)
-    {
-        return $this->kuesionerRepository->storePertanyaan($data);
     }
 
     public function updatePertanyaan(int $pertanyaanId, array $data)
@@ -103,8 +94,4 @@ class KuesionerService
         return $this->kuesionerRepository->updateKuesionerStatus($kuesionerId, $status);
     }
 
-    public function createSectionQues(array $data)
-    {
-        return $this->sectionQuesRepository->create($data);
-    }
 }

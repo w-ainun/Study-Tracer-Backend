@@ -13,17 +13,17 @@ class Pertanyaan extends Model
     protected $primaryKey = 'id_pertanyaan';
 
     protected $fillable = [
-        'id_sectionques',
+        'id_kuesioner',
         'isi_pertanyaan',
         'status_pertanyaan',
     ];
 
     /**
-     * Relasi ke Section Ques
+     * Relasi ke Kuesioner
      */
-    public function sectionQues()
+    public function kuesioner()
     {
-        return $this->belongsTo(\App\Models\SectionQues::class, 'id_sectionques', 'id_sectionques');
+        return $this->belongsTo(\App\Models\Kuesioner::class, 'id_kuesioner', 'id_kuesioner');
     }
 
     /**

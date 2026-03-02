@@ -40,25 +40,10 @@ class Kuesioner extends Model
     }
 
     /**
-     * Relasi ke Section Ques
-     */
-    public function sectionQues()
-    {
-        return $this->hasMany(SectionQues::class, 'id_kuesioner', 'id_kuesioner');
-    }
-
-    /**
-     * Get all pertanyaan through section_ques
+     * Relasi ke Pertanyaan (one-to-many)
      */
     public function pertanyaan()
     {
-        return $this->hasManyThrough(
-            Pertanyaan::class,
-            SectionQues::class,
-            'id_kuesioner', // Foreign key on section_ques table
-            'id_sectionques', // Foreign key on pertanyaan table
-            'id_kuesioner', // Local key on kuesioner table
-            'id_sectionques' // Local key on section_ques table
-        );
+        return $this->hasMany(Pertanyaan::class, 'id_kuesioner', 'id_kuesioner');
     }
 }
