@@ -10,6 +10,12 @@ return new class extends Migration
     {
         Schema::create('kuesioner', function (Blueprint $table) {
             $table->id('id_kuesioner');
+            $table->foreignId('id_status')->nullable()->constrained('status', 'id_status')->onDelete('set null');
+            $table->string('title');
+            $table->text('deskripsi')->nullable();
+            $table->enum('status', ['hidden', 'aktif', 'draft'])->default('draft');
+            $table->date('tanggal_mulai')->nullable();
+            $table->date('tanggal_selesai')->nullable();
             $table->date('tanggal_publikasi')->nullable();
             $table->timestamps();
         });

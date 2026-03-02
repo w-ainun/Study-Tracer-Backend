@@ -15,6 +15,11 @@ class KuesionerSeeder extends Seeder
         // Kuesioner 1: Untuk Alumni yang Bekerja
         $kuesioner = Kuesioner::create([
             'id_status' => 1, // Bekerja
+            'title' => 'Kuesioner Alumni yang Bekerja',
+            'deskripsi' => 'Kuesioner untuk mengumpulkan data dan feedback dari alumni yang sudah bekerja mengenai kepuasan pendidikan, informasi karier, dan penilaian umum.',
+            'status' => 'aktif',
+            'tanggal_mulai' => now()->toDateString(),
+            'tanggal_selesai' => now()->addMonths(3)->toDateString(),
             'tanggal_publikasi' => now()->toDateString(),
         ]);
 
@@ -118,6 +123,11 @@ class KuesionerSeeder extends Seeder
         // Kuesioner 2: Untuk Alumni yang Kuliah (Draft)
         $kuesioner2 = Kuesioner::create([
             'id_status' => 2, // Kuliah
+            'title' => 'Kuesioner Alumni yang Melanjutkan Kuliah',
+            'deskripsi' => 'Kuesioner untuk alumni yang melanjutkan pendidikan ke jenjang yang lebih tinggi, mencakup informasi studi lanjut dan kebutuhan pengembangan.',
+            'status' => 'draft',
+            'tanggal_mulai' => null,
+            'tanggal_selesai' => null,
             'tanggal_publikasi' => null,
         ]);
 
@@ -188,6 +198,11 @@ class KuesionerSeeder extends Seeder
         // Kuesioner 3: Untuk Alumni Wirausaha
         $kuesioner3 = Kuesioner::create([
             'id_status' => 3, // Wirausaha
+            'title' => 'Kuesioner Alumni Wirausaha',
+            'deskripsi' => 'Kuesioner untuk alumni yang menjalankan usaha sendiri, mencakup informasi usaha dan bagaimana pendidikan membantu dalam berwirausaha.',
+            'status' => 'aktif',
+            'tanggal_mulai' => now()->toDateString(),
+            'tanggal_selesai' => now()->addMonths(6)->toDateString(),
             'tanggal_publikasi' => now()->toDateString(),
         ]);
 
@@ -213,7 +228,12 @@ class KuesionerSeeder extends Seeder
         ];
 
         $kuesioner4 = Kuesioner::create([
-            'id_status' => 4, // Kuliah
+            'id_status' => 4, // Status lainnya
+            'title' => 'Kuesioner Tambahan',
+            'deskripsi' => 'Kuesioner tambahan untuk keperluan survei lainnya.',
+            'status' => 'hidden',
+            'tanggal_mulai' => null,
+            'tanggal_selesai' => null,
             'tanggal_publikasi' => null,
         ]);
 

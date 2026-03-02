@@ -14,22 +14,27 @@ class Kuesioner extends Model
 
     protected $fillable = [
         'id_status',
-        'judul_kuesioner',
-        'deskripsi_kuesioner',
+        'title',
+        'deskripsi',
+        'status',
+        'tanggal_mulai',
+        'tanggal_selesai',
         'tanggal_publikasi',
     ];
 
     protected function casts(): array
     {
         return [
+            'tanggal_mulai' => 'date',
+            'tanggal_selesai' => 'date',
             'tanggal_publikasi' => 'date',
         ];
     }
 
     /**
-     * Relasi ke Status
+     * Relasi ke Status Karir
      */
-    public function status()
+    public function statusKarir()
     {
         return $this->belongsTo(Status::class, 'id_status', 'id_status');
     }

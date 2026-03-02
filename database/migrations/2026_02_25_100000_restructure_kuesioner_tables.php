@@ -45,14 +45,16 @@ return new class extends Migration
 
         // Step 3: Modify kuesioner table
         Schema::table('kuesioner', function (Blueprint $table) {
-            // Add id_status column
-            $table->unsignedBigInteger('id_status')->nullable()->after('id_kuesioner');
-            
-            // Add foreign key to status table
-            $table->foreign('id_status')
-                  ->references('id_status')
-                  ->on('status')
-                  ->onDelete('set null');
+            // Add id_status column if it doesn't exist
+            if (!Schema::hasColumn('kuesioner', 'id_status')) {
+                $table->unsignedBigInteger('id_status')->nullable()->after('id_kuesioner');
+                
+                // Add foreign key to status table
+                $table->foreign('id_status')
+                      ->references('id_status')
+                      ->on('status')
+                      ->onDelete('set null');
+            }
         });
 
         // Step 4: Rename pertanyaan_kuesioner table and modify structure
@@ -174,8 +176,10 @@ return new class extends Migration
 
         // Restore kuesioner table
         Schema::table('kuesioner', function (Blueprint $table) {
-            $table->dropForeign(['id_status']);
-            $table->dropColumn('id_status');
+            if (Schema::hasColumn('kuesioner', 'id_status')) {
+                $table->dropForeign(['id_status']);
+                $table->dropColumn('id_status');
+            }
         });
 
         // Drop section_ques table

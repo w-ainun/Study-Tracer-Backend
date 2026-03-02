@@ -16,9 +16,12 @@ class StoreKuesionerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_status' => ['required', 'exists:status,id_status'],
-            'judul_kuesioner' => ['required', 'string', 'max:255'],
-            'deskripsi_kuesioner' => ['nullable', 'string'],
+            'id_status' => ['nullable', 'exists:status,id_status'],
+            'title' => ['required', 'string', 'max:255'],
+            'deskripsi' => ['nullable', 'string'],
+            'status' => ['required', 'in:hidden,aktif,draft'],
+            'tanggal_mulai' => ['nullable', 'date'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'tanggal_publikasi' => ['nullable', 'date'],
         ];
     }
@@ -26,9 +29,11 @@ class StoreKuesionerRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'id_status.required' => 'Status karier wajib dipilih.',
             'id_status.exists' => 'Status karier tidak valid.',
-            'judul_kuesioner.required' => 'Judul kuesioner wajib diisi.',
+            'title.required' => 'Judul kuesioner wajib diisi.',
+            'status.required' => 'Status kuesioner wajib dipilih.',
+            'status.in' => 'Status kuesioner harus salah satu dari: hidden, aktif, atau draft.',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
         ];
     }
 

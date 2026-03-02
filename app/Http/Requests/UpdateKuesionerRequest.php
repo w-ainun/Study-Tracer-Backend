@@ -16,10 +16,22 @@ class UpdateKuesionerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'id_status' => ['sometimes', 'exists:status,id_status'],
-            'judul_kuesioner' => ['sometimes', 'string', 'max:255'],
-            'deskripsi_kuesioner' => ['sometimes', 'string'],
+            'id_status' => ['nullable', 'exists:status,id_status'],
+            'title' => ['sometimes', 'string', 'max:255'],
+            'deskripsi' => ['sometimes', 'string'],
+            'status' => ['sometimes', 'in:hidden,aktif,draft'],
+            'tanggal_mulai' => ['nullable', 'date'],
+            'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'tanggal_publikasi' => ['nullable', 'date'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'id_status.exists' => 'Status karier tidak valid.',
+            'status.in' => 'Status kuesioner harus salah satu dari: hidden, aktif, atau draft.',
+            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai.',
         ];
     }
 

@@ -9,6 +9,7 @@ use App\Http\Requests\StorePertanyaanRequest;
 use App\Http\Requests\StoreSectionQuesRequest;
 use App\Http\Requests\UpdatePertanyaanRequest;
 use App\Http\Requests\UpdateKuesionerRequest;
+use App\Http\Requests\UpdateKuesionerStatusRequest;
 use App\Http\Resources\KuesionerResource;
 use App\Http\Resources\JawabanKuesionerResource;
 use App\Http\Resources\PertanyaanResource;
@@ -28,18 +29,18 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Get all kuesioner (admin view) — supports filters: id_status, search
+     * Get all kuesioner (admin view) — supports filters: id_status, search, status
      */
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['id_status', 'search']);
+            $filters = $request->only(['id_status', 'search', 'status']);
 
             $perPage = $request->input('per_page', 15);
             $kuesioner = $this->kuesionerService->getAll($filters, $perPage);
             return $this->successResponse(KuesionerResource::collection($kuesioner)->response()->getData(true));
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil data kuesioner');
+            return $this->errorResponse('Gagal mengambil data kuesioner: ' . $e->getMessage());
         }
     }
 
@@ -53,7 +54,7 @@ class KuesionerController extends Controller
             $kuesioner = $this->kuesionerService->getPublished($perPage);
             return $this->successResponse(KuesionerResource::collection($kuesioner)->response()->getData(true));
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil data kuesioner');
+            return $this->errorResponse('Gagal mengambil data kuesioner: ' . $e->getMessage());
         }
     }
 
@@ -69,7 +70,7 @@ class KuesionerController extends Controller
             }
             return $this->successResponse(new KuesionerResource($kuesioner));
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil kuesioner berdasarkan status');
+            return $this->errorResponse('Gagal mengambil kuesioner berdasarkan status: ' . $e->getMessage());
         }
     }
 
@@ -154,11 +155,16 @@ class KuesionerController extends Controller
     }
 
     /**
-     * Update kuesioner visibility status - DEPRECATED: status moved to pertanyaan level
+     * Update kuesioner visibility status (hidden/aktif/draft)
      */
-    public function updateStatus(Request $request, int $id)
+    public function updateStatus(UpdateKuesionerStatusRequest $request, int $id)
     {
-        return $this->errorResponse('Status kuesioner telah dipindahkan ke level pertanyaan. Gunakan update status_pertanyaan.', 400);
+        try {
+            $kuesioner = $this->kuesionerService->updateKuesionerStatus($id, $request->validated()['status']);
+            return $this->successResponse(new KuesionerResource($kuesioner), 'Status kuesioner berhasil diperbarui');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status kuesioner: ' . $e->getMessage());
+        }
     }
 
     // ═══════════════════════════════════════════════

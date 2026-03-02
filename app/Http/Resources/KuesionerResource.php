@@ -12,13 +12,16 @@ class KuesionerResource extends JsonResource
         return [
             'id' => $this->id_kuesioner,
             'id_status' => $this->id_status,
-            'judul' => $this->judul_kuesioner,
-            'deskripsi' => $this->deskripsi_kuesioner,
+            'title' => $this->title,
+            'deskripsi' => $this->deskripsi,
+            'status' => $this->status,
+            'tanggal_mulai' => $this->tanggal_mulai?->format('Y-m-d'),
+            'tanggal_selesai' => $this->tanggal_selesai?->format('Y-m-d'),
             'tanggal_publikasi' => $this->tanggal_publikasi?->format('Y-m-d'),
-            'status' => $this->whenLoaded('status', function () {
+            'status_karir' => $this->whenLoaded('statusKarir', function () {
                 return [
-                    'id' => $this->status->id_status,
-                    'nama' => $this->status->nama_status,
+                    'id' => $this->statusKarir->id_status,
+                    'nama' => $this->statusKarir->nama_status,
                 ];
             }),
             'jumlah_pertanyaan' => $this->whenCounted('pertanyaan'),
