@@ -15,7 +15,6 @@ class Pertanyaan extends Model
     protected $fillable = [
         'id_kuesioner',
         'isi_pertanyaan',
-        'status_pertanyaan',
     ];
 
     /**

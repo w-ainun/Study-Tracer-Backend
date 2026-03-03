@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Kuesioner;
-use App\Models\SectionQues;
 use App\Models\Pertanyaan;
 use App\Models\OpsiJawaban;
 use Illuminate\Database\Seeder;
@@ -23,12 +22,7 @@ class KuesionerSeeder extends Seeder
             'tanggal_publikasi' => now()->toDateString(),
         ]);
 
-        // Section 1: Kepuasan Pendidikan
-        $section1 = SectionQues::create([
-            'id_kuesioner' => $kuesioner->id_kuesioner,
-            'judul_pertanyaan' => 'Kepuasan Pendidikan',
-        ]);
-
+        // Pertanyaan untuk Kuesioner 1: Kepuasan Pendidikan
         $pertanyaanSection1 = [
             [
                 'isi_pertanyaan' => 'Seberapa puas Anda dengan kualitas pendidikan yang diterima?',
@@ -42,9 +36,8 @@ class KuesionerSeeder extends Seeder
 
         foreach ($pertanyaanSection1 as $item) {
             $pertanyaan = Pertanyaan::create([
-                'id_sectionques' => $section1->id_sectionques,
+                'id_kuesioner' => $kuesioner->id_kuesioner,
                 'isi_pertanyaan' => $item['isi_pertanyaan'],
-                'status_pertanyaan' => 'publish',
             ]);
 
             foreach ($item['opsi'] as $opsi) {
@@ -55,12 +48,7 @@ class KuesionerSeeder extends Seeder
             }
         }
 
-        // Section 2: Karier
-        $section2 = SectionQues::create([
-            'id_kuesioner' => $kuesioner->id_kuesioner,
-            'judul_pertanyaan' => 'Informasi Karier',
-        ]);
-
+        // Pertanyaan untuk Kuesioner 1: Informasi Karier
         $pertanyaanSection2 = [
             [
                 'isi_pertanyaan' => 'Berapa lama waktu yang dibutuhkan untuk mendapatkan pekerjaan pertama setelah lulus?',
@@ -74,9 +62,8 @@ class KuesionerSeeder extends Seeder
 
         foreach ($pertanyaanSection2 as $item) {
             $pertanyaan = Pertanyaan::create([
-                'id_sectionques' => $section2->id_sectionques,
+                'id_kuesioner' => $kuesioner->id_kuesioner,
                 'isi_pertanyaan' => $item['isi_pertanyaan'],
-                'status_pertanyaan' => 'publish',
             ]);
 
             foreach ($item['opsi'] as $opsi) {
@@ -87,12 +74,7 @@ class KuesionerSeeder extends Seeder
             }
         }
 
-        // Section 3: Umum
-        $section3 = SectionQues::create([
-            'id_kuesioner' => $kuesioner->id_kuesioner,
-            'judul_pertanyaan' => 'Penilaian Umum',
-        ]);
-
+        // Pertanyaan untuk Kuesioner 1: Penilaian Umum
         $pertanyaanSection3 = [
             [
                 'isi_pertanyaan' => 'Bagaimana fasilitas belajar di sekolah menurut Anda?',
@@ -106,9 +88,8 @@ class KuesionerSeeder extends Seeder
 
         foreach ($pertanyaanSection3 as $item) {
             $pertanyaan = Pertanyaan::create([
-                'id_sectionques' => $section3->id_sectionques,
+                'id_kuesioner' => $kuesioner->id_kuesioner,
                 'isi_pertanyaan' => $item['isi_pertanyaan'],
-                'status_pertanyaan' => 'publish',
             ]);
 
             foreach ($item['opsi'] as $opsi) {
@@ -131,12 +112,7 @@ class KuesionerSeeder extends Seeder
             'tanggal_publikasi' => null,
         ]);
 
-        // Section 1: Studi Lanjut
-        $section2_1 = SectionQues::create([
-            'id_kuesioner' => $kuesioner2->id_kuesioner,
-            'judul_pertanyaan' => 'Informasi Studi Lanjut',
-        ]);
-
+        // Pertanyaan untuk Kuesioner 2: Informasi Studi Lanjut
         $pertanyaanSection2_1 = [
             [
                 'isi_pertanyaan' => 'Program studi apa yang Anda ambil saat ini?',
@@ -150,9 +126,8 @@ class KuesionerSeeder extends Seeder
 
         foreach ($pertanyaanSection2_1 as $item) {
             $pertanyaan = Pertanyaan::create([
-                'id_sectionques' => $section2_1->id_sectionques,
+                'id_kuesioner' => $kuesioner2->id_kuesioner,
                 'isi_pertanyaan' => $item['isi_pertanyaan'],
-                'status_pertanyaan' => 'draft',
             ]);
 
             foreach ($item['opsi'] as $opsi) {
@@ -163,12 +138,7 @@ class KuesionerSeeder extends Seeder
             }
         }
 
-        // Section 2: Kebutuhan Pengembangan
-        $section2_2 = SectionQues::create([
-            'id_kuesioner' => $kuesioner2->id_kuesioner,
-            'judul_pertanyaan' => 'Pengembangan Diri',
-        ]);
-
+        // Pertanyaan untuk Kuesioner 2: Pengembangan Diri
         $pertanyaanSection2_2 = [
             [
                 'isi_pertanyaan' => 'Pelatihan apa yang paling Anda butuhkan untuk menunjang studi?',
@@ -182,9 +152,8 @@ class KuesionerSeeder extends Seeder
 
         foreach ($pertanyaanSection2_2 as $item) {
             $pertanyaan = Pertanyaan::create([
-                'id_sectionques' => $section2_2->id_sectionques,
+                'id_kuesioner' => $kuesioner2->id_kuesioner,
                 'isi_pertanyaan' => $item['isi_pertanyaan'],
-                'status_pertanyaan' => 'draft',
             ]);
 
             foreach ($item['opsi'] as $opsi) {
@@ -206,12 +175,7 @@ class KuesionerSeeder extends Seeder
             'tanggal_publikasi' => now()->toDateString(),
         ]);
 
-        // Section 1: Informasi Usaha
-        $section3_1 = SectionQues::create([
-            'id_kuesioner' => $kuesioner3->id_kuesioner,
-            'judul_pertanyaan' => 'Informasi Usaha',
-        ]);
-
+        // Pertanyaan untuk Kuesioner 3: Informasi Usaha
         $pertanyaanSection3_1 = [
             [
                 'isi_pertanyaan' => 'Bidang usaha apa yang Anda jalankan?',
@@ -227,21 +191,10 @@ class KuesionerSeeder extends Seeder
             ],
         ];
 
-        $kuesioner4 = Kuesioner::create([
-            'id_status' => 4, // Status lainnya
-            'title' => 'Kuesioner Tambahan',
-            'deskripsi' => 'Kuesioner tambahan untuk keperluan survei lainnya.',
-            'status' => 'hidden',
-            'tanggal_mulai' => null,
-            'tanggal_selesai' => null,
-            'tanggal_publikasi' => null,
-        ]);
-
         foreach ($pertanyaanSection3_1 as $item) {
             $pertanyaan = Pertanyaan::create([
-                'id_sectionques' => $section3_1->id_sectionques,
+                'id_kuesioner' => $kuesioner3->id_kuesioner,
                 'isi_pertanyaan' => $item['isi_pertanyaan'],
-                'status_pertanyaan' => 'publish',
             ]);
 
             foreach ($item['opsi'] as $opsi) {
@@ -251,5 +204,16 @@ class KuesionerSeeder extends Seeder
                 ]);
             }
         }
+
+        // Kuesioner 4: Tambahan
+        $kuesioner4 = Kuesioner::create([
+            'id_status' => 4, // Status lainnya
+            'title' => 'Kuesioner Tambahan',
+            'deskripsi' => 'Kuesioner tambahan untuk keperluan survei lainnya.',
+            'status' => 'hidden',
+            'tanggal_mulai' => null,
+            'tanggal_selesai' => null,
+            'tanggal_publikasi' => null,
+        ]);
     }
 }

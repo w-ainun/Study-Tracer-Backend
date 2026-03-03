@@ -52,8 +52,34 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function create(array $data)
     {
+        // Extract questions if present
+        $questions = $data['questions'] ?? [];
+        unset($data['questions']);
+        
+        // Create kuesioner
         $kuesioner = Kuesioner::create($data);
-        return $kuesioner->load('statusKarir');
+        
+        // Create pertanyaan and opsi jawaban if questions provided
+        if (!empty($questions)) {
+            foreach ($questions as $questionData) {
+                $pertanyaan = Pertanyaan::create([
+                    'id_kuesioner' => $kuesioner->id_kuesioner,
+                    'isi_pertanyaan' => $questionData['text'],
+                ]);
+                
+                // Create opsi jawaban if options provided
+                if (!empty($questionData['options'])) {
+                    foreach ($questionData['options'] as $opsi) {
+                        OpsiJawaban::create([
+                            'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                            'opsi' => $opsi,
+                        ]);
+                    }
+                }
+            }
+        }
+        
+        return $kuesioner->load('statusKarir', 'pertanyaan.opsiJawaban');
     }
 
     /**
@@ -107,7 +133,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         $pertanyaan = Pertanyaan::create([
             'id_kuesioner' => $kuesionerId,
             'isi_pertanyaan' => $data['isi_pertanyaan'],
-            'status_pertanyaan' => $data['status_pertanyaan'] ?? 'draft',
         ]);
 
         if (!empty($data['opsi'])) {
@@ -132,10 +157,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         $updateData = [];
         if (isset($data['isi_pertanyaan'])) {
             $updateData['isi_pertanyaan'] = $data['isi_pertanyaan'];
-        }
-
-        if (isset($data['status_pertanyaan'])) {
-            $updateData['status_pertanyaan'] = $data['status_pertanyaan'];
         }
 
         // If id_kuesioner provided, move to different kuesioner

@@ -13,7 +13,6 @@ class PertanyaanResource extends JsonResource
             'id' => $this->id_pertanyaan,
             'id_kuesioner' => $this->id_kuesioner,
             'isi_pertanyaan' => $this->isi_pertanyaan,
-            'status_pertanyaan' => $this->status_pertanyaan ?? 'draft',
             'kuesioner' => $this->whenLoaded('kuesioner', function () {
                 return [
                     'id' => $this->kuesioner->id_kuesioner,

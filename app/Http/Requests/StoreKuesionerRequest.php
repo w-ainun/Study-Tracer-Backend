@@ -23,6 +23,12 @@ class StoreKuesionerRequest extends FormRequest
             'tanggal_mulai' => ['nullable', 'date'],
             'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
             'tanggal_publikasi' => ['nullable', 'date'],
+            
+            // Nested questions
+            'questions' => ['nullable', 'array'],
+            'questions.*.text' => ['required', 'string'],
+            'questions.*.options' => ['nullable', 'array'],
+            'questions.*.options.*' => ['string'],
         ];
     }
 

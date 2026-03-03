@@ -14,9 +14,9 @@ return new class extends Migration
             $table->string('title');
             $table->text('deskripsi')->nullable();
             $table->enum('status', ['hidden', 'aktif', 'draft'])->default('draft');
-            $table->date('tanggal_mulai')->nullable();
-            $table->date('tanggal_selesai')->nullable();
-            $table->date('tanggal_publikasi')->nullable();
+            $table->dateTime('tanggal_mulai')->nullable();
+            $table->dateTime('tanggal_selesai')->nullable();
+            $table->dateTime('tanggal_publikasi')->nullable();
             $table->timestamps();
         });
     }
