@@ -12,6 +12,7 @@ use App\Interfaces\LowonganRepositoryInterface;
 use App\Interfaces\KuesionerRepositoryInterface;
 use App\Interfaces\MasterDataRepositoryInterface;
 use App\Interfaces\StatusKarierRepositoryInterface;
+use App\Interfaces\Alumni\BerandaRepositoryInterface;
 
 use App\Repositories\AuthRepository;
 use App\Repositories\AlumniRepository;
@@ -20,6 +21,7 @@ use App\Repositories\LowonganRepository;
 use App\Repositories\KuesionerRepository;
 use App\Repositories\MasterDataRepository;
 use App\Repositories\StatusKarierRepository;
+use App\Repositories\Alumni\BerandaRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -35,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(KuesionerRepositoryInterface::class, KuesionerRepository::class);
         $this->app->bind(MasterDataRepositoryInterface::class, MasterDataRepository::class);
         $this->app->bind(StatusKarierRepositoryInterface::class, StatusKarierRepository::class);
+        $this->app->bind(BerandaRepositoryInterface::class, BerandaRepository::class);
     }
 
     /**

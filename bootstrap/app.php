@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'alumni.verified' => \App\Http\Middleware\EnsureAlumniVerified::class,
         ]);
         // Removed statefulApi() - not needed for Bearer Token API
         

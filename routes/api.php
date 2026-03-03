@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LowonganController;
 use App\Http\Controllers\Api\KuesionerController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\StatusKarierController;
+use App\Http\Controllers\Api\Alumni\BerandaController;
 
 // ╔══════════════════════════════════════════════════════╗
 // ║                  PUBLIC ROUTES                       ║
@@ -52,21 +53,27 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Alumni Routes ────────────────────────────────────
     Route::middleware('role:alumni')->prefix('alumni')->group(function () {
+        // Always accessible (even if not verified)
         Route::get('/profile', [AlumniController::class, 'profile']);
         Route::put('/profile', [AlumniController::class, 'updateProfile']);
         Route::post('/career-status', [AlumniController::class, 'updateCareerStatus']);
+        Route::get('/beranda', [BerandaController::class, 'index']);
+        Route::get('/status-pengajuan', [BerandaController::class, 'statusPengajuan']);
 
-        // Lowongan for alumni (sorted by skill match)
-        Route::get('/lowongan', [LowonganController::class, 'publishedForAlumni']);
-
-        // Saved lowongan
-        Route::get('/saved-lowongan', [LowonganController::class, 'savedByUser']);
-        Route::post('/lowongan/{id}/toggle-save', [LowonganController::class, 'toggleSave']);
-
-        // Kuesioner jawaban
+        // Kuesioner (accessible even if not verified)
         Route::get('/kuesioner/{id}', [KuesionerController::class, 'showWithPertanyaan']);
         Route::get('/kuesioner/status/{statusId}', [KuesionerController::class, 'publishedByStatus']);
         Route::post('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'submitAnswers']);
+
+        // ── Restricted routes (verified alumni only) ──
+        Route::middleware('alumni.verified')->group(function () {
+            // Lowongan for alumni (sorted by skill match)
+            Route::get('/lowongan', [LowonganController::class, 'publishedForAlumni']);
+
+            // Saved lowongan
+            Route::get('/saved-lowongan', [LowonganController::class, 'savedByUser']);
+            Route::post('/lowongan/{id}/toggle-save', [LowonganController::class, 'toggleSave']);
+        });
     });
 
     // ── Admin Routes ─────────────────────────────────────
