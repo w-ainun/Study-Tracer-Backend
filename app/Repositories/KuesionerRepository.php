@@ -331,7 +331,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return [
             'kuesioner' => [
                 'id' => $kuesioner->id_kuesioner,
-                'judul' => $kuesioner->judul_kuesioner,
+                'judul' => $kuesioner->title,
                 'total_pertanyaan' => $pertanyaanIds->count(),
             ],
             'total_responden' => count($result),
@@ -346,30 +346,79 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     {
         $kuesioner = Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])->findOrFail($kuesionerId);
 
-        $pertanyaanIds = $kuesioner->pertanyaan()->pluck('pertanyaan.id_pertanyaan');
+        // Get user with complete alumni data
+        $user = \App\Models\User::with(['alumni.jurusan'])->findOrFail($alumniId);
 
-        $jawaban = Jawaban::where('id_user', $alumniId)
+        // Get all jawaban from this user for this kuesioner
+        $pertanyaanIds = $kuesioner->pertanyaan->pluck('id_pertanyaan');
+        
+        $jawabanCollection = Jawaban::where('id_user', $alumniId)
             ->whereIn('id_pertanyaan', $pertanyaanIds)
             ->with(['pertanyaan.opsiJawaban', 'opsiJawaban'])
-            ->get();
+            ->get()
+            ->keyBy('id_pertanyaan');
 
-        $user = \App\Models\User::with('alumni.jurusan')->find($alumniId);
+        // Build structured response with all pertanyaan and their jawaban
+        $pertanyaanWithJawaban = [];
+        foreach ($kuesioner->pertanyaan as $pertanyaan) {
+            $jawaban = $jawabanCollection->get($pertanyaan->id_pertanyaan);
+            
+            $pertanyaanWithJawaban[] = [
+                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                'isi_pertanyaan' => $pertanyaan->isi_pertanyaan,
+                'opsi_jawaban' => $pertanyaan->opsiJawaban->map(function ($opsi) {
+                    return [
+                        'id_opsi' => $opsi->id_opsi,
+                        'opsi' => $opsi->opsi,
+                    ];
+                }),
+                'jawaban' => $jawaban ? [
+                    'id_jawaban' => $jawaban->id_jawaban,
+                    'jawaban_text' => $jawaban->jawaban, // For essay/text questions
+                    'opsi_dipilih' => $jawaban->opsiJawaban ? [
+                        'id_opsi' => $jawaban->opsiJawaban->id_opsi,
+                        'opsi' => $jawaban->opsiJawaban->opsi,
+                    ] : null,
+                    'created_at' => $jawaban->created_at,
+                    'status' => $jawaban->status,
+                ] : null,
+            ];
+        }
 
         return [
             'alumni' => [
-                'id' => $user?->id_users,
-                'nama' => $user?->alumni?->nama_alumni,
-                'nis' => $user?->alumni?->nis ?? null,
-                'nisn' => $user?->alumni?->nisn ?? null,
-                'jurusan' => $user?->alumni?->jurusan?->nama_jurusan ?? null,
-                'tahun_lulus' => $user?->alumni?->tahun_lulus,
+                'id' => $user->id_users,
+                'nama' => $user->alumni?->nama_alumni,
+                'nis' => $user->alumni?->nis ?? null,
+                'nisn' => $user->alumni?->nisn ?? null,
+                'email' => $user->email,
+                'foto' => $user->alumni?->foto,
+                'no_hp' => $user->alumni?->no_hp,
+                'alamat' => $user->alumni?->alamat,
+                'jenis_kelamin' => $user->alumni?->jenis_kelamin,
+                'tempat_lahir' => $user->alumni?->tempat_lahir,
+                'tanggal_lahir' => $user->alumni?->tanggal_lahir,
+                'jurusan' => $user->alumni?->jurusan?->nama_jurusan ?? null,
+                'tahun_masuk' => $user->alumni?->tahun_masuk,
+                'tahun_lulus' => $user->alumni?->tahun_lulus,
             ],
             'kuesioner' => [
                 'id' => $kuesioner->id_kuesioner,
-                'judul' => $kuesioner->judul_kuesioner,
-                'status_nama' => $kuesioner->status?->nama_status,
+                'judul' => $kuesioner->title,
+                'deskripsi' => $kuesioner->deskripsi,
+                'status_karir' => $kuesioner->statusKarir?->nama_status ?? null,
+                'total_pertanyaan' => $kuesioner->pertanyaan->count(),
+                'tanggal_publikasi' => $kuesioner->tanggal_publikasi,
             ],
-            'jawaban' => $jawaban,
+            'pertanyaan' => $pertanyaanWithJawaban,
+            'statistik' => [
+                'total_pertanyaan' => count($pertanyaanWithJawaban),
+                'terjawab' => $jawabanCollection->count(),
+                'belum_dijawab' => count($pertanyaanWithJawaban) - $jawabanCollection->count(),
+                'persentase_selesai' => count($pertanyaanWithJawaban) > 0 
+                    ? round(($jawabanCollection->count() / count($pertanyaanWithJawaban)) * 100, 2) 
+                    : 0,
+            ],
         ];
     }
 
