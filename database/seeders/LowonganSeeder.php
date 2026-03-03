@@ -31,12 +31,27 @@ class LowonganSeeder extends Seeder
             Lowongan::create([
                 'judul_lowongan' => $data['judul'],
                 'deskripsi' => $data['deskripsi'],
+                
+                // Field baru dari migrasi enhance_lowongan_table
+                'tipe_pekerjaan' => fake()->randomElement(['Full-time', 'Part-time', 'Internship', 'Contract']),
+                'lokasi' => fake()->city(),
+                
                 'status' => fake()->randomElement(['draft', 'published', 'closed']),
                 'approval_status' => fake()->randomElement(['pending', 'approved', 'rejected']),
-                'lowongan_selesai' => fake()->time('H:i:s'),
+                
+                // Diubah dari time() menjadi date() karena perubahan tipe kolom
+                'lowongan_selesai' => fake()->dateTimeBetween('now', '+1 month')->format('Y-m-d'), 
+                
+                // Field baru dari migrasi create_lowongan_skills_table_and_add_time_columns
+                'jam_mulai' => '08:00:00',
+                'jam_berakhir' => '17:00:00',
+                
                 'id_pekerjaan' => null,
                 'foto_lowongan' => null,
                 'id_perusahaan' => fake()->randomElement($perusahaanIds),
+                
+                // Field baru (nullable)
+                'id_users' => null,
             ]);
         }
     }

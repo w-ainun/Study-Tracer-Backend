@@ -19,7 +19,14 @@ class LowonganFactory extends Factory
             'lokasi' => fake()->city(),
             'status' => fake()->randomElement(['draft', 'published', 'closed']),
             'approval_status' => fake()->randomElement(['pending', 'approved', 'rejected']),
-            'lowongan_selesai' => fake()->date('Y-m-d'),
+            
+            // Diubah agar tanggal selesai lowongan selalu di masa depan (lebih realistis)
+            'lowongan_selesai' => fake()->dateTimeBetween('now', '+2 months')->format('Y-m-d'),
+            
+            // Kolom waktu baru dari migrasi terakhir
+            'jam_mulai' => '08:00:00',
+            'jam_berakhir' => '17:00:00',
+            
             'id_pekerjaan' => null,
             'foto_lowongan' => null,
             'id_perusahaan' => Perusahaan::factory(),
