@@ -25,8 +25,8 @@ class Kuesioner extends Model
     protected function casts(): array
     {
         return [
-            'tanggal_mulai' => 'date',
-            'tanggal_selesai' => 'date',
+            'tanggal_mulai' => 'datetime',
+            'tanggal_selesai' => 'datetime',
             'tanggal_publikasi' => 'date',
         ];
     }

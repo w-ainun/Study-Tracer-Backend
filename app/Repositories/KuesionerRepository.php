@@ -10,9 +10,7 @@ use App\Models\Jawaban;
 
 class KuesionerRepository implements KuesionerRepositoryInterface
 {
-    /**
-     * Get all kuesioner with filters (admin view)
-     */
+
     public function getAll(array $filters = [], int $perPage = 15)
     {
         $query = Kuesioner::with(['statusKarir'])
@@ -30,7 +28,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             });
         }
 
-        // Filter by kuesioner status (hidden/aktif/draft)
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
@@ -87,9 +84,71 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function update(int $id, array $data)
     {
+        // Extract questions if present
+        $questions = $data['questions'] ?? [];
+        unset($data['questions']);
+        
         $kuesioner = Kuesioner::findOrFail($id);
         $kuesioner->update($data);
-        return $kuesioner->fresh()->load('statusKarir');
+        
+        // Update pertanyaan and opsi jawaban if questions provided
+        if (!empty($questions)) {
+            // Get existing pertanyaan IDs
+            $existingPertanyaanIds = $kuesioner->pertanyaan->pluck('id_pertanyaan')->toArray();
+            $updatedPertanyaanIds = [];
+            
+            foreach ($questions as $questionData) {
+                if (isset($questionData['id']) && in_array($questionData['id'], $existingPertanyaanIds)) {
+                    // Update existing pertanyaan
+                    $pertanyaan = Pertanyaan::find($questionData['id']);
+                    $pertanyaan->update([
+                        'isi_pertanyaan' => $questionData['text'],
+                    ]);
+                    
+                    $updatedPertanyaanIds[] = $questionData['id'];
+                    
+                    // Update opsi jawaban
+                    if (!empty($questionData['options'])) {
+                        // Delete existing opsi
+                        OpsiJawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)->delete();
+                        
+                        // Create new opsi
+                        foreach ($questionData['options'] as $opsi) {
+                            OpsiJawaban::create([
+                                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                                'opsi' => $opsi,
+                            ]);
+                        }
+                    }
+                } else {
+                    // Create new pertanyaan
+                    $pertanyaan = Pertanyaan::create([
+                        'id_kuesioner' => $kuesioner->id_kuesioner,
+                        'isi_pertanyaan' => $questionData['text'],
+                    ]);
+                    
+                    $updatedPertanyaanIds[] = $pertanyaan->id_pertanyaan;
+                    
+                    // Create opsi jawaban
+                    if (!empty($questionData['options'])) {
+                        foreach ($questionData['options'] as $opsi) {
+                            OpsiJawaban::create([
+                                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                                'opsi' => $opsi,
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Delete pertanyaan that are no longer in the update
+            $pertanyaanToDelete = array_diff($existingPertanyaanIds, $updatedPertanyaanIds);
+            if (!empty($pertanyaanToDelete)) {
+                Pertanyaan::whereIn('id_pertanyaan', $pertanyaanToDelete)->delete();
+            }
+        }
+        
+        return $kuesioner->fresh()->load('statusKarir', 'pertanyaan.opsiJawaban');
     }
 
     /**
@@ -128,6 +187,34 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function addPertanyaan(int $kuesionerId, array $data)
     {
         // Validate kuesioner exists
+        Kuesioner::findOrFail($kuesionerId);
+
+        $pertanyaan = Pertanyaan::create([
+            'id_kuesioner' => $kuesionerId,
+            'isi_pertanyaan' => $data['isi_pertanyaan'],
+        ]);
+
+        if (!empty($data['opsi'])) {
+            foreach ($data['opsi'] as $opsi) {
+                OpsiJawaban::create([
+                    'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                    'opsi' => $opsi,
+                ]);
+            }
+        }
+
+        return $pertanyaan->load(['opsiJawaban', 'kuesioner']);
+    }
+
+    /**
+     * Store pertanyaan directly (used for direct creation)
+     */
+    public function storePertanyaan(array $data)
+    {
+        // id_kuesioner harus ada di data
+        $kuesionerId = $data['id_kuesioner'];
+        
+        // Validasi kuesioner exists
         Kuesioner::findOrFail($kuesionerId);
 
         $pertanyaan = Pertanyaan::create([
@@ -223,9 +310,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return $created;
     }
 
-    /**
-     * Get published (aktif) kuesioner for alumni
-     */
     public function getPublished(int $perPage = 15)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
@@ -243,9 +327,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             ->paginate($perPage);
     }
 
-    /**
-     * Get published kuesioner by status (e.g., kuesioner for "Bekerja")
-     */
     public function getPublishedByStatus(int $statusId)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
@@ -263,23 +344,12 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             ->first();
     }
 
-    /**
-     * Get kuesioner with full pertanyaan tree
-     */
     public function getKuesionerWithPertanyaan(int $kuesionerId)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
             ->findOrFail($kuesionerId);
     }
 
-    // ═══════════════════════════════════════════════
-    //  ADMIN JAWABAN
-    // ═══════════════════════════════════════════════
-
-    /**
-     * Get list of alumni who answered a kuesioner
-     * Optimized: single query with grouping instead of N+1 per-user loop
-     */
     public function getAlumniJawaban(int $kuesionerId, array $filters = [])
     {
         $kuesioner = Kuesioner::findOrFail($kuesionerId);
@@ -331,7 +401,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return [
             'kuesioner' => [
                 'id' => $kuesioner->id_kuesioner,
-                'judul' => $kuesioner->judul_kuesioner,
+                'judul' => $kuesioner->title,
                 'total_pertanyaan' => $pertanyaanIds->count(),
             ],
             'total_responden' => count($result),
@@ -346,30 +416,79 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     {
         $kuesioner = Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])->findOrFail($kuesionerId);
 
-        $pertanyaanIds = $kuesioner->pertanyaan()->pluck('pertanyaan.id_pertanyaan');
+        // Get user with complete alumni data
+        $user = \App\Models\User::with(['alumni.jurusan'])->findOrFail($alumniId);
 
-        $jawaban = Jawaban::where('id_user', $alumniId)
+        // Get all jawaban from this user for this kuesioner
+        $pertanyaanIds = $kuesioner->pertanyaan->pluck('id_pertanyaan');
+        
+        $jawabanCollection = Jawaban::where('id_user', $alumniId)
             ->whereIn('id_pertanyaan', $pertanyaanIds)
             ->with(['pertanyaan.opsiJawaban', 'opsiJawaban'])
-            ->get();
+            ->get()
+            ->keyBy('id_pertanyaan');
 
-        $user = \App\Models\User::with('alumni.jurusan')->find($alumniId);
+        // Build structured response with all pertanyaan and their jawaban
+        $pertanyaanWithJawaban = [];
+        foreach ($kuesioner->pertanyaan as $pertanyaan) {
+            $jawaban = $jawabanCollection->get($pertanyaan->id_pertanyaan);
+            
+            $pertanyaanWithJawaban[] = [
+                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                'isi_pertanyaan' => $pertanyaan->isi_pertanyaan,
+                'opsi_jawaban' => $pertanyaan->opsiJawaban->map(function ($opsi) {
+                    return [
+                        'id_opsi' => $opsi->id_opsi,
+                        'opsi' => $opsi->opsi,
+                    ];
+                }),
+                'jawaban' => $jawaban ? [
+                    'id_jawaban' => $jawaban->id_jawaban,
+                    'jawaban_text' => $jawaban->jawaban, // For essay/text questions
+                    'opsi_dipilih' => $jawaban->opsiJawaban ? [
+                        'id_opsi' => $jawaban->opsiJawaban->id_opsi,
+                        'opsi' => $jawaban->opsiJawaban->opsi,
+                    ] : null,
+                    'created_at' => $jawaban->created_at,
+                    'status' => $jawaban->status,
+                ] : null,
+            ];
+        }
 
         return [
             'alumni' => [
-                'id' => $user?->id_users,
-                'nama' => $user?->alumni?->nama_alumni,
-                'nis' => $user?->alumni?->nis ?? null,
-                'nisn' => $user?->alumni?->nisn ?? null,
-                'jurusan' => $user?->alumni?->jurusan?->nama_jurusan ?? null,
-                'tahun_lulus' => $user?->alumni?->tahun_lulus,
+                'id' => $user->id_users,
+                'nama' => $user->alumni?->nama_alumni,
+                'nis' => $user->alumni?->nis ?? null,
+                'nisn' => $user->alumni?->nisn ?? null,
+                'email' => $user->email,
+                'foto' => $user->alumni?->foto,
+                'no_hp' => $user->alumni?->no_hp,
+                'alamat' => $user->alumni?->alamat,
+                'jenis_kelamin' => $user->alumni?->jenis_kelamin,
+                'tempat_lahir' => $user->alumni?->tempat_lahir,
+                'tanggal_lahir' => $user->alumni?->tanggal_lahir,
+                'jurusan' => $user->alumni?->jurusan?->nama_jurusan ?? null,
+                'tahun_masuk' => $user->alumni?->tahun_masuk,
+                'tahun_lulus' => $user->alumni?->tahun_lulus,
             ],
             'kuesioner' => [
                 'id' => $kuesioner->id_kuesioner,
-                'judul' => $kuesioner->judul_kuesioner,
-                'status_nama' => $kuesioner->status?->nama_status,
+                'judul' => $kuesioner->title,
+                'deskripsi' => $kuesioner->deskripsi,
+                'status_karir' => $kuesioner->statusKarir?->nama_status ?? null,
+                'total_pertanyaan' => $kuesioner->pertanyaan->count(),
+                'tanggal_publikasi' => $kuesioner->tanggal_publikasi,
             ],
-            'jawaban' => $jawaban,
+            'pertanyaan' => $pertanyaanWithJawaban,
+            'statistik' => [
+                'total_pertanyaan' => count($pertanyaanWithJawaban),
+                'terjawab' => $jawabanCollection->count(),
+                'belum_dijawab' => count($pertanyaanWithJawaban) - $jawabanCollection->count(),
+                'persentase_selesai' => count($pertanyaanWithJawaban) > 0 
+                    ? round(($jawabanCollection->count() / count($pertanyaanWithJawaban)) * 100, 2) 
+                    : 0,
+            ],
         ];
     }
 

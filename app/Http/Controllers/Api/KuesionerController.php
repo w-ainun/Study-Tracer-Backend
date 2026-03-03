@@ -10,7 +10,6 @@ use App\Http\Requests\UpdatePertanyaanRequest;
 use App\Http\Requests\UpdateKuesionerRequest;
 use App\Http\Requests\UpdateKuesionerStatusRequest;
 use App\Http\Resources\KuesionerResource;
-use App\Http\Resources\JawabanKuesionerResource;
 use App\Http\Resources\PertanyaanResource;
 use App\Services\KuesionerService;
 use App\Traits\ApiResponse;
@@ -256,15 +255,9 @@ class KuesionerController extends Controller
     {
         try {
             $data = $this->kuesionerService->getAlumniJawabanDetail($kuesionerId, $alumniId);
-
-            // Transform jawaban using resource
-            if (isset($data['jawaban'])) {
-                $data['jawaban'] = JawabanKuesionerResource::collection($data['jawaban']);
-            }
-
-            return $this->successResponse($data);
+            return $this->successResponse($data, 'Detail jawaban berhasil diambil');
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal mengambil detail jawaban: ' . $e->getMessage());
+            return $this->errorResponse('Gagal mengambil detail jawaban: ' . $e->getMessage(), 404);
         }
     }
 }
