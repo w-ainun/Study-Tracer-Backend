@@ -10,9 +10,7 @@ use App\Models\Jawaban;
 
 class KuesionerRepository implements KuesionerRepositoryInterface
 {
-    /**
-     * Get all kuesioner with filters (admin view)
-     */
+
     public function getAll(array $filters = [], int $perPage = 15)
     {
         $query = Kuesioner::with(['statusKarir'])
@@ -30,7 +28,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             });
         }
 
-        // Filter by kuesioner status (hidden/aktif/draft)
         if (!empty($filters['status'])) {
             $query->where('status', $filters['status']);
         }
@@ -87,9 +84,71 @@ class KuesionerRepository implements KuesionerRepositoryInterface
      */
     public function update(int $id, array $data)
     {
+        // Extract questions if present
+        $questions = $data['questions'] ?? [];
+        unset($data['questions']);
+        
         $kuesioner = Kuesioner::findOrFail($id);
         $kuesioner->update($data);
-        return $kuesioner->fresh()->load('statusKarir');
+        
+        // Update pertanyaan and opsi jawaban if questions provided
+        if (!empty($questions)) {
+            // Get existing pertanyaan IDs
+            $existingPertanyaanIds = $kuesioner->pertanyaan->pluck('id_pertanyaan')->toArray();
+            $updatedPertanyaanIds = [];
+            
+            foreach ($questions as $questionData) {
+                if (isset($questionData['id']) && in_array($questionData['id'], $existingPertanyaanIds)) {
+                    // Update existing pertanyaan
+                    $pertanyaan = Pertanyaan::find($questionData['id']);
+                    $pertanyaan->update([
+                        'isi_pertanyaan' => $questionData['text'],
+                    ]);
+                    
+                    $updatedPertanyaanIds[] = $questionData['id'];
+                    
+                    // Update opsi jawaban
+                    if (!empty($questionData['options'])) {
+                        // Delete existing opsi
+                        OpsiJawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)->delete();
+                        
+                        // Create new opsi
+                        foreach ($questionData['options'] as $opsi) {
+                            OpsiJawaban::create([
+                                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                                'opsi' => $opsi,
+                            ]);
+                        }
+                    }
+                } else {
+                    // Create new pertanyaan
+                    $pertanyaan = Pertanyaan::create([
+                        'id_kuesioner' => $kuesioner->id_kuesioner,
+                        'isi_pertanyaan' => $questionData['text'],
+                    ]);
+                    
+                    $updatedPertanyaanIds[] = $pertanyaan->id_pertanyaan;
+                    
+                    // Create opsi jawaban
+                    if (!empty($questionData['options'])) {
+                        foreach ($questionData['options'] as $opsi) {
+                            OpsiJawaban::create([
+                                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                                'opsi' => $opsi,
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // Delete pertanyaan that are no longer in the update
+            $pertanyaanToDelete = array_diff($existingPertanyaanIds, $updatedPertanyaanIds);
+            if (!empty($pertanyaanToDelete)) {
+                Pertanyaan::whereIn('id_pertanyaan', $pertanyaanToDelete)->delete();
+            }
+        }
+        
+        return $kuesioner->fresh()->load('statusKarir', 'pertanyaan.opsiJawaban');
     }
 
     /**
@@ -128,6 +187,34 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function addPertanyaan(int $kuesionerId, array $data)
     {
         // Validate kuesioner exists
+        Kuesioner::findOrFail($kuesionerId);
+
+        $pertanyaan = Pertanyaan::create([
+            'id_kuesioner' => $kuesionerId,
+            'isi_pertanyaan' => $data['isi_pertanyaan'],
+        ]);
+
+        if (!empty($data['opsi'])) {
+            foreach ($data['opsi'] as $opsi) {
+                OpsiJawaban::create([
+                    'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                    'opsi' => $opsi,
+                ]);
+            }
+        }
+
+        return $pertanyaan->load(['opsiJawaban', 'kuesioner']);
+    }
+
+    /**
+     * Store pertanyaan directly (used for direct creation)
+     */
+    public function storePertanyaan(array $data)
+    {
+        // id_kuesioner harus ada di data
+        $kuesionerId = $data['id_kuesioner'];
+        
+        // Validasi kuesioner exists
         Kuesioner::findOrFail($kuesionerId);
 
         $pertanyaan = Pertanyaan::create([
@@ -223,9 +310,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         return $created;
     }
 
-    /**
-     * Get published (aktif) kuesioner for alumni
-     */
     public function getPublished(int $perPage = 15)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
@@ -243,9 +327,6 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             ->paginate($perPage);
     }
 
-    /**
-     * Get published kuesioner by status (e.g., kuesioner for "Bekerja")
-     */
     public function getPublishedByStatus(int $statusId)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
@@ -263,23 +344,12 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             ->first();
     }
 
-    /**
-     * Get kuesioner with full pertanyaan tree
-     */
     public function getKuesionerWithPertanyaan(int $kuesionerId)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
             ->findOrFail($kuesionerId);
     }
 
-    // ═══════════════════════════════════════════════
-    //  ADMIN JAWABAN
-    // ═══════════════════════════════════════════════
-
-    /**
-     * Get list of alumni who answered a kuesioner
-     * Optimized: single query with grouping instead of N+1 per-user loop
-     */
     public function getAlumniJawaban(int $kuesionerId, array $filters = [])
     {
         $kuesioner = Kuesioner::findOrFail($kuesionerId);
