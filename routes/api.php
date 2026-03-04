@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\StatusKarierController;
 use App\Http\Controllers\Api\Alumni\BerandaController;
 use App\Http\Controllers\Api\Alumni\LowonganController as AlumniLowonganController;
+use App\Http\Controllers\Api\Alumni\AlumniDirectoryController;
 
 // ╔══════════════════════════════════════════════════════╗
 // ║                  PUBLIC ROUTES                       ║
@@ -75,6 +76,10 @@ Route::middleware('auth:sanctum')->group(function () {
             // Saved lowongan
             Route::get('/saved-lowongan', [AlumniLowonganController::class, 'saved']);
             Route::post('/lowongan/{id}/toggle-save', [AlumniLowonganController::class, 'toggleSave']);
+
+            // Alumni directory (Direktori Alumni)
+            Route::get('/directory', [AlumniDirectoryController::class, 'index']);
+            Route::get('/directory/filters', [AlumniDirectoryController::class, 'filterOptions']);
         });
     });
 

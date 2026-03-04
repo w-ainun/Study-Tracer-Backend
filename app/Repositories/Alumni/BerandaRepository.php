@@ -58,7 +58,7 @@ class BerandaRepository implements BerandaRepositoryInterface
     {
         return Lowongan::with(['perusahaan.kota.provinsi', 'skills'])
             ->where('approval_status', 'approved')
-            ->where('status', 'open')
+            ->where('status', 'published')
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get();

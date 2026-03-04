@@ -16,7 +16,7 @@ class LowonganAlumniRepository implements LowonganAlumniRepositoryInterface
     {
         $query = Lowongan::with(['perusahaan.kota.provinsi', 'pekerjaan', 'skills'])
             ->where('approval_status', 'approved')
-            ->where('status', 'open');
+            ->where('status', 'published');
 
         // Search filter
         if (!empty($filters['search'])) {
