@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\KuesionerController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\StatusKarierController;
 use App\Http\Controllers\Api\Alumni\BerandaController;
+use App\Http\Controllers\Api\Alumni\LowonganController as AlumniLowonganController;
 
 // ╔══════════════════════════════════════════════════════╗
 // ║                  PUBLIC ROUTES                       ║
@@ -68,11 +69,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // ── Restricted routes (verified alumni only) ──
         Route::middleware('alumni.verified')->group(function () {
             // Lowongan for alumni (sorted by skill match)
-            Route::get('/lowongan', [LowonganController::class, 'publishedForAlumni']);
+            Route::get('/lowongan', [AlumniLowonganController::class, 'index']);
+            Route::get('/lowongan/{id}', [AlumniLowonganController::class, 'show']);
 
             // Saved lowongan
-            Route::get('/saved-lowongan', [LowonganController::class, 'savedByUser']);
-            Route::post('/lowongan/{id}/toggle-save', [LowonganController::class, 'toggleSave']);
+            Route::get('/saved-lowongan', [AlumniLowonganController::class, 'saved']);
+            Route::post('/lowongan/{id}/toggle-save', [AlumniLowonganController::class, 'toggleSave']);
         });
     });
 
