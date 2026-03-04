@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\StatusKarierController;
 use App\Http\Controllers\Api\Alumni\BerandaController;
 use App\Http\Controllers\Api\Alumni\LowonganController as AlumniLowonganController;
 use App\Http\Controllers\Api\Alumni\AlumniDirectoryController;
+use App\Http\Controllers\Api\Alumni\ProfileController;
 
 // ╔══════════════════════════════════════════════════════╗
 // ║                  PUBLIC ROUTES                       ║
@@ -56,9 +57,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── Alumni Routes ────────────────────────────────────
     Route::middleware('role:alumni')->prefix('alumni')->group(function () {
         // Always accessible (even if not verified)
-        Route::get('/profile', [AlumniController::class, 'profile']);
-        Route::put('/profile', [AlumniController::class, 'updateProfile']);
-        Route::post('/career-status', [AlumniController::class, 'updateCareerStatus']);
+        Route::get('/profile', [ProfileController::class, 'show']);
+        Route::put('/profile', [ProfileController::class, 'update']);
+        Route::post('/career-status', [ProfileController::class, 'updateCareerStatus']);
         Route::get('/beranda', [BerandaController::class, 'index']);
         Route::get('/status-pengajuan', [BerandaController::class, 'statusPengajuan']);
 

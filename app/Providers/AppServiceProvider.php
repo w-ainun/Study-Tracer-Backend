@@ -15,6 +15,7 @@ use App\Interfaces\StatusKarierRepositoryInterface;
 use App\Interfaces\Alumni\BerandaRepositoryInterface;
 use App\Interfaces\Alumni\LowonganAlumniRepositoryInterface;
 use App\Interfaces\Alumni\AlumniDirectoryRepositoryInterface;
+use App\Interfaces\Alumni\ProfileRepositoryInterface;
 
 use App\Repositories\AuthRepository;
 use App\Repositories\AlumniRepository;
@@ -26,6 +27,7 @@ use App\Repositories\StatusKarierRepository;
 use App\Repositories\Alumni\BerandaRepository;
 use App\Repositories\Alumni\LowonganAlumniRepository;
 use App\Repositories\Alumni\AlumniDirectoryRepository;
+use App\Repositories\Alumni\ProfileRepository;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(BerandaRepositoryInterface::class, BerandaRepository::class);
         $this->app->bind(LowonganAlumniRepositoryInterface::class, LowonganAlumniRepository::class);
         $this->app->bind(AlumniDirectoryRepositoryInterface::class, AlumniDirectoryRepository::class);
+        $this->app->bind(ProfileRepositoryInterface::class, ProfileRepository::class);
     }
 
     /**
