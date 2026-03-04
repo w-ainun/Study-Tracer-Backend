@@ -32,4 +32,7 @@ interface KuesionerRepositoryInterface
 
     // Status management
     public function updateKuesionerStatus(int $kuesionerId, string $status);
+
+    // Statistics
+    public function getStatistics(int $kuesionerId);
 }

@@ -94,4 +94,9 @@ class KuesionerService
         return $this->kuesionerRepository->updateKuesionerStatus($kuesionerId, $status);
     }
 
+    public function getStatistics(int $kuesionerId)
+    {
+        return $this->kuesionerRepository->getStatistics($kuesionerId);
+    }
+
 }

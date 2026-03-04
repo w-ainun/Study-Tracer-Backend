@@ -260,4 +260,21 @@ class KuesionerController extends Controller
             return $this->errorResponse('Gagal mengambil detail jawaban: ' . $e->getMessage(), 404);
         }
     }
+
+    // ═══════════════════════════════════════════════
+    //  STATISTICS
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Get statistics for questionnaire responses (admin)
+     */
+    public function statistics(int $kuesionerId)
+    {
+        try {
+            $data = $this->kuesionerService->getStatistics($kuesionerId);
+            return $this->successResponse($data, 'Statistik kuesioner berhasil diambil');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil statistik kuesioner: ' . $e->getMessage(), 404);
+        }
+    }
 }
