@@ -536,4 +536,68 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         $kuesioner->update(['status' => $status]);
         return $kuesioner->fresh()->load('statusKarir');
     }
+
+    /**
+     * Get statistics for questionnaire responses
+     */
+    public function getStatistics(int $kuesionerId)
+    {
+        $kuesioner = Kuesioner::with(['statusKarir'])->findOrFail($kuesionerId);
+
+        // Get all pertanyaan with opsi jawaban
+        $pertanyaans = Pertanyaan::with('opsiJawaban')
+            ->where('id_kuesioner', $kuesionerId)
+            ->get();
+
+        // Get total unique respondents (alumni) for this kuesioner
+        $totalResponden = Jawaban::whereIn('id_pertanyaan', $pertanyaans->pluck('id_pertanyaan'))
+            ->distinct('id_user')
+            ->count('id_user');
+
+        // Build statistics for each question
+        $statistics = [];
+        foreach ($pertanyaans as $index => $pertanyaan) {
+            $opsiStatistics = [];
+            
+            foreach ($pertanyaan->opsiJawaban as $opsi) {
+                // Count how many times this option was selected
+                $count = Jawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)
+                    ->where('id_opsiJawaban', $opsi->id_opsi)
+                    ->count();
+
+                $opsiStatistics[] = [
+                    'opsi' => $opsi->opsi,
+                    'count' => $count,
+                    'percentage' => $totalResponden > 0 ? round(($count / $totalResponden) * 100, 2) : 0,
+                ];
+            }
+
+            // Count text answers (if no opsi selected)
+            $textAnswerCount = Jawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)
+                ->whereNull('id_opsiJawaban')
+                ->count();
+
+            $statistics[] = [
+                'pertanyaan_number' => $index + 1,
+                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                'isi_pertanyaan' => $pertanyaan->isi_pertanyaan,
+                'opsi_statistics' => $opsiStatistics,
+                'text_answer_count' => $textAnswerCount,
+                'total_answers' => array_sum(array_column($opsiStatistics, 'count')) + $textAnswerCount,
+            ];
+        }
+
+        return [
+            'kuesioner' => [
+                'id_kuesioner' => $kuesioner->id_kuesioner,
+                'title' => $kuesioner->title,
+                'deskripsi' => $kuesioner->deskripsi,
+                'status' => $kuesioner->status,
+                'status_karir' => $kuesioner->statusKarir ? $kuesioner->statusKarir->nama_status : null,
+            ],
+            'total_responden' => $totalResponden,
+            'total_pertanyaan' => count($statistics),
+            'statistics' => $statistics,
+        ];
+    }
 }

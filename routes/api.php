@@ -115,6 +115,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/kuesioner/{id}', [KuesionerController::class, 'update']);
         Route::delete('/kuesioner/{id}', [KuesionerController::class, 'destroy']);
         Route::patch('/kuesioner/{id}/status', [KuesionerController::class, 'updateStatus']);
+        
+        // Kuesioner Statistics
+        Route::get('/kuesioner/{id}/statistics', [KuesionerController::class, 'statistics']);
 
         // Pertanyaan Management
         Route::get('/pertanyaan', [KuesionerController::class, 'getAllPertanyaan']);
