@@ -12,9 +12,9 @@ class BerandaAlumniCardResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $latestRiwayat = $this->whenLoaded('riwayatStatus', function () {
-            return $this->riwayatStatus->first();
-        });
+        $latestRiwayat = $this->relationLoaded('riwayatStatus')
+            ? $this->riwayatStatus->first()
+            : null;
 
         // Determine tag from status name (Bekerja, Kuliah, Wirausaha, or Mencari)
         $tags = $latestRiwayat?->status?->nama_status ?? 'Mencari';
