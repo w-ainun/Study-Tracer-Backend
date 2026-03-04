@@ -12,11 +12,21 @@ class JawabanSeeder extends Seeder
 {
     public function run(): void
     {
-        $pertanyaans = Pertanyaan::with('opsiJawaban')->get();
+        $pertanyaans = Pertanyaan::with('opsiJawaban', 'kuesioner')->get();
         $alumniUsers = User::where('role', 'alumni')->pluck('id_users')->toArray();
 
         if ($pertanyaans->isEmpty() || empty($alumniUsers)) {
             $this->command->warn('Pertanyaan or Alumni users not found. Run KuesionerSeeder and UserSeeder first.');
+            return;
+        }
+
+        // Filter questions from active questionnaires only
+        $activePertanyaans = $pertanyaans->filter(function($pertanyaan) {
+            return $pertanyaan->kuesioner && $pertanyaan->kuesioner->status === 'aktif';
+        });
+
+        if ($activePertanyaans->isEmpty()) {
+            $this->command->warn('No active questionnaires found. Please publish some questionnaires first.');
             return;
         }
 
@@ -27,10 +37,8 @@ class JawabanSeeder extends Seeder
         );
 
         foreach ($selectedUsers as $userId) {
-            // Each alumni answers all published questions
-            $publishedPertanyaans = $pertanyaans->where('status_pertanyaan', 'publish');
-
-            foreach ($publishedPertanyaans as $pertanyaan) {
+            // Each alumni answers all questions from active questionnaires
+            foreach ($activePertanyaans as $pertanyaan) {
                 $opsiJawabans = $pertanyaan->opsiJawaban;
                 $hasOpsi = $opsiJawabans->isNotEmpty();
 
@@ -53,9 +61,8 @@ class JawabanSeeder extends Seeder
 
         foreach ($incompleteUsers as $userId) {
             // Answer only some questions partially
-            $publishedPertanyaans = $pertanyaans->where('status_pertanyaan', 'publish');
-            $partial = $publishedPertanyaans->random(
-                min(fake()->numberBetween(1, 3), $publishedPertanyaans->count())
+            $partial = $activePertanyaans->random(
+                min(fake()->numberBetween(1, 5), $activePertanyaans->count())
             );
 
             foreach ($partial as $pertanyaan) {

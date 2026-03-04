@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
         ]);
 
         Admin::create([
-            'nama_admin' => 'Administrator',
+            'nama_admin' => 'Danendra Mahardhika',
             'id_users' => $adminUser->id_users,
         ]);
 
