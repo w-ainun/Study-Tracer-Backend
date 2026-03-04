@@ -168,7 +168,7 @@ class AdminRepository implements AdminRepositoryInterface
                   ->orWhere('nis', 'like', "%{$search}%")
                   ->orWhere('nisn', 'like', "%{$search}%")
                   ->orWhereHas('user', function ($uq) use ($search) {
-                      $uq->where('email', 'like', "%{$search}%");
+                     $uq->where('email_users', 'like', "%{$search}%");
                   });
             });
         }
