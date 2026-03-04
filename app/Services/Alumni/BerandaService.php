@@ -15,9 +15,13 @@ class BerandaService
 
     /**
      * Get full beranda/dashboard data for alumni.
-     * Sections restricted by verification status:
-     * - Always available: profile, status_pengajuan, kuesioner_pending
-     * - Verified only: alumni_terbaru, lowongan_terbaru, top_perusahaan
+     *
+     * Access control rules:
+     * - Profile, status_pengajuan, kuesioner_pending → ALWAYS accessible
+     * - alumni_terbaru, lowongan_terbaru, top_perusahaan → visible but LOCKED
+     *   until: admin accepted (status_create=ok) AND kuesioner completed
+     *
+     * Kuesioner is filtered by the alumni's current career status (id_status).
      */
     public function getBerandaData(int $userId): array
     {
@@ -28,26 +32,35 @@ class BerandaService
         }
 
         $isVerified = $alumni->status_create === 'ok';
+        $currentStatusId = $this->berandaRepository->getCurrentStatusId($userId);
+        $hasCompletedKuesioner = $this->berandaRepository->hasCompletedKuesioner($userId, $currentStatusId);
+        $canAccessAll = $isVerified && $hasCompletedKuesioner;
 
-        $data = [
+        return [
             'profile' => $alumni,
             'is_verified' => $isVerified,
+            'has_completed_kuesioner' => $hasCompletedKuesioner,
+            'can_access_all' => $canAccessAll,
+            'current_status_id' => $currentStatusId,
             'status_pengajuan' => $this->buildStatusPengajuan($alumni),
-            'kuesioner_pending' => $this->berandaRepository->getPendingKuesioner($userId),
+
+            // Kuesioner: filtered by current career status, always accessible
+            'kuesioner_pending' => $this->berandaRepository->getPendingKuesioner($userId, $currentStatusId),
+
+            // Restricted sections: always returned (visible) but with locked flag
+            'alumni_terbaru' => [
+                'locked' => !$canAccessAll,
+                'data' => $this->berandaRepository->getRecentVerifiedAlumni(8),
+            ],
+            'lowongan_terbaru' => [
+                'locked' => !$canAccessAll,
+                'data' => $this->berandaRepository->getLatestPublishedLowongan(6),
+            ],
+            'top_perusahaan' => [
+                'locked' => !$canAccessAll,
+                'data' => $this->berandaRepository->getTopPerusahaan(5),
+            ],
         ];
-
-        // Restricted sections — only available when alumni is verified
-        if ($isVerified) {
-            $data['alumni_terbaru'] = $this->berandaRepository->getRecentVerifiedAlumni(8);
-            $data['lowongan_terbaru'] = $this->berandaRepository->getLatestPublishedLowongan(6);
-            $data['top_perusahaan'] = $this->berandaRepository->getTopPerusahaan(5);
-        } else {
-            $data['alumni_terbaru'] = [];
-            $data['lowongan_terbaru'] = [];
-            $data['top_perusahaan'] = [];
-        }
-
-        return $data;
     }
 
     /**
@@ -74,7 +87,6 @@ class BerandaService
         $createdAt = $alumni->created_at;
         $updatedAt = $alumni->updated_at;
 
-        // Step definitions
         $steps = [];
 
         // Step 1: Pendaftaran Dikirim — always completed once registered
@@ -91,7 +103,7 @@ class BerandaService
                 'title' => 'Verifikasi Sedang Berlangsung',
                 'status' => 'current',
                 'date' => null,
-                'description' => 'Tim admin kami sedang memvalidasi tahun kelulusan dan Nomor Induk Mahasiswa Anda dengan data universitas.',
+                'description' => 'Tim admin kami sedang memvalidasi tahun kelulusan dan Nomor Induk Siswa Anda dengan data sekolah.',
             ];
         } elseif ($status === 'rejected') {
             $steps[] = [

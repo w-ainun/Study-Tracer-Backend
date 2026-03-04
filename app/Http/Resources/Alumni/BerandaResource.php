@@ -2,8 +2,6 @@
 
 namespace App\Http\Resources\Alumni;
 
-use App\Http\Resources\BerandaAlumniCardResource;
-use App\Http\Resources\KuesionerResource;
 use App\Http\Resources\LowonganResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -12,6 +10,11 @@ class BerandaResource extends JsonResource
 {
     /**
      * Transform the beranda data into an array.
+     *
+     * Restricted sections (alumni_terbaru, lowongan_terbaru, top_perusahaan)
+     * are always returned with their data so the frontend can show them as
+     * visible-but-locked. A `locked` boolean tells the frontend to disable
+     * interaction when true.
      */
     public function toArray(Request $request): array
     {
@@ -30,18 +33,36 @@ class BerandaResource extends JsonResource
                 'email' => $profile->user?->email_users,
                 'current_status' => $this->buildCurrentStatus($latestRiwayat),
             ],
+
+            // Access control flags
             'is_verified' => $this->resource['is_verified'],
+            'has_completed_kuesioner' => $this->resource['has_completed_kuesioner'],
+            'can_access_all' => $this->resource['can_access_all'],
+            'current_status_id' => $this->resource['current_status_id'],
+
+            // Always accessible sections
             'status_pengajuan' => new StatusPengajuanResource($this->resource['status_pengajuan']),
             'kuesioner_pending' => BerandaKuesionerResource::collection($this->resource['kuesioner_pending']),
-            'alumni_terbaru' => BerandaAlumniCardResource::collection(
-                collect($this->resource['alumni_terbaru'])
-            ),
-            'lowongan_terbaru' => LowonganResource::collection(
-                collect($this->resource['lowongan_terbaru'])
-            ),
-            'top_perusahaan' => BerandaPerusahaanResource::collection(
-                collect($this->resource['top_perusahaan'])
-            ),
+
+            // Restricted sections — data always provided, `locked` flag controls frontend interaction
+            'alumni_terbaru' => [
+                'locked' => $this->resource['alumni_terbaru']['locked'],
+                'data' => BerandaAlumniCardResource::collection(
+                    collect($this->resource['alumni_terbaru']['data'])
+                ),
+            ],
+            'lowongan_terbaru' => [
+                'locked' => $this->resource['lowongan_terbaru']['locked'],
+                'data' => LowonganResource::collection(
+                    collect($this->resource['lowongan_terbaru']['data'])
+                ),
+            ],
+            'top_perusahaan' => [
+                'locked' => $this->resource['top_perusahaan']['locked'],
+                'data' => BerandaPerusahaanResource::collection(
+                    collect($this->resource['top_perusahaan']['data'])
+                ),
+            ],
         ];
     }
 
