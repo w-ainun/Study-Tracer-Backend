@@ -7,6 +7,7 @@ use App\Models\Alumni;
 use App\Models\Kuesioner;
 use App\Models\Lowongan;
 use App\Models\Perusahaan;
+use App\Models\RiwayatStatus;
 
 class BerandaRepository implements BerandaRepositoryInterface
 {
@@ -81,23 +82,30 @@ class BerandaRepository implements BerandaRepositoryInterface
     }
 
     /**
-     * Get pending kuesioner for alumni based on their status.
-     * Returns active kuesioner that the alumni has NOT fully completed yet.
+     * Get pending kuesioner for alumni filtered by current career status.
+     * Only returns active kuesioner matching the alumni's status that have NOT been fully answered.
      */
-    public function getPendingKuesioner(int $userId)
+    public function getPendingKuesioner(int $userId, ?int $statusId = null)
     {
-        return Kuesioner::with('statusKarir')
+        $query = Kuesioner::with('statusKarir')
             ->withCount('pertanyaan')
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_publikasi')
-            ->where(function ($query) {
-                $query->whereNull('tanggal_mulai')
+            ->where(function ($q) {
+                $q->whereNull('tanggal_mulai')
                     ->orWhere('tanggal_mulai', '<=', now());
             })
-            ->where(function ($query) {
-                $query->whereNull('tanggal_selesai')
+            ->where(function ($q) {
+                $q->whereNull('tanggal_selesai')
                     ->orWhere('tanggal_selesai', '>=', now());
-            })
+            });
+
+        // Filter by current career status when provided
+        if ($statusId !== null) {
+            $query->where('id_status', $statusId);
+        }
+
+        return $query
             ->orderByDesc('tanggal_publikasi')
             ->get()
             ->filter(function ($kuesioner) use ($userId) {
@@ -120,5 +128,69 @@ class BerandaRepository implements BerandaRepositoryInterface
         return Alumni::with('user')
             ->where('id_users', $userId)
             ->first();
+    }
+
+    /**
+     * Get the current career status id from the alumni's latest riwayat.
+     */
+    public function getCurrentStatusId(int $userId): ?int
+    {
+        $alumni = Alumni::where('id_users', $userId)->first();
+
+        if (!$alumni) return null;
+
+        $latestRiwayat = RiwayatStatus::where('id_alumni', $alumni->id_alumni)
+            ->latest('id_riwayat')
+            ->first();
+
+        return $latestRiwayat?->id_status;
+    }
+
+    /**
+     * Check whether the alumni has completed all required kuesioner
+     * for their current career status.
+     *
+     * "Completed" means: all active kuesioner for the status have all pertanyaan answered.
+     * If there are no active kuesioner for the status, returns true (nothing to complete).
+     */
+    public function hasCompletedKuesioner(int $userId, ?int $statusId = null): bool
+    {
+        $activeKuesioner = Kuesioner::withCount('pertanyaan')
+            ->where('status', 'aktif')
+            ->whereNotNull('tanggal_publikasi')
+            ->where(function ($q) {
+                $q->whereNull('tanggal_mulai')
+                    ->orWhere('tanggal_mulai', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('tanggal_selesai')
+                    ->orWhere('tanggal_selesai', '>=', now());
+            });
+
+        if ($statusId !== null) {
+            $activeKuesioner->where('id_status', $statusId);
+        }
+
+        $activeKuesioner = $activeKuesioner->get();
+
+        // No active kuesioner for this status → considered complete
+        if ($activeKuesioner->isEmpty()) {
+            return true;
+        }
+
+        // Check each active kuesioner — all pertanyaan must be answered
+        foreach ($activeKuesioner as $kuesioner) {
+            if ($kuesioner->pertanyaan_count === 0) continue;
+
+            $answeredCount = $kuesioner->pertanyaan()
+                ->whereHas('jawaban', fn($q) => $q->where('id_user', $userId))
+                ->count();
+
+            if ($answeredCount < $kuesioner->pertanyaan_count) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
