@@ -109,16 +109,32 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                     
                     // Update opsi jawaban
                     if (!empty($questionData['options'])) {
-                        // Delete existing opsi
-                        OpsiJawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)->delete();
+                        // Get existing opsi
+                        $existingOpsi = OpsiJawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)
+                            ->orderBy('id_opsi')
+                            ->get();
                         
-                        // Create new opsi
-                        foreach ($questionData['options'] as $opsi) {
-                            OpsiJawaban::create([
-                                'id_pertanyaan' => $pertanyaan->id_pertanyaan,
-                                'opsi' => $opsi,
-                            ]);
+                        $updatedOpsiIds = [];
+                        
+                        foreach ($questionData['options'] as $index => $opsiText) {
+                            if (isset($existingOpsi[$index])) {
+                                // Update existing opsi (preserve ID)
+                                $existingOpsi[$index]->update(['opsi' => $opsiText]);
+                                $updatedOpsiIds[] = $existingOpsi[$index]->id_opsi;
+                            } else {
+                                // Create new opsi if more options than before
+                                $newOpsi = OpsiJawaban::create([
+                                    'id_pertanyaan' => $pertanyaan->id_pertanyaan,
+                                    'opsi' => $opsiText,
+                                ]);
+                                $updatedOpsiIds[] = $newOpsi->id_opsi;
+                            }
                         }
+                        
+                        // Delete only opsi that are no longer needed
+                        OpsiJawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)
+                            ->whereNotIn('id_opsi', $updatedOpsiIds)
+                            ->delete();
                     }
                 } else {
                     // Create new pertanyaan
@@ -256,13 +272,32 @@ class KuesionerRepository implements KuesionerRepositoryInterface
 
         // Replace opsi jawaban if provided
         if (isset($data['opsi'])) {
-            OpsiJawaban::where('id_pertanyaan', $pertanyaanId)->delete();
-            foreach ($data['opsi'] as $opsi) {
-                OpsiJawaban::create([
-                    'id_pertanyaan' => $pertanyaanId,
-                    'opsi' => $opsi,
-                ]);
+            // Get existing opsi
+            $existingOpsi = OpsiJawaban::where('id_pertanyaan', $pertanyaanId)
+                ->orderBy('id_opsi')
+                ->get();
+            
+            $updatedOpsiIds = [];
+            
+            foreach ($data['opsi'] as $index => $opsiText) {
+                if (isset($existingOpsi[$index])) {
+                    // Update existing opsi (preserve ID)
+                    $existingOpsi[$index]->update(['opsi' => $opsiText]);
+                    $updatedOpsiIds[] = $existingOpsi[$index]->id_opsi;
+                } else {
+                    // Create new opsi if more options than before
+                    $newOpsi = OpsiJawaban::create([
+                        'id_pertanyaan' => $pertanyaanId,
+                        'opsi' => $opsiText,
+                    ]);
+                    $updatedOpsiIds[] = $newOpsi->id_opsi;
+                }
             }
+            
+            // Delete only opsi that are no longer needed
+            OpsiJawaban::where('id_pertanyaan', $pertanyaanId)
+                ->whereNotIn('id_opsi', $updatedOpsiIds)
+                ->delete();
         }
 
         return $pertanyaan->fresh()->load(['opsiJawaban', 'kuesioner']);
