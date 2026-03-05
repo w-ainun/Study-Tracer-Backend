@@ -107,6 +107,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/lowongan/{id}/approve', [LowonganController::class, 'approve']);
         Route::post('/lowongan/{id}/reject', [LowonganController::class, 'reject']);
         Route::post('/lowongan/{id}/repost', [LowonganController::class, 'repost']);
+        Route::patch('/lowongan/{id}/status', [LowonganController::class, 'updateStatus']);
+        Route::post('/lowongan/auto-close-expired', [LowonganController::class, 'autoCloseExpired']);
 
         // Kuesioner Management
         Route::get('/kuesioner', [KuesionerController::class, 'index']);

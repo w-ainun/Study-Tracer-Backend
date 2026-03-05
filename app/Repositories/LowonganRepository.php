@@ -137,4 +137,17 @@ class LowonganRepository implements LowonganRepositoryInterface
 
         return $query->paginate($perPage);
     }
+
+    /**
+     * Close all expired lowongan (where lowongan_selesai < today and status != 'closed')
+     * Returns the number of lowongan that were closed
+     */
+    public function closeExpiredLowongan(): int
+    {
+        $today = now()->toDateString();
+        
+        return Lowongan::where('lowongan_selesai', '<', $today)
+            ->where('status', '!=', 'closed')
+            ->update(['status' => 'closed']);
+    }
 }

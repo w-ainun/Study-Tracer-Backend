@@ -253,4 +253,44 @@ class LowonganController extends Controller
             return $this->errorResponse('Gagal mengambil data lowongan: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Update status of a specific lowongan
+     * Body: { "status": "closed" | "published" | "draft" }
+     */
+    public function updateStatus(Request $request, int $id)
+    {
+        try {
+            $request->validate([
+                'status' => 'required|in:draft,published,closed'
+            ]);
+
+            $lowongan = $this->lowonganService->updateStatus($id, $request->status);
+            return $this->successResponse(
+                new LowonganResource($lowongan), 
+                "Status lowongan berhasil diubah menjadi {$request->status}"
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $this->errorResponse($e->getMessage(), 400);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengubah status lowongan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Auto-close all expired lowongan (where deadline has passed)
+     * This can be called manually or scheduled via cron
+     */
+    public function autoCloseExpired()
+    {
+        try {
+            $count = $this->lowonganService->autoCloseExpired();
+            return $this->successResponse(
+                ['closed_count' => $count],
+                "Berhasil menutup {$count} lowongan yang sudah expired"
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menutup lowongan expired: ' . $e->getMessage());
+        }
+    }
 }

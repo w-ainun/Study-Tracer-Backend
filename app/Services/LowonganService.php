@@ -107,4 +107,27 @@ class LowonganService
     {
         return $this->lowonganRepository->getPublishedSortedBySkillMatch($alumniSkillIds, $filters, $perPage);
     }
+
+    /**
+     * Update status of a lowongan
+     */
+    public function updateStatus(int $id, string $status)
+    {
+        $validStatuses = ['draft', 'published', 'closed'];
+        
+        if (!in_array($status, $validStatuses)) {
+            throw new \InvalidArgumentException('Status tidak valid. Gunakan: draft, published, atau closed');
+        }
+
+        return $this->lowonganRepository->update($id, ['status' => $status]);
+    }
+
+    /**
+     * Auto-close all expired lowongan (where lowongan_selesai < today)
+     * Returns count of closed lowongan
+     */
+    public function autoCloseExpired(): int
+    {
+        return $this->lowonganRepository->closeExpiredLowongan();
+    }
 }

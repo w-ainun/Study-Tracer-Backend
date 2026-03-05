@@ -15,4 +15,5 @@ interface LowonganRepositoryInterface
     public function toggleSave(int $userId, int $lowonganId): bool;
     public function syncSkills(int $lowonganId, array $skillIds): void;
     public function getPublishedSortedBySkillMatch(array $alumniSkillIds, array $filters = [], int $perPage = 15);
+    public function closeExpiredLowongan(): int;
 }
