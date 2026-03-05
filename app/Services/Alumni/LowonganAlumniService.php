@@ -102,7 +102,9 @@ class LowonganAlumniService
             );
             $data['id_perusahaan'] = $perusahaan->id_perusahaan;
         }
-        unset($data['nama_perusahaan']);
+        
+        // Remove non-lowongan fields before mass assignment
+        unset($data['nama_perusahaan'], $data['id_kota']);
 
         // Extract & remove skills before creating lowongan
         $skillIds = $data['skills'] ?? [];
