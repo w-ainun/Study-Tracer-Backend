@@ -213,21 +213,48 @@ class AdminController extends Controller
                 $alumni = $riwayat->alumni;
                 $changes = [];
 
-                // Build change details
-                $statusName = $riwayat->status?->nama_status ?? '-';
-                $changes[] = ['label' => 'Status Karier', 'old' => '-', 'new' => $statusName];
+                // ── Find the alumni's previous APPROVED riwayat to show "old" values ──
+                $previousRiwayat = null;
+                if ($alumni) {
+                    $previousRiwayat = \App\Models\RiwayatStatus::with([
+                        'status',
+                        'pekerjaan.perusahaan',
+                        'kuliah.universitas',
+                        'kuliah.jurusanKuliah',
+                        'wirausaha.bidangUsaha',
+                    ])
+                        ->where('id_alumni', $alumni->id_alumni)
+                        ->where('approval_status', 'approved')
+                        ->where('id_riwayat', '!=', $riwayat->id_riwayat)
+                        ->orderByDesc('id_riwayat')
+                        ->first();
+                }
+
+                $oldStatus = $previousRiwayat?->status?->nama_status ?? '-';
+                $newStatus = $riwayat->status?->nama_status ?? '-';
+                $changes[] = ['label' => 'Status Karier', 'old' => $oldStatus, 'new' => $newStatus];
+
+                // Old pekerjaan details
+                $oldPosisi = $previousRiwayat?->pekerjaan?->posisi ?? '-';
+                $oldPerusahaan = $previousRiwayat?->pekerjaan?->perusahaan?->nama_perusahaan ?? '-';
+                // Old kuliah details
+                $oldUniversitas = $previousRiwayat?->kuliah?->universitas?->nama_universitas ?? '-';
+                $oldJurusan = $previousRiwayat?->kuliah?->jurusanKuliah?->nama ?? '-';
+                // Old wirausaha details
+                $oldNamaUsaha = $previousRiwayat?->wirausaha?->nama_usaha ?? '-';
+                $oldBidang = $previousRiwayat?->wirausaha?->bidangUsaha?->nama_bidang ?? '-';
 
                 if ($riwayat->pekerjaan) {
-                    $changes[] = ['label' => 'Posisi', 'old' => '-', 'new' => $riwayat->pekerjaan->posisi ?? '-'];
-                    $changes[] = ['label' => 'Perusahaan', 'old' => '-', 'new' => $riwayat->pekerjaan->perusahaan?->nama_perusahaan ?? '-'];
+                    $changes[] = ['label' => 'Posisi', 'old' => $oldPosisi, 'new' => $riwayat->pekerjaan->posisi ?? '-'];
+                    $changes[] = ['label' => 'Perusahaan', 'old' => $oldPerusahaan, 'new' => $riwayat->pekerjaan->perusahaan?->nama_perusahaan ?? '-'];
                 }
                 if ($riwayat->kuliah) {
-                    $changes[] = ['label' => 'Universitas', 'old' => '-', 'new' => $riwayat->kuliah->universitas?->nama_universitas ?? '-'];
-                    $changes[] = ['label' => 'Jurusan', 'old' => '-', 'new' => $riwayat->kuliah->jurusanKuliah?->nama ?? '-'];
+                    $changes[] = ['label' => 'Universitas', 'old' => $oldUniversitas, 'new' => $riwayat->kuliah->universitas?->nama_universitas ?? '-'];
+                    $changes[] = ['label' => 'Jurusan', 'old' => $oldJurusan, 'new' => $riwayat->kuliah->jurusanKuliah?->nama ?? '-'];
                 }
                 if ($riwayat->wirausaha) {
-                    $changes[] = ['label' => 'Nama Usaha', 'old' => '-', 'new' => $riwayat->wirausaha->nama_usaha ?? '-'];
-                    $changes[] = ['label' => 'Bidang', 'old' => '-', 'new' => $riwayat->wirausaha->bidangUsaha?->nama_bidang ?? '-'];
+                    $changes[] = ['label' => 'Nama Usaha', 'old' => $oldNamaUsaha, 'new' => $riwayat->wirausaha->nama_usaha ?? '-'];
+                    $changes[] = ['label' => 'Bidang', 'old' => $oldBidang, 'new' => $riwayat->wirausaha->bidangUsaha?->nama_bidang ?? '-'];
                 }
 
                 return [

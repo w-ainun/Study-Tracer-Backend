@@ -14,6 +14,16 @@ interface AlumniDirectoryRepositoryInterface
     public function getVerifiedAlumni(array $filters = [], int $perPage = 12);
 
     /**
+     * Get a single verified alumni with full relations for public profile view.
+     *
+     * @param int $alumniId
+     * @return \App\Models\Alumni
+     *
+     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     */
+    public function getAlumniPublicProfile(int $alumniId);
+
+    /**
      * Get distinct graduation years from verified alumni for filter options.
      *
      * @return array
