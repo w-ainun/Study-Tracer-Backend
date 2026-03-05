@@ -22,6 +22,14 @@ class AlumniDirectoryService
     }
 
     /**
+     * Get a single alumni's public profile (no sensitive data).
+     */
+    public function getAlumniPublicProfile(int $alumniId)
+    {
+        return $this->directoryRepository->getAlumniPublicProfile($alumniId);
+    }
+
+    /**
      * Get filter options for the directory dropdowns.
      */
     public function getFilterOptions(): array

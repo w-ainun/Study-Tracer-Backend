@@ -83,6 +83,7 @@ Route::middleware('auth:sanctum')->group(function () {
             // Alumni directory (Direktori Alumni)
             Route::get('/directory', [AlumniDirectoryController::class, 'index']);
             Route::get('/directory/filters', [AlumniDirectoryController::class, 'filterOptions']);
+            Route::get('/directory/{id}', [AlumniDirectoryController::class, 'show']);
         });
     });
 

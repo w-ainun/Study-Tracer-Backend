@@ -76,6 +76,26 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
     }
 
     /**
+     * Get a single verified alumni with full relations for public profile view.
+     */
+    public function getAlumniPublicProfile(int $alumniId)
+    {
+        return Alumni::with([
+            'jurusan',
+            'skills',
+            'socialMedia',
+            'riwayatStatus' => fn($q) => $q->where('approval_status', 'approved')->orderByDesc('id_riwayat'),
+            'riwayatStatus.status',
+            'riwayatStatus.pekerjaan.perusahaan.kota.provinsi',
+            'riwayatStatus.kuliah.universitas',
+            'riwayatStatus.kuliah.jurusanKuliah',
+            'riwayatStatus.wirausaha.bidangUsaha',
+        ])
+            ->where('status_create', 'ok')
+            ->findOrFail($alumniId);
+    }
+
+    /**
      * Get distinct graduation years from verified alumni.
      */
     public function getTahunLulusOptions(): array

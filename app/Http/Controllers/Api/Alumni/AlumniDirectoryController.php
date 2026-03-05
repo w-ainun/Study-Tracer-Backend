@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Alumni;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Alumni\AlumniDirectoryResource;
+use App\Http\Resources\Alumni\PublicProfileResource;
 use App\Services\Alumni\AlumniDirectoryService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -58,6 +59,23 @@ class AlumniDirectoryController extends Controller
             return $this->successResponse($options);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil opsi filter: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /alumni/directory/{id}
+     * Public profile of a single alumni — no sensitive data (email, no_hp, alamat, nis, nisn).
+     */
+    public function show(int $id)
+    {
+        try {
+            $alumni = $this->directoryService->getAlumniPublicProfile($id);
+
+            return $this->successResponse(new PublicProfileResource($alumni));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->errorResponse('Alumni tidak ditemukan', 404);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil profil alumni: ' . $e->getMessage());
         }
     }
 }
