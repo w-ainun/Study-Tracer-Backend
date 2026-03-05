@@ -36,9 +36,9 @@ class ProfileResource extends JsonResource
             }
         }
 
-        // Determine current career info from latest riwayat
+        // Determine current career info from latest APPROVED riwayat
         $latestRiwayat = $this->relationLoaded('riwayatStatus')
-            ? $this->riwayatStatus->first()
+            ? $this->riwayatStatus->where('approval_status', 'approved')->first()
             : null;
 
         $currentCareer = null;
@@ -106,7 +106,12 @@ class ProfileResource extends JsonResource
 
             // Career data
             'current_career' => $currentCareer,
-            'riwayat_status' => ProfileRiwayatResource::collection($this->whenLoaded('riwayatStatus')),
+            'riwayat_status' => ProfileRiwayatResource::collection(
+                $this->whenLoaded('riwayatStatus', function () {
+                    // Only show approved riwayat in the list; pending ones are hidden until admin approves
+                    return $this->riwayatStatus->where('approval_status', 'approved')->values();
+                }, collect())
+            ),
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

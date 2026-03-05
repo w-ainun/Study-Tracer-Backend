@@ -24,15 +24,23 @@ class CareerStatusRequest extends FormRequest
             'pekerjaan' => ['nullable', 'array'],
             'pekerjaan.posisi' => ['required_with:pekerjaan', 'string'],
             'pekerjaan.nama_perusahaan' => ['required_with:pekerjaan', 'string'],
-            'pekerjaan.id_kota' => ['required_with:pekerjaan', 'exists:kota,id_kota'],
+            'pekerjaan.id_kota' => ['nullable', 'exists:kota,id_kota'],
             'pekerjaan.jalan' => ['nullable', 'string'],
 
-            // If Kuliah
+            // If Kuliah (accept nama_universitas or id_universitas)
+            'universitas' => ['nullable', 'array'],
+            'universitas.nama_universitas' => ['nullable', 'string'],
+            'universitas.id_universitas' => ['nullable', 'exists:universitas,id_universitas'],
+            'universitas.id_jurusanKuliah' => ['nullable', 'exists:jurusan_kuliah,id_jurusanKuliah'],
+            'universitas.jalur_masuk' => ['nullable', 'string'],
+            'universitas.jenjang' => ['nullable', 'string'],
+
+            // Legacy kuliah key (backward compat)
             'kuliah' => ['nullable', 'array'],
-            'kuliah.id_universitas' => ['required_with:kuliah', 'exists:universitas,id_universitas'],
-            'kuliah.id_jurusanKuliah' => ['required_with:kuliah', 'exists:jurusan_kuliah,id_jurusanKuliah'],
-            'kuliah.jalur_masuk' => ['required_with:kuliah', 'in:SNBP,SNBT,Mandiri,Beasiswa,lainnya'],
-            'kuliah.jenjang' => ['required_with:kuliah', 'in:D3,D4,S1,S2,S3'],
+            'kuliah.id_universitas' => ['nullable', 'exists:universitas,id_universitas'],
+            'kuliah.id_jurusanKuliah' => ['nullable', 'exists:jurusan_kuliah,id_jurusanKuliah'],
+            'kuliah.jalur_masuk' => ['nullable', 'string'],
+            'kuliah.jenjang' => ['nullable', 'string'],
 
             // If Wirausaha
             'wirausaha' => ['nullable', 'array'],

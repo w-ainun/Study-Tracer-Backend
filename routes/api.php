@@ -29,6 +29,7 @@ Route::prefix('master')->group(function () {
     Route::get('/jurusan', [MasterDataController::class, 'jurusan']);
     Route::get('/jurusan-kuliah', [MasterDataController::class, 'jurusanKuliah']);
     Route::get('/skills', [MasterDataController::class, 'skills']);
+    Route::post('/skills', [MasterDataController::class, 'storeSkill']); // Allow creating new skills from profile page
     Route::get('/social-media', [MasterDataController::class, 'socialMedia']);
     Route::get('/status', [MasterDataController::class, 'status']);
     Route::get('/bidang-usaha', [MasterDataController::class, 'bidangUsaha']);
@@ -103,6 +104,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/alumni', [AdminController::class, 'getAllAlumni']);
         Route::get('/alumni/{id}', [AdminController::class, 'getAlumniDetail']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
+
+        // Pending Career Status Updates (for ProfileUpdateRequests)
+        Route::get('/pending-career-updates', [AdminController::class, 'getPendingCareerUpdates']);
+        Route::post('/career-updates/{id}/approve', [AdminController::class, 'approveCareerUpdate']);
+        Route::post('/career-updates/{id}/reject', [AdminController::class, 'rejectCareerUpdate']);
 
         // Lowongan Management
         Route::get('/lowongan', [LowonganController::class, 'index']);

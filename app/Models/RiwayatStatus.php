@@ -17,6 +17,7 @@ class RiwayatStatus extends Model
         'id_status',
         'tahun_mulai',
         'tahun_selesai',
+        'approval_status',
     ];
 
     public function alumni()

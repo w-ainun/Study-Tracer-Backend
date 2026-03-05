@@ -53,6 +53,14 @@ class User extends Authenticatable
     }
     public function lowongan()
     {
-    return $this->hasMany(Lowongan::class, 'id_users', 'id_users');
+        return $this->hasMany(Lowongan::class, 'id_users', 'id_users');
+    }
+
+    /**
+     * Accessor: allow accessing email_users as "email".
+     */
+    public function getEmailAttribute()
+    {
+        return $this->email_users;
     }
 }
