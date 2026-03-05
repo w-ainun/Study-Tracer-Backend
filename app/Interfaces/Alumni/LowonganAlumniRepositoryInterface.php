@@ -35,4 +35,19 @@ interface LowonganAlumniRepositoryInterface
      * Get list of lowongan IDs saved by the user.
      */
     public function getSavedLowonganIds(int $userId): array;
+
+    /**
+     * Get all lowongan posted by a specific user (all statuses).
+     */
+    public function getByUserId(int $userId, array $filters = [], int $perPage = 15);
+
+    /**
+     * Create a new lowongan.
+     */
+    public function create(array $data);
+
+    /**
+     * Sync skills for a lowongan.
+     */
+    public function syncSkills(int $lowonganId, array $skillIds): void;
 }

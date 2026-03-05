@@ -38,7 +38,7 @@ class StoreLowonganRequest extends FormRequest
             'status' => ['sometimes', 'in:draft,published,closed'],
             'lowongan_selesai' => ['nullable', 'date'],
             'jam_mulai' => ['nullable', 'date_format:H:i'],
-            'jam_berakhir' => ['nullable', 'date_format:H:i', 'after:jam_mulai'],
+            'jam_berakhir' => ['nullable', 'date_format:H:i'],
             'id_pekerjaan' => ['nullable', 'exists:pekerjaan,id_pekerjaan'],
             // Allow both 'foto' and 'foto_lowongan' keys during validation check, but prepareForValidation merges to foto_lowongan
             'foto_lowongan' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],

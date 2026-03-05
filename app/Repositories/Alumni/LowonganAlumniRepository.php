@@ -116,4 +116,47 @@ class LowonganAlumniRepository implements LowonganAlumniRepositoryInterface
             ->pluck('id_lowongan')
             ->toArray();
     }
+
+    /**
+     * Get all lowongan posted by a specific user (includes all statuses for "my lowongan").
+     */
+    public function getByUserId(int $userId, array $filters = [], int $perPage = 15)
+    {
+        $query = Lowongan::with(['perusahaan.kota.provinsi', 'pekerjaan', 'skills'])
+            ->where('id_users', $userId);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+        if (!empty($filters['approval_status'])) {
+            $query->where('approval_status', $filters['approval_status']);
+        }
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('judul_lowongan', 'like', "%{$search}%")
+                    ->orWhere('deskripsi', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderByDesc('created_at')->paginate($perPage);
+    }
+
+    /**
+     * Create a new lowongan.
+     */
+    public function create(array $data)
+    {
+        $lowongan = Lowongan::create($data);
+        return $lowongan->load(['perusahaan.kota.provinsi', 'pekerjaan', 'skills']);
+    }
+
+    /**
+     * Sync skills for a lowongan.
+     */
+    public function syncSkills(int $lowonganId, array $skillIds): void
+    {
+        $lowongan = Lowongan::findOrFail($lowonganId);
+        $lowongan->skills()->sync($skillIds);
+    }
 }

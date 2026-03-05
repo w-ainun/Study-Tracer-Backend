@@ -19,6 +19,8 @@ class Lowongan extends Model
         'lokasi',
         'status',
         'approval_status',
+        'approved_at',
+        'rejected_at',
         'lowongan_selesai',
         'jam_mulai',
         'jam_berakhir',
@@ -30,6 +32,8 @@ class Lowongan extends Model
 
     protected $casts = [
         'lowongan_selesai' => 'date',
+        'approved_at' => 'datetime',
+        'rejected_at' => 'datetime',
         'jam_mulai' => 'string',
         'jam_berakhir' => 'string',
     ];
