@@ -36,10 +36,17 @@ class LowonganController extends Controller
                 $perPage
             );
 
-            $paginated = LowonganAlumniResource::collection($result['lowongan'])
-                ->additional(['saved_ids' => $result['saved_ids']]);
+            $paginator = $result['lowongan'];
 
-            return $this->successResponse($paginated->response()->getData(true));
+            // Flatten pagination so frontend can access last_page, current_page directly
+            return $this->successResponse([
+                'data'         => LowonganAlumniResource::collection($paginator),
+                'saved_ids'    => $result['saved_ids'],
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+            ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data lowongan: ' . $e->getMessage());
         }
@@ -70,11 +77,16 @@ class LowonganController extends Controller
     {
         try {
             $perPage = $request->input('per_page', 15);
-            $saved = $this->lowonganService->getSavedLowongan($request->user()->id_users, $perPage);
+            $paginator = $this->lowonganService->getSavedLowongan($request->user()->id_users, $perPage);
 
-            return $this->successResponse(
-                SavedLowonganResource::collection($saved)->response()->getData(true)
-            );
+            // Flatten pagination so frontend can access last_page, current_page directly
+            return $this->successResponse([
+                'data'         => SavedLowonganResource::collection($paginator),
+                'current_page' => $paginator->currentPage(),
+                'last_page'    => $paginator->lastPage(),
+                'per_page'     => $paginator->perPage(),
+                'total'        => $paginator->total(),
+            ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil lowongan tersimpan');
         }
