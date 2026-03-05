@@ -24,7 +24,7 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
             'riwayatStatus.kuliah.jurusanKuliah',
             'riwayatStatus.wirausaha',
         ])
-            ->where('status_create', 'ok');
+            ->whereNotIn('status_create', ['banned', 'rejected', 'pending']);
 
         // Search by nama, perusahaan, or role/posisi
         if (!empty($filters['search'])) {
@@ -80,7 +80,7 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
      */
     public function getTahunLulusOptions(): array
     {
-        return Alumni::where('status_create', 'ok')
+        return Alumni::whereNotIn('status_create', ['banned', 'rejected', 'pending'])
             ->whereNotNull('tahun_lulus')
             ->selectRaw('YEAR(tahun_lulus) as tahun')
             ->distinct()
@@ -96,7 +96,7 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
     public function getStatusOptions(): array
     {
         return Status::whereHas('riwayatStatus.alumni', function ($q) {
-            $q->where('status_create', 'ok');
+            $q->whereNotIn('status_create', ['banned', 'rejected', 'pending']);
         })
             ->distinct()
             ->pluck('nama_status')
@@ -109,7 +109,7 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
     public function getUniversitasOptions(): array
     {
         return Universitas::whereHas('kuliah.riwayatStatus.alumni', function ($q) {
-            $q->where('status_create', 'ok');
+            $q->whereNotIn('status_create', ['banned', 'rejected', 'pending']);
         })
             ->distinct()
             ->pluck('nama_universitas')
