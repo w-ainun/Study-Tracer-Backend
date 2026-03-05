@@ -72,4 +72,21 @@ class AdminService
     {
         return $this->adminRepository->getGeographicDistribution();
     }
+
+    // ── Pending Career Status ────────────────────────
+
+    public function getPendingCareerUpdates()
+    {
+        return $this->adminRepository->getPendingCareerUpdates();
+    }
+
+    public function approveCareerUpdate(int $riwayatId)
+    {
+        return $this->adminRepository->approveCareerUpdate($riwayatId);
+    }
+
+    public function rejectCareerUpdate(int $riwayatId)
+    {
+        return $this->adminRepository->rejectCareerUpdate($riwayatId);
+    }
 }

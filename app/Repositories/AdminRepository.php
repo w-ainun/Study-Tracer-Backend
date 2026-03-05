@@ -9,6 +9,7 @@ use App\Models\Lowongan;
 use App\Models\Kuesioner;
 use App\Models\RiwayatStatus;
 use App\Models\Status;
+use App\Models\Pekerjaan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -282,5 +283,58 @@ class AdminRepository implements AdminRepositoryInterface
                 ])
                 ->toArray();
         });
+    }
+
+    // ── Pending Career Status Requests ───────────────────
+
+    /**
+     * Get all riwayat_status with approval_status = 'pending', with alumni & detail relations.
+     */
+    public function getPendingCareerUpdates()
+    {
+        return RiwayatStatus::with([
+            'alumni.user',
+            'alumni.jurusan',
+            'status',
+            'pekerjaan.perusahaan.kota.provinsi',
+            'kuliah.universitas',
+            'kuliah.jurusanKuliah',
+            'wirausaha.bidangUsaha',
+        ])
+            ->where('approval_status', 'pending')
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    /**
+     * Approve a pending career status update.
+     */
+    public function approveCareerUpdate(int $riwayatId)
+    {
+        $riwayat = RiwayatStatus::findOrFail($riwayatId);
+        $riwayat->update(['approval_status' => 'approved']);
+        return $riwayat->load([
+            'alumni.user',
+            'status',
+            'pekerjaan.perusahaan.kota.provinsi',
+            'kuliah.universitas',
+            'kuliah.jurusanKuliah',
+            'wirausaha.bidangUsaha',
+        ]);
+    }
+
+    /**
+     * Reject a pending career status update.
+     */
+    public function rejectCareerUpdate(int $riwayatId)
+    {
+        $riwayat = RiwayatStatus::findOrFail($riwayatId);
+        $riwayat->update(['approval_status' => 'rejected']);
+        // Optionally delete the riwayat and its children
+        if ($riwayat->pekerjaan) $riwayat->pekerjaan->delete();
+        if ($riwayat->kuliah) $riwayat->kuliah->delete();
+        if ($riwayat->wirausaha) $riwayat->wirausaha->delete();
+        $riwayat->delete();
+        return true;
     }
 }

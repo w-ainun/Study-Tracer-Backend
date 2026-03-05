@@ -16,4 +16,7 @@ interface AdminRepositoryInterface
     public function getAlumniDetail(int $alumniId);
     public function banAlumni(int $alumniId);
     public function deleteUser(int $userId);
+    public function getPendingCareerUpdates();
+    public function approveCareerUpdate(int $riwayatId);
+    public function rejectCareerUpdate(int $riwayatId);
 }

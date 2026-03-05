@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AlumniResource;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\Alumni\ProfileRiwayatResource;
 use App\Services\AdminService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -195,5 +196,85 @@ class AdminController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    // ── Pending Career Status Requests ───────────────────
+
+    /**
+     * GET /admin/pending-career-updates
+     * List all riwayat_status with approval_status = 'pending'.
+     */
+    public function getPendingCareerUpdates()
+    {
+        try {
+            $pending = $this->adminService->getPendingCareerUpdates();
+
+            $data = $pending->map(function ($riwayat) {
+                $alumni = $riwayat->alumni;
+                $changes = [];
+
+                // Build change details
+                $statusName = $riwayat->status?->nama_status ?? '-';
+                $changes[] = ['label' => 'Status Karier', 'old' => '-', 'new' => $statusName];
+
+                if ($riwayat->pekerjaan) {
+                    $changes[] = ['label' => 'Posisi', 'old' => '-', 'new' => $riwayat->pekerjaan->posisi ?? '-'];
+                    $changes[] = ['label' => 'Perusahaan', 'old' => '-', 'new' => $riwayat->pekerjaan->perusahaan?->nama_perusahaan ?? '-'];
+                }
+                if ($riwayat->kuliah) {
+                    $changes[] = ['label' => 'Universitas', 'old' => '-', 'new' => $riwayat->kuliah->universitas?->nama_universitas ?? '-'];
+                    $changes[] = ['label' => 'Jurusan', 'old' => '-', 'new' => $riwayat->kuliah->jurusanKuliah?->nama ?? '-'];
+                }
+                if ($riwayat->wirausaha) {
+                    $changes[] = ['label' => 'Nama Usaha', 'old' => '-', 'new' => $riwayat->wirausaha->nama_usaha ?? '-'];
+                    $changes[] = ['label' => 'Bidang', 'old' => '-', 'new' => $riwayat->wirausaha->bidangUsaha?->nama_bidang ?? '-'];
+                }
+
+                return [
+                    'id' => $riwayat->id_riwayat,
+                    'name' => $alumni?->nama_alumni ?? '-',
+                    'angkatan' => $alumni?->tahun_masuk ?? '-',
+                    'userId' => $alumni?->nis ?? '-',
+                    'image' => $alumni?->foto ? asset('storage/' . $alumni->foto) : null,
+                    'initials' => strtoupper(substr($alumni?->nama_alumni ?? 'A', 0, 2)),
+                    'time' => $riwayat->created_at?->diffForHumans() ?? '-',
+                    'field' => 'Status Karier',
+                    'changes' => $changes,
+                ];
+            });
+
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil permintaan update karier: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /admin/career-updates/{id}/approve
+     */
+    public function approveCareerUpdate(int $id)
+    {
+        try {
+            $riwayat = $this->adminService->approveCareerUpdate($id);
+            return $this->successResponse(
+                new ProfileRiwayatResource($riwayat),
+                'Status karier berhasil disetujui'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menyetujui status karier: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /admin/career-updates/{id}/reject
+     */
+    public function rejectCareerUpdate(int $id)
+    {
+        try {
+            $this->adminService->rejectCareerUpdate($id);
+            return $this->successResponse(null, 'Permintaan status karier berhasil ditolak');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menolak status karier: ' . $e->getMessage());
+        }
     }
 }

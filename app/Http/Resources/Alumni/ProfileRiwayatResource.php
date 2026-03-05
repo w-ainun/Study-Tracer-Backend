@@ -14,6 +14,7 @@ class ProfileRiwayatResource extends JsonResource
     {
         return [
             'id' => $this->id_riwayat,
+            'approval_status' => $this->approval_status ?? 'approved',
             'status' => $this->whenLoaded('status', function () {
                 return [
                     'id' => $this->status->id_status,
