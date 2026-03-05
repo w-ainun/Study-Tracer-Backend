@@ -84,4 +84,27 @@ class ProfileController extends Controller
             return $this->errorResponse('Gagal menyimpan status karir: ' . $e->getMessage());
         }
     }
+
+    /**
+     * PUT /alumni/career-status/{id}
+     * Update existing career status directly (e.g., update tahun_selesai).
+     * Updates the existing riwayat_status without creating a new pending entry.
+     */
+    public function updateExistingCareerStatus(CareerStatusRequest $request, $id)
+    {
+        try {
+            $riwayat = $this->profileService->updateExistingCareerStatus(
+                $request->user()->id_users,
+                $id,
+                $request->validated()
+            );
+
+            return $this->successResponse(
+                new ProfileRiwayatResource($riwayat),
+                'Status karir berhasil diperbarui.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status karir: ' . $e->getMessage());
+        }
+    }
 }

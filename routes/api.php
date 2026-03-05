@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/profile', [ProfileController::class, 'show']);
         Route::put('/profile', [ProfileController::class, 'update']);
         Route::post('/career-status', [ProfileController::class, 'updateCareerStatus']);
+        Route::put('/career-status/{id}', [ProfileController::class, 'updateExistingCareerStatus']);
         Route::get('/beranda', [BerandaController::class, 'index']);
         Route::get('/status-pengajuan', [BerandaController::class, 'statusPengajuan']);
 

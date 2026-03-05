@@ -165,4 +165,97 @@ class ProfileService
             ]);
         });
     }
+
+    /**
+     * Update existing career status (riwayat_status) directly.
+     * This method updates the existing entry without creating a new pending one.
+     */
+    public function updateExistingCareerStatus(int $userId, int $riwayatId, array $data)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $riwayatId, $data) {
+            // Find the riwayat status and verify ownership
+            $riwayat = RiwayatStatus::where('id_riwayat', $riwayatId)
+                ->where('id_alumni', $alumni->id_alumni)
+                ->first();
+
+            if (!$riwayat) {
+                throw new \Exception('Riwayat status tidak ditemukan atau tidak memiliki akses.');
+            }
+
+            // Update basic fields
+            $riwayat->update([
+                'id_status' => $data['id_status'] ?? $riwayat->id_status,
+                'tahun_mulai' => $data['tahun_mulai'] ?? $riwayat->tahun_mulai,
+                'tahun_selesai' => $data['tahun_selesai'] ?? $riwayat->tahun_selesai,
+            ]);
+
+            // Update career detail based on status type
+            if (!empty($data['pekerjaan'])) {
+                // Update or create pekerjaan
+                $perusahaan = Perusahaan::firstOrCreate(
+                    ['nama_perusahaan' => $data['pekerjaan']['nama_perusahaan']],
+                    [
+                        'id_kota' => $data['pekerjaan']['id_kota'] ?? null,
+                        'jalan' => $data['pekerjaan']['jalan'] ?? '',
+                    ]
+                );
+
+                Pekerjaan::updateOrCreate(
+                    ['id_riwayat' => $riwayat->id_riwayat],
+                    [
+                        'posisi' => $data['pekerjaan']['posisi'],
+                        'id_perusahaan' => $perusahaan->id_perusahaan,
+                    ]
+                );
+            }
+
+            // Handle kuliah data
+            $kuliahData = $data['kuliah'] ?? $data['universitas'] ?? null;
+            if (!empty($kuliahData)) {
+                $idUniversitas = $kuliahData['id_universitas'] ?? null;
+                if (!$idUniversitas && !empty($kuliahData['nama_universitas'])) {
+                    $univ = Universitas::firstOrCreate(
+                        ['nama_universitas' => $kuliahData['nama_universitas']]
+                    );
+                    $idUniversitas = $univ->id_universitas;
+                }
+
+                if ($idUniversitas) {
+                    Kuliah::updateOrCreate(
+                        ['id_riwayat' => $riwayat->id_riwayat],
+                        [
+                            'id_universitas' => $idUniversitas,
+                            'id_jurusanKuliah' => $kuliahData['id_jurusanKuliah'] ?? null,
+                            'jalur_masuk' => $kuliahData['jalur_masuk'] ?? null,
+                            'jenjang' => $kuliahData['jenjang'] ?? null,
+                        ]
+                    );
+                }
+            }
+
+            if (!empty($data['wirausaha'])) {
+                Wirausaha::updateOrCreate(
+                    ['id_riwayat' => $riwayat->id_riwayat],
+                    [
+                        'id_bidang' => $data['wirausaha']['id_bidang'],
+                        'nama_usaha' => $data['wirausaha']['nama_usaha'],
+                    ]
+                );
+            }
+
+            return $riwayat->load([
+                'status',
+                'pekerjaan.perusahaan.kota.provinsi',
+                'kuliah.universitas',
+                'kuliah.jurusanKuliah',
+                'wirausaha.bidangUsaha',
+            ]);
+        });
+    }
 }

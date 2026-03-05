@@ -44,6 +44,8 @@ class ProfileResource extends JsonResource
         $currentCareer = null;
         if ($latestRiwayat) {
             $currentCareer = [
+                'id_riwayat' => $latestRiwayat->id_riwayat,
+                'id_status' => $latestRiwayat->id_status,
                 'status' => $latestRiwayat->status?->nama_status ?? null,
                 'tahun_mulai' => $latestRiwayat->tahun_mulai,
                 'tahun_selesai' => $latestRiwayat->tahun_selesai,
@@ -56,13 +58,18 @@ class ProfileResource extends JsonResource
                     'perusahaan' => $perusahaan?->nama_perusahaan,
                     'kota' => $perusahaan?->kota?->nama_kota ?? null,
                     'provinsi' => $perusahaan?->kota?->provinsi?->nama_provinsi ?? null,
+                    'id_kota' => $perusahaan?->id_kota,
+                    'jalan' => $perusahaan?->jalan,
                 ];
             }
 
             if ($latestRiwayat->kuliah) {
                 $currentCareer['kuliah'] = [
                     'universitas' => $latestRiwayat->kuliah->universitas?->nama_universitas,
-                    'jurusan_kuliah' => $latestRiwayat->kuliah->jurusanKuliah?->nama ?? null,
+                    'jurusan_kuliah' => $latestRiwayat->kuliah->jurusanKuliah ? [
+                        'id' => $latestRiwayat->kuliah->jurusanKuliah->id_jurusanKuliah,
+                        'nama' => $latestRiwayat->kuliah->jurusanKuliah->nama_jurusan ?? $latestRiwayat->kuliah->jurusanKuliah->nama ?? null,
+                    ] : null,
                     'jenjang' => $latestRiwayat->kuliah->jenjang,
                     'jalur_masuk' => $latestRiwayat->kuliah->jalur_masuk,
                 ];
@@ -72,6 +79,7 @@ class ProfileResource extends JsonResource
                 $currentCareer['wirausaha'] = [
                     'nama_usaha' => $latestRiwayat->wirausaha->nama_usaha,
                     'bidang_usaha' => $latestRiwayat->wirausaha->bidangUsaha?->nama_bidang ?? null,
+                    'id_bidang' => $latestRiwayat->wirausaha->id_bidang,
                 ];
             }
         }
