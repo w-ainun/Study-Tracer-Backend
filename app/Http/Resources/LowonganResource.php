@@ -38,6 +38,8 @@ class LowonganResource extends JsonResource
             }),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'approved_at' => $this->approved_at,
+            'rejected_at' => $this->rejected_at,
         ];
     }
 }

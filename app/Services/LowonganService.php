@@ -65,16 +65,21 @@ class LowonganService
 
     public function approve(int $id)
     {
-        // When approved, also set status to published (active)
+        // When approved, set status to published (active) + record timestamp
         return $this->lowonganRepository->update($id, [
             'approval_status' => 'approved',
-            'status' => 'published'
+            'status' => 'published',
+            'approved_at' => now(),
+            'rejected_at' => null, // clear any previous rejection
         ]);
     }
 
     public function reject(int $id)
     {
-        return $this->lowonganRepository->updateApprovalStatus($id, 'rejected');
+        return $this->lowonganRepository->update($id, [
+            'approval_status' => 'rejected',
+            'rejected_at' => now(),
+        ]);
     }
 
     public function repost(int $id)

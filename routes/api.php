@@ -74,6 +74,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::middleware('alumni.verified')->group(function () {
             // Lowongan for alumni (sorted by skill match)
             Route::get('/lowongan', [AlumniLowonganController::class, 'index']);
+            Route::post('/lowongan', [AlumniLowonganController::class, 'store']);        // Submit lowongan (pending approval)
+            Route::get('/my-lowongan', [AlumniLowonganController::class, 'myLowongan']); // Own submissions
             Route::get('/lowongan/{id}', [AlumniLowonganController::class, 'show']);
 
             // Saved lowongan

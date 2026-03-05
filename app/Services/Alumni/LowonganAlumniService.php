@@ -4,6 +4,8 @@ namespace App\Services\Alumni;
 
 use App\Interfaces\Alumni\LowonganAlumniRepositoryInterface;
 use App\Models\Alumni;
+use App\Models\Kota;
+use App\Models\Perusahaan;
 
 class LowonganAlumniService
 {
@@ -67,5 +69,60 @@ class LowonganAlumniService
         $this->lowonganRepository->getPublishedById($lowonganId);
 
         return $this->lowonganRepository->toggleSave($userId, $lowonganId);
+    }
+
+    // ── Alumni Lowongan Submission ───────────────────
+
+    /**
+     * Create a new lowongan submitted by an alumni.
+     * - Always starts as draft + pending
+     * - Auto-creates Perusahaan from nama_perusahaan if needed
+     * - Syncs skills
+     */
+    public function createLowongan(array $data): \App\Models\Lowongan
+    {
+        // Force alumni-submitted lowongan to draft + pending
+        $data['status'] = 'draft';
+        $data['approval_status'] = 'pending';
+
+        // Auto-create Perusahaan from nama_perusahaan if no id_perusahaan
+        if (!empty($data['nama_perusahaan']) && empty($data['id_perusahaan'])) {
+            $defaultCityId = Kota::value('id_kota') ?? 1;
+
+            if (!empty($data['id_kota'])) {
+                $defaultCityId = $data['id_kota'];
+            } elseif (!empty($data['lokasi'])) {
+                $city = Kota::where('nama_kota', 'like', '%' . $data['lokasi'] . '%')->first();
+                if ($city) $defaultCityId = $city->id_kota;
+            }
+
+            $perusahaan = Perusahaan::firstOrCreate(
+                ['nama_perusahaan' => $data['nama_perusahaan']],
+                ['jalan' => $data['lokasi'] ?? '-', 'id_kota' => $defaultCityId]
+            );
+            $data['id_perusahaan'] = $perusahaan->id_perusahaan;
+        }
+        unset($data['nama_perusahaan']);
+
+        // Extract & remove skills before creating lowongan
+        $skillIds = $data['skills'] ?? [];
+        unset($data['skills']);
+
+        $lowongan = $this->lowonganRepository->create($data);
+
+        if (!empty($skillIds)) {
+            $this->lowonganRepository->syncSkills($lowongan->id_lowongan, $skillIds);
+            $lowongan->load('skills');
+        }
+
+        return $lowongan;
+    }
+
+    /**
+     * Get alumni's own lowongan (all statuses) for "Lowongan Saya" page.
+     */
+    public function getMyLowongan(int $userId, array $filters = [], int $perPage = 15)
+    {
+        return $this->lowonganRepository->getByUserId($userId, $filters, $perPage);
     }
 }
