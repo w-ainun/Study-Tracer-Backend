@@ -57,6 +57,21 @@ class KuesionerController extends Controller
     }
 
     /**
+     * Get published kuesioner with filters (alumni view) — supports filters: id_status, search
+     */
+    public function indexForAlumni(Request $request)
+    {
+        try {
+            $filters = $request->only(['id_status', 'search']);
+            $perPage = $request->input('per_page', 15);
+            $kuesioner = $this->kuesionerService->getAllPublished($filters, $perPage);
+            return $this->successResponse(KuesionerResource::collection($kuesioner)->response()->getData(true));
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil data kuesioner: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Get published kuesioner by status (e.g., kuesioner for "Bekerja")
      */
     public function publishedByStatus(int $statusId)

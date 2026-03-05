@@ -23,6 +23,7 @@ interface KuesionerRepositoryInterface
 
     // Published / Alumni
     public function getPublished(int $perPage = 15);
+    public function getAllPublished(array $filters = [], int $perPage = 15);
     public function getPublishedByStatus(int $statusId);
     public function getKuesionerWithPertanyaan(int $kuesionerId);
 

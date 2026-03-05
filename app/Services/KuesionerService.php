@@ -69,6 +69,11 @@ class KuesionerService
         return $this->kuesionerRepository->getPublished($perPage);
     }
 
+    public function getAllPublished(array $filters = [], int $perPage = 15)
+    {
+        return $this->kuesionerRepository->getAllPublished($filters, $perPage);
+    }
+
     public function getPublishedByStatus(int $statusId)
     {
         return $this->kuesionerRepository->getPublishedByStatus($statusId);

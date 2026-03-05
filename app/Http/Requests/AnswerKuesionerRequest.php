@@ -20,6 +20,7 @@ class AnswerKuesionerRequest extends FormRequest
             'jawaban.*.id_pertanyaan' => ['required', 'exists:pertanyaan,id_pertanyaan'],
             'jawaban.*.id_opsiJawaban' => ['nullable', 'exists:opsi_jawaban,id_opsi'],
             'jawaban.*.jawaban' => ['nullable', 'string'],
+            'jawaban.*.status' => ['nullable', 'string', 'in:Selesai,Draft'],
         ];
     }
 

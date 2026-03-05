@@ -340,6 +340,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                 'id_user' => $userId,
                 'id_opsiJawaban' => $jawaban['id_opsiJawaban'] ?? null,
                 'jawaban' => $jawaban['jawaban'] ?? null,
+                'status' => $jawaban['status'] ?? 'Selesai',
             ]);
         }
         return $created;
@@ -377,6 +378,36 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                       ->orWhere('tanggal_selesai', '>=', now());
             })
             ->first();
+    }
+
+    public function getAllPublished(array $filters = [], int $perPage = 15)
+    {
+        $query = Kuesioner::with(['statusKarir'])
+            ->withCount('pertanyaan')
+            ->where('status', 'aktif')
+            ->whereNotNull('tanggal_publikasi')
+            ->where(function ($q) {
+                $q->whereNull('tanggal_mulai')
+                  ->orWhere('tanggal_mulai', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('tanggal_selesai')
+                  ->orWhere('tanggal_selesai', '>=', now());
+            });
+
+        if (!empty($filters['id_status'])) {
+            $query->where('id_status', $filters['id_status']);
+        }
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('deskripsi', 'like', "%{$search}%");
+            });
+        }
+
+        return $query->orderBy('tanggal_publikasi', 'desc')->paginate($perPage);
     }
 
     public function getKuesionerWithPertanyaan(int $kuesionerId)
