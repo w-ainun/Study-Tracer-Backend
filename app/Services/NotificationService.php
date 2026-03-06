@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Notification;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class NotificationService
@@ -12,13 +13,18 @@ class NotificationService
      */
     public function create(int $userId, string $type, string $title, string $message, ?array $data = null)
     {
-        return Notification::create([
+        $notification = Notification::create([
             'id_users' => $userId,
             'type' => $type,
             'title' => $title,
             'message' => $message,
             'data' => $data,
         ]);
+        
+        // Clear cache setelah create notifikasi baru
+        $this->clearNotificationCache($userId);
+        
+        return $notification;
     }
 
     /**
@@ -27,6 +33,7 @@ class NotificationService
     public function getUserNotifications(int $userId, ?bool $unreadOnly = null, int $perPage = 20)
     {
         $query = Notification::forUser($userId)
+            ->select(['id_notification', 'type', 'title', 'message', 'data', 'is_read', 'read_at', 'created_at'])
             ->orderBy('created_at', 'desc');
 
         if ($unreadOnly === true) {
@@ -43,6 +50,10 @@ class NotificationService
     {
         $notification = Notification::forUser($userId)->findOrFail($notificationId);
         $notification->markAsRead();
+        
+        // Clear cache setelah mark as read
+        $this->clearNotificationCache($userId);
+        
         return $notification;
     }
 
@@ -51,12 +62,17 @@ class NotificationService
      */
     public function markAllAsRead(int $userId)
     {
-        return Notification::forUser($userId)
+        $count = Notification::forUser($userId)
             ->unread()
             ->update([
                 'is_read' => true,
                 'read_at' => now(),
             ]);
+        
+        // Clear cache setelah mark all as read
+        $this->clearNotificationCache($userId);
+        
+        return $count;
     }
 
     /**
@@ -65,7 +81,12 @@ class NotificationService
     public function delete(int $notificationId, int $userId)
     {
         $notification = Notification::forUser($userId)->findOrFail($notificationId);
-        return $notification->delete();
+        $deleted = $notification->delete();
+        
+        // Clear cache setelah delete
+        $this->clearNotificationCache($userId);
+        
+        return $deleted;
     }
 
     /**
@@ -73,15 +94,32 @@ class NotificationService
      */
     public function deleteAll(int $userId)
     {
-        return Notification::forUser($userId)->delete();
+        $count = Notification::forUser($userId)->delete();
+        
+        // Clear cache setelah delete all
+        $this->clearNotificationCache($userId);
+        
+        return $count;
     }
 
     /**
-     * Hitung jumlah notifikasi belum dibaca
+     * Hitung jumlah notifikasi belum dibaca (dengan cache)
      */
     public function getUnreadCount(int $userId)
     {
-        return Notification::forUser($userId)->unread()->count();
+        $cacheKey = "notifications:unread_count:{$userId}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($userId) {
+            return Notification::forUser($userId)->unread()->count('id_notification');
+        });
+    }
+    
+    /**
+     * Clear cache notifikasi user
+     */
+    protected function clearNotificationCache(int $userId)
+    {
+        Cache::forget("notifications:unread_count:{$userId}");
     }
 
     // ========================================
