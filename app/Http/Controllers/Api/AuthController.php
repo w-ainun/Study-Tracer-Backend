@@ -112,4 +112,20 @@ class AuthController extends Controller
             return $this->errorResponse('Gagal mereset password: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Validate email availability for registration (Step 1 validation).
+     */
+    public function validateEmail(Request $request)
+    {
+        try {
+            $request->validate([
+                'email' => ['required', 'email', new \App\Rules\EmailNotBanned(), new \App\Rules\UniqueEmailExceptRejected()],
+            ]);
+
+            return $this->successResponse(null, 'Email tersedia untuk registrasi.');
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Email tidak valid', 422, $e->errors());
+        }
+    }
 }
