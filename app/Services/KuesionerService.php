@@ -3,15 +3,19 @@
 namespace App\Services;
 
 use App\Interfaces\KuesionerRepositoryInterface;
+use App\Models\Alumni;
 
 class KuesionerService
 {
     private KuesionerRepositoryInterface $kuesionerRepository;
+    private NotificationService $notificationService;
 
     public function __construct(
-        KuesionerRepositoryInterface $kuesionerRepository
+        KuesionerRepositoryInterface $kuesionerRepository,
+        NotificationService $notificationService
     ) {
         $this->kuesionerRepository = $kuesionerRepository;
+        $this->notificationService = $notificationService;
     }
 
     public function getAll(array $filters = [], int $perPage = 15)
@@ -96,7 +100,59 @@ class KuesionerService
 
     public function updateKuesionerStatus(int $kuesionerId, string $status)
     {
-        return $this->kuesionerRepository->updateKuesionerStatus($kuesionerId, $status);
+        $kuesioner = $this->kuesionerRepository->updateKuesionerStatus($kuesionerId, $status);
+        
+        // Trigger notifikasi ke alumni yang sesuai jika status berubah menjadi 'aktif'
+        if ($status === 'aktif' && $kuesioner) {
+            $this->notifyRelevantAlumni($kuesioner);
+        }
+        
+        return $kuesioner;
+    }
+
+    /**
+     * Notifikasi alumni yang sesuai dengan kuesioner baru
+     */
+    private function notifyRelevantAlumni($kuesioner)
+    {
+        $statusId = $kuesioner->id_status;
+        $kuesionerTitle = $kuesioner->judul;
+        
+        // Jika kuesioner untuk status tertentu
+        if ($statusId) {
+            // Cari semua alumni dengan status karir tersebut
+            $alumni = Alumni::whereHas('riwayatStatus', function ($query) use ($statusId) {
+                $query->where('id_status', $statusId)
+                    ->where('approval_status', 'approved');
+            })->with('user')->get();
+            
+            $statusName = $kuesioner->status->nama_status ?? 'status tertentu';
+            
+            foreach ($alumni as $alum) {
+                if ($alum->id_users) {
+                    $this->notificationService->notifyNewKuesioner(
+                        $alum->id_users,
+                        $kuesioner->id_kuesioner,
+                        $kuesionerTitle,
+                        $statusName
+                    );
+                }
+            }
+        } else {
+            // Jika kuesioner untuk semua alumni
+            $allAlumni = Alumni::with('user')->where('status_create', 'ok')->get();
+            
+            foreach ($allAlumni as $alum) {
+                if ($alum->id_users) {
+                    $this->notificationService->notifyNewKuesioner(
+                        $alum->id_users,
+                        $kuesioner->id_kuesioner,
+                        $kuesionerTitle,
+                        'semua alumni'
+                    );
+                }
+            }
+        }
     }
 
     public function getStatistics(int $kuesionerId)

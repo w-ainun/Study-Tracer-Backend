@@ -7,10 +7,14 @@ use App\Interfaces\LowonganRepositoryInterface;
 class LowonganService
 {
     private LowonganRepositoryInterface $lowonganRepository;
+    private NotificationService $notificationService;
 
-    public function __construct(LowonganRepositoryInterface $lowonganRepository)
-    {
+    public function __construct(
+        LowonganRepositoryInterface $lowonganRepository,
+        NotificationService $notificationService
+    ) {
         $this->lowonganRepository = $lowonganRepository;
+        $this->notificationService = $notificationService;
     }
 
     public function getAll(array $filters = [], int $perPage = 15)
@@ -65,21 +69,49 @@ class LowonganService
 
     public function approve(int $id)
     {
+        // Get lowongan data before updating (untuk notifikasi)
+        $lowongan = $this->lowonganRepository->getById($id);
+        
         // When approved, set status to published (active) + record timestamp
-        return $this->lowonganRepository->update($id, [
+        $updatedLowongan = $this->lowonganRepository->update($id, [
             'approval_status' => 'approved',
             'status' => 'published',
             'approved_at' => now(),
             'rejected_at' => null, // clear any previous rejection
         ]);
+        
+        // Trigger notifikasi
+        if ($lowongan && $lowongan->id_users) {
+            $this->notificationService->notifyLowonganApproved(
+                $lowongan->id_users,
+                $id,
+                $lowongan->judul
+            );
+        }
+        
+        return $updatedLowongan;
     }
 
     public function reject(int $id)
     {
-        return $this->lowonganRepository->update($id, [
+        // Get lowongan data before updating (untuk notifikasi)
+        $lowongan = $this->lowonganRepository->getById($id);
+        
+        $updatedLowongan = $this->lowonganRepository->update($id, [
             'approval_status' => 'rejected',
             'rejected_at' => now(),
         ]);
+        
+        // Trigger notifikasi
+        if ($lowongan && $lowongan->id_users) {
+            $this->notificationService->notifyLowonganRejected(
+                $lowongan->id_users,
+                $id,
+                $lowongan->judul
+            );
+        }
+        
+        return $updatedLowongan;
     }
 
     public function repost(int $id)

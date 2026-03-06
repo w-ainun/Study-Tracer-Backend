@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\LowonganController;
 use App\Http\Controllers\Api\KuesionerController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\StatusKarierController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\Alumni\BerandaController;
 use App\Http\Controllers\Api\Alumni\LowonganController as AlumniLowonganController;
 use App\Http\Controllers\Api\Alumni\AlumniDirectoryController;
@@ -71,6 +72,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/kuesioner/{id}', [KuesionerController::class, 'showWithPertanyaan']);
         Route::get('/kuesioner/status/{statusId}', [KuesionerController::class, 'publishedByStatus']);
         Route::post('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'submitAnswers']);
+
+        // Notifikasi (accessible even if not verified)
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+        Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
+        Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
         // ── Restricted routes (verified alumni only) ──
         Route::middleware('alumni.verified')->group(function () {
