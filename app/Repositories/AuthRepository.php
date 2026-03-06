@@ -26,13 +26,27 @@ class AuthRepository implements AuthRepositoryInterface
 
     public function findUserByEmail(string $email)
     {
-        return User::where('email_users', $email)->first();
+        return User::with('alumni')->where('email_users', $email)->first();
     }
 
     public function findUserById(int $id)
     {
         return User::with(['alumni.jurusan', 'alumni.skills', 'alumni.socialMedia', 'admin'])
             ->find($id);
+    }
+
+    public function deleteRejectedUserByEmail(string $email): void
+    {
+        $user = User::where('email_users', $email)
+            ->whereHas('alumni', function ($query) {
+                $query->where('status_create', 'rejected');
+            })
+            ->first();
+
+        if ($user) {
+            // Hapus user dan relasi alumni akan terhapus otomatis jika ada foreign key cascade
+            $user->delete();
+        }
     }
 
     public function createPasswordResetToken(string $email, string $token): void

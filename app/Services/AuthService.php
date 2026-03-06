@@ -25,6 +25,9 @@ class AuthService
     public function registerUserAndProfile(array $accountData, array $profileData)
     {
         return DB::transaction(function () use ($accountData, $profileData) {
+            // Hapus akun lama jika status_create = 'rejected'
+            $this->authRepository->deleteRejectedUserByEmail($accountData['email']);
+            
             // Convert year-only values to proper date format for DB
             if (!empty($profileData['tahun_lulus']) && preg_match('/^\d{4}$/', $profileData['tahun_lulus'])) {
                 $profileData['tahun_lulus'] = $profileData['tahun_lulus'] . '-01-01';
@@ -145,6 +148,27 @@ class AuthService
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah.'],
             ]);
+        }
+
+        // Cek status akun alumni
+        if ($user->alumni) {
+            if ($user->alumni->status_create === 'banned') {
+                throw ValidationException::withMessages([
+                    'email' => ['Akun Anda telah dibanned dan tidak dapat login.'],
+                ]);
+            }
+            
+            if ($user->alumni->status_create === 'rejected') {
+                throw ValidationException::withMessages([
+                    'email' => ['Akun Anda telah ditolak. Silakan daftar ulang.'],
+                ]);
+            }
+            
+            if ($user->alumni->status_create === 'pending') {
+                throw ValidationException::withMessages([
+                    'email' => ['Akun Anda masih menunggu persetujuan admin.'],
+                ]);
+            }
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;

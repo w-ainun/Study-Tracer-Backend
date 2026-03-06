@@ -5,6 +5,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use App\Rules\EmailNotBanned;
+use App\Rules\UniqueEmailExceptRejected;
 
 class RegisterAlumniRequest extends FormRequest
 {
@@ -17,7 +19,7 @@ class RegisterAlumniRequest extends FormRequest
     {
         return [
             // Step 1: Account
-            'email' => ['required', 'email', 'unique:users,email_users'],
+            'email' => ['required', 'email', new EmailNotBanned(), new UniqueEmailExceptRejected()],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
 
             // Step 2: Profile
