@@ -3,6 +3,7 @@
 namespace App\Services\Alumni;
 
 use App\Interfaces\Alumni\AlumniDirectoryRepositoryInterface;
+use Illuminate\Support\Facades\Cache;
 
 class AlumniDirectoryService
 {
@@ -30,14 +31,16 @@ class AlumniDirectoryService
     }
 
     /**
-     * Get filter options for the directory dropdowns.
+     * Get filter options for the directory dropdowns (cached 10 minutes).
      */
     public function getFilterOptions(): array
     {
-        return [
-            'tahun'       => $this->directoryRepository->getTahunLulusOptions(),
-            'status'      => $this->directoryRepository->getStatusOptions(),
-            'universitas' => $this->directoryRepository->getUniversitasOptions(),
-        ];
+        return Cache::remember('directory.filter_options', 600, function () {
+            return [
+                'tahun'       => $this->directoryRepository->getTahunLulusOptions(),
+                'status'      => $this->directoryRepository->getStatusOptions(),
+                'universitas' => $this->directoryRepository->getUniversitasOptions(),
+            ];
+        });
     }
 }

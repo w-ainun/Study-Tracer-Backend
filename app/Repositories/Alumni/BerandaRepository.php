@@ -7,6 +7,7 @@ use App\Models\Alumni;
 use App\Models\Kuesioner;
 use App\Models\Lowongan;
 use App\Models\Perusahaan;
+use App\Models\Pertanyaan;
 use App\Models\RiwayatStatus;
 
 class BerandaRepository implements BerandaRepositoryInterface
@@ -105,19 +106,25 @@ class BerandaRepository implements BerandaRepositoryInterface
             $query->where('id_status', $statusId);
         }
 
-        return $query
-            ->orderByDesc('tanggal_publikasi')
-            ->get()
-            ->filter(function ($kuesioner) use ($userId) {
-                if ($kuesioner->pertanyaan_count === 0) return false;
+        $kuesioners = $query->orderByDesc('tanggal_publikasi')->get();
+        
+        if ($kuesioners->isEmpty()) {
+            return collect();
+        }
 
-                $answeredCount = $kuesioner->pertanyaan()
-                    ->whereHas('jawaban', fn($q) => $q->where('id_user', $userId))
-                    ->count();
+        // Batch: get answered counts for all kuesioners at once (single query)
+        $kuesionerIds = $kuesioners->pluck('id_kuesioner');
+        $answeredCounts = Pertanyaan::whereIn('id_kuesioner', $kuesionerIds)
+            ->whereHas('jawaban', fn($q) => $q->where('id_user', $userId))
+            ->selectRaw('id_kuesioner, COUNT(*) as answered')
+            ->groupBy('id_kuesioner')
+            ->pluck('answered', 'id_kuesioner');
 
-                return $answeredCount < $kuesioner->pertanyaan_count;
-            })
-            ->values();
+        return $kuesioners->filter(function ($kuesioner) use ($answeredCounts) {
+            if ($kuesioner->pertanyaan_count === 0) return false;
+            $answered = $answeredCounts->get($kuesioner->id_kuesioner, 0);
+            return $answered < $kuesioner->pertanyaan_count;
+        })->values();
     }
 
     /**
@@ -149,13 +156,10 @@ class BerandaRepository implements BerandaRepositoryInterface
     /**
      * Check whether the alumni has completed all required kuesioner
      * for their current career status.
-     *
-     * "Completed" means: all active kuesioner for the status have all pertanyaan answered.
-     * If there are no active kuesioner for the status, returns true (nothing to complete).
      */
     public function hasCompletedKuesioner(int $userId, ?int $statusId = null): bool
     {
-        $activeKuesioner = Kuesioner::withCount('pertanyaan')
+        $query = Kuesioner::withCount('pertanyaan')
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_publikasi')
             ->where(function ($q) {
@@ -168,25 +172,27 @@ class BerandaRepository implements BerandaRepositoryInterface
             });
 
         if ($statusId !== null) {
-            $activeKuesioner->where('id_status', $statusId);
+            $query->where('id_status', $statusId);
         }
 
-        $activeKuesioner = $activeKuesioner->get();
+        $activeKuesioner = $query->get();
 
-        // No active kuesioner for this status → considered complete
         if ($activeKuesioner->isEmpty()) {
             return true;
         }
 
-        // Check each active kuesioner — all pertanyaan must be answered
+        // Batch: get answered counts for all kuesioners in single query
+        $kuesionerIds = $activeKuesioner->pluck('id_kuesioner');
+        $answeredCounts = Pertanyaan::whereIn('id_kuesioner', $kuesionerIds)
+            ->whereHas('jawaban', fn($q) => $q->where('id_user', $userId))
+            ->selectRaw('id_kuesioner, COUNT(*) as answered')
+            ->groupBy('id_kuesioner')
+            ->pluck('answered', 'id_kuesioner');
+
         foreach ($activeKuesioner as $kuesioner) {
             if ($kuesioner->pertanyaan_count === 0) continue;
-
-            $answeredCount = $kuesioner->pertanyaan()
-                ->whereHas('jawaban', fn($q) => $q->where('id_user', $userId))
-                ->count();
-
-            if ($answeredCount < $kuesioner->pertanyaan_count) {
+            $answered = $answeredCounts->get($kuesioner->id_kuesioner, 0);
+            if ($answered < $kuesioner->pertanyaan_count) {
                 return false;
             }
         }

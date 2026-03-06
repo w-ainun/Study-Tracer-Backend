@@ -47,6 +47,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LowonganAlumniRepositoryInterface::class, LowonganAlumniRepository::class);
         $this->app->bind(AlumniDirectoryRepositoryInterface::class, AlumniDirectoryRepository::class);
         $this->app->bind(ProfileRepositoryInterface::class, ProfileRepository::class);
+
+        // Register Laravel Telescope (local/dev only)
+        if ($this->app->environment('local')) {
+            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        }
     }
 
     /**

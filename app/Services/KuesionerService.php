@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\KuesionerRepositoryInterface;
+use App\Jobs\SendBulkNotifications;
 use App\Models\Alumni;
 
 class KuesionerService
@@ -111,47 +112,41 @@ class KuesionerService
     }
 
     /**
-     * Notifikasi alumni yang sesuai dengan kuesioner baru
+     * Notifikasi alumni yang sesuai dengan kuesioner baru (via queue)
      */
     private function notifyRelevantAlumni($kuesioner)
     {
         $statusId = $kuesioner->id_status;
-        $kuesionerTitle = $kuesioner->judul;
+        $kuesionerTitle = $kuesioner->title;
         
-        // Jika kuesioner untuk status tertentu
         if ($statusId) {
-            // Cari semua alumni dengan status karir tersebut
-            $alumni = Alumni::whereHas('riwayatStatus', function ($query) use ($statusId) {
+            $statusName = $kuesioner->statusKarir->nama_status ?? 'status tertentu';
+            
+            // Ambil user IDs saja (efisien, tanpa load full model)
+            $userIds = Alumni::whereHas('riwayatStatus', function ($query) use ($statusId) {
                 $query->where('id_status', $statusId)
                     ->where('approval_status', 'approved');
-            })->with('user')->get();
-            
-            $statusName = $kuesioner->status->nama_status ?? 'status tertentu';
-            
-            foreach ($alumni as $alum) {
-                if ($alum->id_users) {
-                    $this->notificationService->notifyNewKuesioner(
-                        $alum->id_users,
-                        $kuesioner->id_kuesioner,
-                        $kuesionerTitle,
-                        $statusName
-                    );
-                }
-            }
+            })->whereNotNull('id_users')->pluck('id_users')->toArray();
         } else {
-            // Jika kuesioner untuk semua alumni
-            $allAlumni = Alumni::with('user')->where('status_create', 'ok')->get();
-            
-            foreach ($allAlumni as $alum) {
-                if ($alum->id_users) {
-                    $this->notificationService->notifyNewKuesioner(
-                        $alum->id_users,
-                        $kuesioner->id_kuesioner,
-                        $kuesionerTitle,
-                        'semua alumni'
-                    );
-                }
-            }
+            $statusName = 'semua alumni';
+            $userIds = Alumni::where('status_create', 'ok')
+                ->whereNotNull('id_users')
+                ->pluck('id_users')
+                ->toArray();
+        }
+
+        if (empty($userIds)) {
+            return;
+        }
+
+        // Dispatch ke queue dalam batch per 100 user
+        foreach (array_chunk($userIds, 100) as $chunk) {
+            SendBulkNotifications::dispatch(
+                $chunk,
+                $kuesioner->id_kuesioner,
+                $kuesionerTitle,
+                $statusName,
+            );
         }
     }
 

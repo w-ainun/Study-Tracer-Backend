@@ -104,21 +104,23 @@ class AdminRepository implements AdminRepositoryInterface
 
     public function getUserManagementStats(): array
     {
-        $pending  = Alumni::where('status_create', 'pending')->count();
-        $active   = Alumni::where('status_create', 'ok')->count();
-        $rejected = Alumni::where('status_create', 'rejected')->count();
-        $total    = Alumni::count();
-        $profileUpdated = Alumni::where('updated_at', '>=', now()->subDays(30))
-            ->where('status_create', 'ok')
-            ->count();
+        return Cache::remember('admin.user_management_stats', 60, function () {
+            $counts = Alumni::selectRaw("
+                COUNT(*) as total,
+                SUM(CASE WHEN status_create = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN status_create = 'ok' THEN 1 ELSE 0 END) as active,
+                SUM(CASE WHEN status_create = 'rejected' THEN 1 ELSE 0 END) as rejected,
+                SUM(CASE WHEN status_create = 'ok' AND updated_at >= ? THEN 1 ELSE 0 END) as profile_updated
+            ", [now()->subDays(30)])->first();
 
-        return [
-            'pending'         => $pending,
-            'active'          => $active,
-            'rejected'        => $rejected,
-            'total'           => $total,
-            'profile_updated' => $profileUpdated,
-        ];
+            return [
+                'pending'         => (int) ($counts->pending ?? 0),
+                'active'          => (int) ($counts->active ?? 0),
+                'rejected'        => (int) ($counts->rejected ?? 0),
+                'total'           => (int) ($counts->total ?? 0),
+                'profile_updated' => (int) ($counts->profile_updated ?? 0),
+            ];
+        });
     }
 
     public function getPendingAlumni(int $perPage = 15)
