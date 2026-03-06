@@ -85,7 +85,7 @@ class LowonganService
             $this->notificationService->notifyLowonganApproved(
                 $lowongan->id_users,
                 $id,
-                $lowongan->judul
+                $lowongan->judul_lowongan
             );
         }
         
@@ -107,7 +107,7 @@ class LowonganService
             $this->notificationService->notifyLowonganRejected(
                 $lowongan->id_users,
                 $id,
-                $lowongan->judul
+                $lowongan->judul_lowongan
             );
         }
         
