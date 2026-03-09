@@ -7,11 +7,13 @@ use App\Models\Kuliah;
 use App\Models\Pekerjaan;
 use App\Models\Perusahaan;
 use App\Models\Wirausaha;
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class AlumniService
 {
+    use GeneratesThumbnail;
     private AlumniRepositoryInterface $alumniRepository;
 
     public function __construct(AlumniRepositoryInterface $alumniRepository)
@@ -33,12 +35,13 @@ class AlumniService
         }
 
         return DB::transaction(function () use ($alumni, $data, $foto) {
-            // Handle foto upload
+            // Handle foto upload with thumbnail
             if ($foto) {
                 if ($alumni->foto) {
-                    Storage::disk('public')->delete($alumni->foto);
+                    $this->deleteWithThumbnail($alumni->foto);
                 }
-                $data['foto'] = $foto->store('alumni/foto', 'public');
+                $result = $this->storeWithThumbnail($foto, 'alumni/foto');
+                $data['foto'] = $result['path'];
             }
 
             // Extract skills and social media before updating profile

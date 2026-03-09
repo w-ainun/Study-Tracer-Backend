@@ -5,6 +5,7 @@ namespace App\Http\Resources\Alumni;
 use App\Http\Resources\JurusanResource;
 use App\Http\Resources\SkillResource;
 use App\Http\Resources\SocialMediaResource;
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -83,6 +84,7 @@ class PublicProfileResource extends JsonResource
             'tahun_masuk' => $this->tahun_masuk,
             'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),
             'foto' => $this->foto ?: null,
+            'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'tempat_lahir' => $this->tempat_lahir,
 
             // Relations

@@ -9,11 +9,12 @@ use App\Http\Resources\Alumni\MyLowonganResource;
 use App\Http\Resources\Alumni\SavedLowonganResource;
 use App\Services\Alumni\LowonganAlumniService;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 
 class LowonganController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, GeneratesThumbnail;
 
     private LowonganAlumniService $lowonganService;
 
@@ -81,9 +82,10 @@ class LowonganController extends Controller
         try {
             $data = $request->validated();
 
-            // Handle foto upload
+            // Handle foto upload with thumbnail
             if ($request->hasFile('foto_lowongan')) {
-                $data['foto_lowongan'] = $request->file('foto_lowongan')->store('lowongan', 'public');
+                $result = $this->storeWithThumbnail($request->file('foto_lowongan'), 'lowongan');
+                $data['foto_lowongan'] = $result['path'];
             }
 
             // Attach current alumni as poster

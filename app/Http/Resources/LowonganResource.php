@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -21,6 +22,7 @@ class LowonganResource extends JsonResource
             'jam_mulai' => $this->jam_mulai,
             'jam_berakhir' => $this->jam_berakhir,
             'foto' => $this->foto_lowongan,
+            'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto_lowongan),
             'perusahaan' => new PerusahaanResource($this->whenLoaded('perusahaan')),
             'pekerjaan' => $this->whenLoaded('pekerjaan', function () {
                 return [

@@ -8,6 +8,7 @@ use App\Models\Kuliah;
 use App\Models\Pekerjaan;
 use App\Models\Perusahaan;
 use App\Models\Wirausaha;
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -15,6 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
+    use GeneratesThumbnail;
     private AuthRepositoryInterface $authRepository;
 
     public function __construct(AuthRepositoryInterface $authRepository)
@@ -33,9 +35,10 @@ class AuthService
                 $profileData['tahun_lulus'] = $profileData['tahun_lulus'] . '-01-01';
             }
 
-            // Handle foto upload — store to disk and replace with path
+            // Handle foto upload — store to disk with thumbnail
             if (isset($profileData['foto']) && $profileData['foto'] instanceof \Illuminate\Http\UploadedFile) {
-                $profileData['foto'] = $profileData['foto']->store('alumni/foto', 'public');
+                $result = $this->storeWithThumbnail($profileData['foto'], 'alumni/foto');
+                $profileData['foto'] = $result['path'];
             }
 
             // --- 1. EKSTRAK DATA RELASI & KARIER SEBELUM MEMBUAT ALUMNI ---
