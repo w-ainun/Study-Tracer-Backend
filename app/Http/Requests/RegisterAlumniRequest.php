@@ -6,6 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use App\Rules\EmailNotBanned;
+use App\Rules\Recaptcha;
 use App\Rules\UniqueEmailExceptRejected;
 
 class RegisterAlumniRequest extends FormRequest
@@ -18,6 +19,9 @@ class RegisterAlumniRequest extends FormRequest
     public function rules(): array
     {
         return [
+            // CAPTCHA
+            'captcha_token' => ['required', 'string', new Recaptcha()],
+
             // Step 1: Account
             'email' => ['required', 'email', new EmailNotBanned(), new UniqueEmailExceptRejected()],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
@@ -86,6 +90,7 @@ class RegisterAlumniRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'captcha_token.required' => 'Verifikasi CAPTCHA wajib dilakukan.',
             'email.required' => 'Email wajib diisi.',
             'email.unique' => 'Email sudah terdaftar.',
             'password.required' => 'Password wajib diisi.',

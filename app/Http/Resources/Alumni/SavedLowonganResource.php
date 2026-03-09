@@ -29,6 +29,7 @@ class SavedLowonganResource extends JsonResource
                     'status' => $this->lowongan->status,
                     'lowongan_selesai' => $this->lowongan->lowongan_selesai?->format('Y-m-d'),
                     'foto' => $this->lowongan->foto_lowongan,
+                    'foto_thumbnail' => \App\Traits\GeneratesThumbnail::thumbnailPath($this->lowongan->foto_lowongan),
                     'perusahaan' => new PerusahaanResource($this->lowongan->perusahaan),
                     'pekerjaan' => $this->lowongan->pekerjaan ? [
                         'id' => $this->lowongan->pekerjaan->id_pekerjaan,

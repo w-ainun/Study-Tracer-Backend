@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Interfaces\LowonganRepositoryInterface;
+use App\Traits\GeneratesThumbnail;
 
 class LowonganService
 {
+    use GeneratesThumbnail;
     private LowonganRepositoryInterface $lowonganRepository;
     private NotificationService $notificationService;
 
@@ -47,6 +49,14 @@ class LowonganService
         $skillIds = $data['skills'] ?? null;
         unset($data['skills']);
 
+        // If updating foto_lowongan, delete old one first
+        if (isset($data['foto_lowongan'])) {
+            $lowongan = $this->lowonganRepository->getById($id);
+            if ($lowongan && $lowongan->foto_lowongan) {
+                $this->deleteWithThumbnail($lowongan->foto_lowongan);
+            }
+        }
+
         $lowongan = $this->lowonganRepository->update($id, $data);
 
         if ($skillIds !== null) {
@@ -59,6 +69,14 @@ class LowonganService
 
     public function delete(int $id)
     {
+        // Get lowongan data before deleting to clean up files
+        $lowongan = $this->lowonganRepository->getById($id);
+        
+        // Delete foto_lowongan and thumbnail if exists
+        if ($lowongan && $lowongan->foto_lowongan) {
+            $this->deleteWithThumbnail($lowongan->foto_lowongan);
+        }
+        
         return $this->lowonganRepository->delete($id);
     }
 

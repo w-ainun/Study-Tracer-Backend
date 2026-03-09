@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -37,6 +38,7 @@ class AlumniResource extends JsonResource
             'tempat_lahir' => $this->tempat_lahir,
             'tahun_masuk' => $this->tahun_masuk,
             'foto' => $this->foto ?: null,
+            'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'alamat' => $this->alamat,
             'no_hp' => $this->no_hp,
             'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),

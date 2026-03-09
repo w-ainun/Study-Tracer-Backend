@@ -62,4 +62,9 @@ class Alumni extends Model
     {
         return $this->hasMany(RiwayatStatus::class, 'id_alumni', 'id_alumni');
     }
+
+    public function portofolio()
+    {
+        return $this->hasMany(Portofolio::class, 'id_alumni', 'id_alumni');
+    }
 }

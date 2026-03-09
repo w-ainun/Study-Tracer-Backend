@@ -9,11 +9,12 @@ use App\Http\Resources\LowonganResource;
 use App\Models\Alumni;
 use App\Services\LowonganService;
 use App\Traits\ApiResponse;
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 
 class LowonganController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, GeneratesThumbnail;
 
     private LowonganService $lowonganService;
 
@@ -69,9 +70,10 @@ class LowonganController extends Controller
         try {
             $data = $request->validated();
 
-            // Handle foto upload
+            // Handle foto upload with thumbnail
             if ($request->hasFile('foto_lowongan')) {
-                $data['foto_lowongan'] = $request->file('foto_lowongan')->store('lowongan', 'public');
+                $result = $this->storeWithThumbnail($request->file('foto_lowongan'), 'lowongan');
+                $data['foto_lowongan'] = $result['path'];
             }
 
             // If nama_perusahaan provided but no id_perusahaan, auto-create
@@ -113,7 +115,8 @@ class LowonganController extends Controller
             $data = $request->validated();
 
             if ($request->hasFile('foto_lowongan')) {
-                $data['foto_lowongan'] = $request->file('foto_lowongan')->store('lowongan', 'public');
+                $result = $this->storeWithThumbnail($request->file('foto_lowongan'), 'lowongan');
+                $data['foto_lowongan'] = $result['path'];
             }
 
             // If nama_perusahaan provided, auto-create

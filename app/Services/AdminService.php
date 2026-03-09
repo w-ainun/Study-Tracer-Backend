@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Interfaces\AdminRepositoryInterface;
+use App\Traits\GeneratesThumbnail;
 
 class AdminService
 {
+    use GeneratesThumbnail;
     private AdminRepositoryInterface $adminRepository;
     private NotificationService $notificationService;
 
@@ -80,6 +82,14 @@ class AdminService
 
     public function deleteUser(int $userId)
     {
+        // Get user data before deleting to clean up files
+        $user = \App\Models\User::with('alumni')->find($userId);
+        
+        // Delete alumni foto and thumbnail if exists
+        if ($user && $user->alumni && $user->alumni->foto) {
+            $this->deleteWithThumbnail($user->alumni->foto);
+        }
+        
         return $this->adminRepository->deleteUser($userId);
     }
 

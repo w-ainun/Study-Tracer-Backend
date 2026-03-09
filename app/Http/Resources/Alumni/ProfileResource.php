@@ -6,6 +6,7 @@ use App\Http\Resources\JurusanResource;
 use App\Http\Resources\SkillResource;
 use App\Http\Resources\SocialMediaResource;
 use App\Http\Resources\UserResource;
+use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -94,6 +95,7 @@ class ProfileResource extends JsonResource
             'tempat_lahir' => $this->tempat_lahir,
             'tahun_masuk' => $this->tahun_masuk,
             'foto' => $this->foto ?: null,
+            'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'alamat' => $this->alamat,
             'no_hp' => $this->no_hp,
             'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),
@@ -120,6 +122,19 @@ class ProfileResource extends JsonResource
                     return $this->riwayatStatus->where('approval_status', 'approved')->values();
                 }, collect())
             ),
+
+            // New: Deskripsi Karier & Portofolio  
+            'deskripsi_karier' => $this->when($this->relationLoaded('riwayatStatus'), function () {
+                // Extract all deskripsi karier from approved riwayat_status
+                $deskripsiList = [];
+                foreach ($this->riwayatStatus->where('approval_status', 'approved') as $riwayat) {
+                    if ($riwayat->relationLoaded('deskripsiKarier') && $riwayat->deskripsiKarier) {
+                        $deskripsiList[] = new DeskripsiKarierResource($riwayat->deskripsiKarier->load('riwayatStatus.status', 'riwayatStatus.pekerjaan.perusahaan', 'riwayatStatus.kuliah.universitas', 'riwayatStatus.wirausaha'));
+                    }
+                }
+                return $deskripsiList;
+            }, []),
+            'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio', collect())),
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

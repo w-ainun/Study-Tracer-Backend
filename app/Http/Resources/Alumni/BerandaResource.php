@@ -26,6 +26,7 @@ class BerandaResource extends JsonResource
                 'id' => $profile->id_alumni,
                 'nama' => $profile->nama_alumni,
                 'foto' => $profile->foto ?: null,
+                'foto_thumbnail' => \App\Traits\GeneratesThumbnail::thumbnailPath($profile->foto),
                 'jurusan' => $profile->jurusan?->nama_jurusan,
                 'tahun_masuk' => $profile->tahun_masuk,
                 'tahun_lulus' => $profile->tahun_lulus?->format('Y-m-d'),

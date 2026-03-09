@@ -44,4 +44,9 @@ class RiwayatStatus extends Model
     {
         return $this->hasOne(Wirausaha::class, 'id_riwayat', 'id_riwayat');
     }
+
+    public function deskripsiKarier()
+    {
+        return $this->hasOne(DeskripsiKarier::class, 'id_riwayat', 'id_riwayat');
+    }
 }
