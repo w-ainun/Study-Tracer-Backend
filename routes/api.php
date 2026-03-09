@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\Alumni\BerandaController;
 use App\Http\Controllers\Api\Alumni\LowonganController as AlumniLowonganController;
 use App\Http\Controllers\Api\Alumni\AlumniDirectoryController;
 use App\Http\Controllers\Api\Alumni\ProfileController;
+use App\Http\Controllers\Api\Alumni\DeskripsiKarierController;
+use App\Http\Controllers\Api\Alumni\PortofolioController;
+use App\Http\Controllers\Api\LandingController;
 
 // ╔══════════════════════════════════════════════════════╗
 // ║                  PUBLIC ROUTES                       ║
@@ -52,6 +55,11 @@ Route::get('/lowongan/{id}', [LowonganController::class, 'show']);
 
 // Public published kuesioner
 Route::get('/kuesioner/published', [KuesionerController::class, 'published']);
+
+// Landing page stats
+Route::get('/landing/stats', [LandingController::class, 'stats']);
+Route::get('/landing/featured-jobs', [LandingController::class, 'featuredJobs']);
+Route::get('/landing/featured-alumni', [LandingController::class, 'featuredAlumni']);
 
 // ╔══════════════════════════════════════════════════════╗
 // ║               PROTECTED ROUTES (AUTH)                ║
@@ -99,6 +107,16 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/saved-lowongan', [AlumniLowonganController::class, 'saved']);
             Route::post('/lowongan/{id}/toggle-save', [AlumniLowonganController::class, 'toggleSave']);
 
+
+        // Deskripsi Karier (accessible even if not verified)
+        Route::post('/deskripsi-karier', [DeskripsiKarierController::class, 'store']);
+        Route::put('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'update']);
+        Route::delete('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'destroy']);
+
+        // Portofolio (accessible even if not verified)
+        Route::post('/portofolio', [PortofolioController::class, 'store']);
+        Route::match(['put', 'post'], '/portofolio/{id}', [PortofolioController::class, 'update']);
+        Route::delete('/portofolio/{id}', [PortofolioController::class, 'destroy']);
             // Alumni directory (Direktori Alumni)
             Route::get('/directory', [AlumniDirectoryController::class, 'index']);
             Route::get('/directory/filters', [AlumniDirectoryController::class, 'filterOptions']);

@@ -123,6 +123,19 @@ class ProfileResource extends JsonResource
                 }, collect())
             ),
 
+            // New: Deskripsi Karier & Portofolio  
+            'deskripsi_karier' => $this->when($this->relationLoaded('riwayatStatus'), function () {
+                // Extract all deskripsi karier from approved riwayat_status
+                $deskripsiList = [];
+                foreach ($this->riwayatStatus->where('approval_status', 'approved') as $riwayat) {
+                    if ($riwayat->relationLoaded('deskripsiKarier') && $riwayat->deskripsiKarier) {
+                        $deskripsiList[] = new DeskripsiKarierResource($riwayat->deskripsiKarier->load('riwayatStatus.status', 'riwayatStatus.pekerjaan.perusahaan', 'riwayatStatus.kuliah.universitas', 'riwayatStatus.wirausaha'));
+                    }
+                }
+                return $deskripsiList;
+            }, []),
+            'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio', collect())),
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

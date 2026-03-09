@@ -42,6 +42,8 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus.kuliah.universitas',
             'riwayatStatus.kuliah.jurusanKuliah',
             'riwayatStatus.wirausaha.bidangUsaha',
+            'riwayatStatus.deskripsiKarier',
+            'portofolio',
         ])
             ->where('id_users', $userId)
             ->first();
