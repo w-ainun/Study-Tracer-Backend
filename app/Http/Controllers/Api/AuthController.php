@@ -45,6 +45,11 @@ class AuthController extends Controller
         try {
             $result = $this->authService->login($request->validated());
 
+            // Add can_access_all to user object if available
+            if (isset($result['can_access_all'])) {
+                $result['user']->can_access_all = $result['can_access_all'];
+            }
+
             return $this->successResponse([
                 'user' => new UserResource($result['user']),
                 'token' => $result['token'],
@@ -60,9 +65,16 @@ class AuthController extends Controller
     {
         try {
             $user = $this->authService->getAuthenticatedUser($request->user());
+            $user->load(['alumni.jurusan', 'alumni.skills', 'alumni.socialMedia', 'alumni.riwayatStatus.status', 'admin']);
+
+            // Calculate can_access_all for alumni users
+            if ($user->alumni) {
+                $canAccessAllData = $this->authService->calculateCanAccessAll($user->id_users);
+                $user->can_access_all = $canAccessAllData;
+            }
 
             return $this->successResponse(
-                new UserResource($user->load(['alumni.jurusan', 'alumni.skills', 'alumni.socialMedia', 'alumni.riwayatStatus.status', 'admin']))
+                new UserResource($user)
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data user');

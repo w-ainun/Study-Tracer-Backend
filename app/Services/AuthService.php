@@ -173,10 +173,91 @@ class AuthService
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
+        // Calculate can_access_all for alumni users
+        $canAccessAll = null;
+        if ($user->alumni) {
+            $canAccessAll = $this->calculateCanAccessAll($user->id_users);
+        }
+
         return [
             'user' => $user->load(['alumni.jurusan', 'admin']),
             'token' => $token,
+            'can_access_all' => $canAccessAll,
         ];
+    }
+
+    /**
+     * Check if the user has completed all required kuesioner for their current career status.
+     */
+    private function hasCompletedKuesioner(int $userId): bool
+    {
+        // Get current status id
+        $alumni = \App\Models\Alumni::where('id_users', $userId)->first();
+        
+        if (!$alumni) return false;
+
+        $latestRiwayat = \App\Models\RiwayatStatus::where('id_alumni', $alumni->id_alumni)
+            ->latest('id_riwayat')
+            ->first();
+
+        $statusId = $latestRiwayat?->id_status;
+
+        // Get active kuesioner for this status
+        $query = \App\Models\Kuesioner::withCount('pertanyaan')
+            ->where('status', 'aktif')
+            ->whereNotNull('tanggal_publikasi')
+            ->where(function ($q) {
+                $q->whereNull('tanggal_mulai')
+                    ->orWhere('tanggal_mulai', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('tanggal_selesai')
+                    ->orWhere('tanggal_selesai', '>=', now());
+            });
+
+        if ($statusId !== null) {
+            $query->where('id_status', $statusId);
+        }
+
+        $activeKuesioner = $query->get();
+
+        if ($activeKuesioner->isEmpty()) {
+            return true;
+        }
+
+        // Check if all kuesioner are completed
+        $kuesionerIds = $activeKuesioner->pluck('id_kuesioner');
+        $answeredCounts = \App\Models\Pertanyaan::whereIn('id_kuesioner', $kuesionerIds)
+            ->whereHas('jawaban', fn($q) => $q->where('id_user', $userId))
+            ->selectRaw('id_kuesioner, COUNT(*) as answered')
+            ->groupBy('id_kuesioner')
+            ->pluck('answered', 'id_kuesioner');
+
+        foreach ($activeKuesioner as $kuesioner) {
+            if ($kuesioner->pertanyaan_count === 0) continue;
+            $answered = $answeredCounts->get($kuesioner->id_kuesioner, 0);
+            if ($answered < $kuesioner->pertanyaan_count) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Calculate can_access_all for alumni users.
+     * Returns true if alumni is verified and has completed all required kuesioner.
+     */
+    public function calculateCanAccessAll(int $userId): bool
+    {
+        $alumni = \App\Models\Alumni::where('id_users', $userId)->first();
+        
+        if (!$alumni) return false;
+
+        $isVerified = $alumni->status_create === 'ok';
+        $hasCompletedKuesioner = $this->hasCompletedKuesioner($userId);
+        
+        return $isVerified && $hasCompletedKuesioner;
     }
 
     public function logout($user)
