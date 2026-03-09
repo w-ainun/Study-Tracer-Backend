@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\KuesionerController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\StatusKarierController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\CaptchaController;
 use App\Http\Controllers\Api\Alumni\BerandaController;
 use App\Http\Controllers\Api\Alumni\LowonganController as AlumniLowonganController;
 use App\Http\Controllers\Api\Alumni\AlumniDirectoryController;
@@ -23,6 +24,11 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/validate-email', [AuthController::class, 'validateEmail']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+// CAPTCHA routes
+Route::get('/captcha/generate', [CaptchaController::class, 'generate']);
+Route::post('/captcha/verify', [CaptchaController::class, 'verify']);
+Route::get('/captcha/refresh', [CaptchaController::class, 'refresh']);
 
 // Public master data (for registration form dropdowns)
 Route::prefix('master')->group(function () {
