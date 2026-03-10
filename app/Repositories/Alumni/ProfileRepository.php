@@ -42,8 +42,8 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus.kuliah.universitas',
             'riwayatStatus.kuliah.jurusanKuliah',
             'riwayatStatus.wirausaha.bidangUsaha',
-            'riwayatStatus.deskripsiKarier',
-            'portofolio',
+            'riwayatStatus.deskripsiKarier', // ✓ Eager-loaded
+            'portofolio', // ✓ Eager-loaded
         ])
             ->where('id_users', $userId)
             ->first();
@@ -115,6 +115,8 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus.kuliah.universitas',
             'riwayatStatus.kuliah.jurusanKuliah',
             'riwayatStatus.wirausaha.bidangUsaha',
+            'riwayatStatus.deskripsiKarier',
+            'portofolio',
         ])->findOrFail($alumniId);
     }
 
