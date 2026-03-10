@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::create('deskripsi_karier', function (Blueprint $table) {
             $table->id('id_deskripsi');
             $table->unsignedBigInteger('id_riwayat');
-            $table->text('deskripsi');
+            $table->longText('deskripsi');
             $table->timestamps();
 
             $table->foreign('id_riwayat')->references('id_riwayat')->on('riwayat_status')->onDelete('cascade');
