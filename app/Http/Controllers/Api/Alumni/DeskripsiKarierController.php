@@ -20,6 +20,39 @@ class DeskripsiKarierController extends Controller
     }
 
     /**
+     * GET /alumni/deskripsi-karier
+     * Get all deskripsi karier for authenticated alumni
+     * Can optionally specify id_alumni query parameter to get other alumni's deskripsi
+     */
+    public function index(Request $request)
+    {
+        try {
+            // If id_alumni is provided in query, use it; otherwise use authenticated alumni
+            $alumniId = $request->query('id_alumni', $request->user()->alumni->id_alumni);
+            $deskripsiList = $this->deskripsiKarierService->getByAlumniId($alumniId);
+
+            return $this->successResponse($deskripsiList, 'Deskripsi karier berhasil diambil');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil deskripsi karier: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /alumni/{id_alumni}/deskripsi-karier
+     * Get all deskripsi karier for specific alumni (public profile view)
+     */
+    public function getByAlumni(Request $request, int $id_alumni)
+    {
+        try {
+            $deskripsiList = $this->deskripsiKarierService->getByAlumniId($id_alumni);
+
+            return $this->successResponse($deskripsiList, 'Deskripsi karier berhasil diambil');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil deskripsi karier: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * POST /alumni/deskripsi-karier
      * Create deskripsi karier for a riwayat_status
      */
@@ -44,12 +77,13 @@ class DeskripsiKarierController extends Controller
 
     /**
      * PUT /alumni/deskripsi-karier/{id}
-     * Update deskripsi karier
+     * Update deskripsi karier (delete old and create new)
      */
     public function update(Request $request, int $id)
     {
         try {
             $validated = $request->validate([
+                'id_riwayat' => ['required', 'exists:riwayat_status,id_riwayat'],
                 'deskripsi' => ['required', 'string', 'min:10'],
             ]);
 

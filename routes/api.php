@@ -109,6 +109,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
         // Deskripsi Karier (accessible even if not verified)
+        Route::get('/deskripsi-karier', [DeskripsiKarierController::class, 'index']); // Own or with ?id_alumni=x
+        Route::get('/{id_alumni}/deskripsi-karier', [DeskripsiKarierController::class, 'getByAlumni']); // Specific alumni
         Route::post('/deskripsi-karier', [DeskripsiKarierController::class, 'store']);
         Route::put('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'update']);
         Route::delete('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'destroy']);

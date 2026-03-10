@@ -44,18 +44,33 @@ class DeskripsiKarierService
 
     /**
      * Update deskripsi karier
+     * Delete old data and create new one
      */
     public function update(int $alumniId, int $id, array $data): DeskripsiKarier
     {
-        $deskripsi = DeskripsiKarier::whereHas('riwayatStatus', function ($query) use ($alumniId) {
-            $query->where('id_alumni', $alumniId);
-        })->findOrFail($id);
+        return DB::transaction(function () use ($alumniId, $id, $data) {
+            // Find and verify ownership of old deskripsi
+            $oldDeskripsi = DeskripsiKarier::whereHas('riwayatStatus', function ($query) use ($alumniId) {
+                $query->where('id_alumni', $alumniId);
+            })->findOrFail($id);
 
-        $deskripsi->update([
-            'deskripsi' => $data['deskripsi'],
-        ]);
+            // Verify new riwayat belongs to alumni
+            $riwayat = RiwayatStatus::where('id_riwayat', $data['id_riwayat'])
+                ->where('id_alumni', $alumniId)
+                ->where('approval_status', 'approved')
+                ->firstOrFail();
 
-        return $deskripsi->fresh(['riwayatStatus.status']);
+            // Delete old data
+            $oldDeskripsi->delete();
+
+            // Create new data
+            $newDeskripsi = DeskripsiKarier::create([
+                'id_riwayat' => $data['id_riwayat'],
+                'deskripsi' => $data['deskripsi'],
+            ]);
+
+            return $newDeskripsi->load(['riwayatStatus.status', 'riwayatStatus.pekerjaan.perusahaan', 'riwayatStatus.kuliah.universitas', 'riwayatStatus.wirausaha']);
+        });
     }
 
     /**
