@@ -108,12 +108,14 @@ class PublicProfileResource extends JsonResource
                 $deskripsiList = [];
                 foreach ($this->riwayatStatus->where('approval_status', 'approved') as $riwayat) {
                     if ($riwayat->relationLoaded('deskripsiKarier') && $riwayat->deskripsiKarier) {
-                        $deskripsiList[] = new DeskripsiKarierResource($riwayat->deskripsiKarier);
+                        $deskripsiList[] = new DeskripsiKarierResource(
+                            $riwayat->deskripsiKarier->load('riwayatStatus.status', 'riwayatStatus.pekerjaan.perusahaan', 'riwayatStatus.kuliah.universitas', 'riwayatStatus.wirausaha')
+                        );
                     }
                 }
                 return $deskripsiList;
             }, []),
-            'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio', collect())),
+            'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio') ?? collect()),
         ];
     }
 }
