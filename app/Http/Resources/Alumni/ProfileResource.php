@@ -134,7 +134,7 @@ class ProfileResource extends JsonResource
                 }
                 return $deskripsiList;
             }, []),
-            'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio', collect())),
+            'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio') ?? collect()),
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
