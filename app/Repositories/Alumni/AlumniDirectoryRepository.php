@@ -90,6 +90,8 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
             'riwayatStatus.kuliah.universitas',
             'riwayatStatus.kuliah.jurusanKuliah',
             'riwayatStatus.wirausaha.bidangUsaha',
+            'riwayatStatus.deskripsiKarier',
+            'portofolio',
         ])
             ->where('status_create', 'ok')
             ->findOrFail($alumniId);
