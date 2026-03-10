@@ -6,7 +6,7 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',          // Local frontend
         'http://localhost:5174',          // Alternative local port
-        'https://0e0d-114-5-241-163.ngrok-free.app', // Production/ngrok frontend
+        'https://5e5b-139-228-40-7.ngrok-free.app', // Production/ngrok frontend
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
