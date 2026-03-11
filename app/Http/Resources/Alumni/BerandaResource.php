@@ -84,7 +84,7 @@ class BerandaResource extends JsonResource
         } elseif ($riwayat->kuliah) {
             $data['jenjang'] = $riwayat->kuliah->jenjang ?? null;
             $data['universitas'] = $riwayat->kuliah->universitas?->nama_universitas;
-            $data['jurusan_kuliah'] = $riwayat->kuliah->jurusanKuliah?->nama ?? null;
+            $data['jurusan_kuliah'] = $riwayat->kuliah->jurusanKuliah?->nama_jurusan ?? null;
         } elseif ($riwayat->wirausaha) {
             $data['nama_usaha'] = $riwayat->wirausaha->nama_usaha;
             $data['bidang_usaha'] = $riwayat->wirausaha->bidangUsaha?->nama ?? null;

@@ -66,7 +66,13 @@ class KuesionerService
 
     public function submitJawaban(int $userId, array $jawabanData)
     {
-        return $this->kuesionerRepository->submitJawaban($userId, $jawabanData);
+        $result = $this->kuesionerRepository->submitJawaban($userId, $jawabanData);
+        
+        // Clear cache setelah submit jawaban kuesioner
+        \Illuminate\Support\Facades\Cache::forget("user:{$userId}:kuesioner_completed");
+        \Illuminate\Support\Facades\Cache::forget("user:{$userId}:can_access_all");
+        
+        return $result;
     }
 
     public function getPublished(int $perPage = 15)

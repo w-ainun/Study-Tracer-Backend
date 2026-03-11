@@ -48,10 +48,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(AlumniDirectoryRepositoryInterface::class, AlumniDirectoryRepository::class);
         $this->app->bind(ProfileRepositoryInterface::class, ProfileRepository::class);
 
-        // Register Laravel Telescope (local/dev only)
-        if ($this->app->environment('local')) {
-            $this->app->register(\App\Providers\TelescopeServiceProvider::class);
-        }
+        // Register Laravel Telescope (DISABLED untuk performa)
+        // if ($this->app->environment('local')) {
+        //     $this->app->register(\App\Providers\TelescopeServiceProvider::class);
+        // }
     }
 
     /**
@@ -60,7 +60,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Prevent lazy loading in non-production to catch N+1 queries early
-        Model::preventLazyLoading(!app()->environment('production'));
+        // DISABLED untuk performa di development
+        // Model::preventLazyLoading(!app()->environment('production'));
 
         // Prevent silently discarding attributes not in $fillable
         Model::preventSilentlyDiscardingAttributes(!app()->environment('production'));

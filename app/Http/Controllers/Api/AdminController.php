@@ -239,7 +239,7 @@ class AdminController extends Controller
                 $oldPerusahaan = $previousRiwayat?->pekerjaan?->perusahaan?->nama_perusahaan ?? '-';
                 // Old kuliah details
                 $oldUniversitas = $previousRiwayat?->kuliah?->universitas?->nama_universitas ?? '-';
-                $oldJurusan = $previousRiwayat?->kuliah?->jurusanKuliah?->nama ?? '-';
+                $oldJurusan = $previousRiwayat?->kuliah?->jurusanKuliah?->nama_jurusan ?? '-';
                 // Old wirausaha details
                 $oldNamaUsaha = $previousRiwayat?->wirausaha?->nama_usaha ?? '-';
                 $oldBidang = $previousRiwayat?->wirausaha?->bidangUsaha?->nama_bidang ?? '-';
@@ -250,7 +250,7 @@ class AdminController extends Controller
                 }
                 if ($riwayat->kuliah) {
                     $changes[] = ['label' => 'Universitas', 'old' => $oldUniversitas, 'new' => $riwayat->kuliah->universitas?->nama_universitas ?? '-'];
-                    $changes[] = ['label' => 'Jurusan', 'old' => $oldJurusan, 'new' => $riwayat->kuliah->jurusanKuliah?->nama ?? '-'];
+                    $changes[] = ['label' => 'Jurusan', 'old' => $oldJurusan, 'new' => $riwayat->kuliah->jurusanKuliah?->nama_jurusan ?? '-'];
                 }
                 if ($riwayat->wirausaha) {
                     $changes[] = ['label' => 'Nama Usaha', 'old' => $oldNamaUsaha, 'new' => $riwayat->wirausaha->nama_usaha ?? '-'];

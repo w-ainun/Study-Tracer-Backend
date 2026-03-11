@@ -64,7 +64,7 @@ class PublicProfileResource extends JsonResource
             if ($latestRiwayat->kuliah) {
                 $currentCareer['kuliah'] = [
                     'universitas' => $latestRiwayat->kuliah->universitas?->nama_universitas,
-                    'jurusan_kuliah' => $latestRiwayat->kuliah->jurusanKuliah?->nama ?? null,
+                    'jurusan_kuliah' => $latestRiwayat->kuliah->jurusanKuliah?->nama_jurusan ?? null,
                     'jenjang' => $latestRiwayat->kuliah->jenjang,
                 ];
             }

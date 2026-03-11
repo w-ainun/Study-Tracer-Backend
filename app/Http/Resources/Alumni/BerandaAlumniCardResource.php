@@ -30,8 +30,8 @@ class BerandaAlumniCardResource extends JsonResource
                 $company = $latestRiwayat->pekerjaan->perusahaan?->nama_perusahaan;
             } elseif ($latestRiwayat->kuliah) {
                 $role = $latestRiwayat->kuliah->jenjang
-                    ? $latestRiwayat->kuliah->jenjang . ' - ' . ($latestRiwayat->kuliah->jurusanKuliah?->nama ?? '')
-                    : ($latestRiwayat->kuliah->jurusanKuliah?->nama ?? 'Mahasiswa');
+                    ? $latestRiwayat->kuliah->jenjang . ' - ' . ($latestRiwayat->kuliah->jurusanKuliah?->nama_jurusan ?? '')
+                    : ($latestRiwayat->kuliah->jurusanKuliah?->nama_jurusan ?? 'Mahasiswa');
                 $company = $latestRiwayat->kuliah->universitas?->nama_universitas;
             } elseif ($latestRiwayat->wirausaha) {
                 $role = 'Wirausaha';

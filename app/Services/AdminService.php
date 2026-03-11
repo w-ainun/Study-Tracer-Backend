@@ -41,6 +41,10 @@ class AdminService
         // Trigger notifikasi
         if ($alumni && $alumni->id_users) {
             $this->notificationService->notifyAccountVerified($alumni->id_users);
+            
+            // Clear cache setelah approve alumni
+            \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:can_access_all");
+            \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:kuesioner_completed");
         }
         
         return $alumni;
@@ -53,6 +57,10 @@ class AdminService
         // Trigger notifikasi
         if ($alumni && $alumni->id_users) {
             $this->notificationService->notifyAccountRejected($alumni->id_users);
+            
+            // Clear cache setelah reject alumni
+            \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:can_access_all");
+            \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:kuesioner_completed");
         }
         
         return $alumni;

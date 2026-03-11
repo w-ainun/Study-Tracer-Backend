@@ -37,8 +37,14 @@ class AuthService
 
             // Handle foto upload — store to disk with thumbnail
             if (isset($profileData['foto']) && $profileData['foto'] instanceof \Illuminate\Http\UploadedFile) {
-                $result = $this->storeWithThumbnail($profileData['foto'], 'alumni/foto');
-                $profileData['foto'] = $result['path'];
+                try {
+                    $result = $this->storeWithThumbnail($profileData['foto'], 'alumni/foto');
+                    $profileData['foto'] = $result['path'];
+                } catch (\Error $e) {
+                    // Fallback: If Intervention Image not installed, just store without thumbnail
+                    \Log::warning('Intervention Image not available, storing image without thumbnail: ' . $e->getMessage());
+                    $profileData['foto'] = $profileData['foto']->store('alumni/foto', 'public');
+                }
             }
 
             // --- 1. EKSTRAK DATA RELASI & KARIER SEBELUM MEMBUAT ALUMNI ---
@@ -191,13 +197,18 @@ class AuthService
 
     /**
      * Check if the user has completed all required kuesioner for their current career status.
+     * CACHED untuk menghindari query berulang.
      */
     private function hasCompletedKuesioner(int $userId): bool
     {
-        // Get current status id
-        $alumni = \App\Models\Alumni::where('id_users', $userId)->first();
-        
-        if (!$alumni) return false;
+        return \Illuminate\Support\Facades\Cache::remember(
+            "user:{$userId}:kuesioner_completed",
+            300, // Cache 5 menit
+            function () use ($userId) {
+                // Get current status id
+                $alumni = \App\Models\Alumni::where('id_users', $userId)->first();
+                
+                if (!$alumni) return false;
 
         $latestRiwayat = \App\Models\RiwayatStatus::where('id_alumni', $alumni->id_alumni)
             ->latest('id_riwayat')
@@ -236,31 +247,40 @@ class AuthService
             ->groupBy('id_kuesioner')
             ->pluck('answered', 'id_kuesioner');
 
-        foreach ($activeKuesioner as $kuesioner) {
-            if ($kuesioner->pertanyaan_count === 0) continue;
-            $answered = $answeredCounts->get($kuesioner->id_kuesioner, 0);
-            if ($answered < $kuesioner->pertanyaan_count) {
-                return false;
-            }
-        }
+                foreach ($activeKuesioner as $kuesioner) {
+                    if ($kuesioner->pertanyaan_count === 0) continue;
+                    $answered = $answeredCounts->get($kuesioner->id_kuesioner, 0);
+                    if ($answered < $kuesioner->pertanyaan_count) {
+                        return false;
+                    }
+                }
 
-        return true;
+                return true;
+            }
+        );
     }
 
     /**
      * Calculate can_access_all for alumni users.
      * Returns true if alumni is verified and has completed all required kuesioner.
+     * CACHED untuk menghindari query berulang.
      */
     public function calculateCanAccessAll(int $userId): bool
     {
-        $alumni = \App\Models\Alumni::where('id_users', $userId)->first();
-        
-        if (!$alumni) return false;
+        return \Illuminate\Support\Facades\Cache::remember(
+            "user:{$userId}:can_access_all",
+            600, // Cache 10 menit
+            function () use ($userId) {
+                $alumni = \App\Models\Alumni::where('id_users', $userId)->first();
+                
+                if (!$alumni) return false;
 
-        $isVerified = $alumni->status_create === 'ok';
-        $hasCompletedKuesioner = $this->hasCompletedKuesioner($userId);
-        
-        return $isVerified && $hasCompletedKuesioner;
+                $isVerified = $alumni->status_create === 'ok';
+                $hasCompletedKuesioner = $this->hasCompletedKuesioner($userId);
+                
+                return $isVerified && $hasCompletedKuesioner;
+            }
+        );
     }
 
     public function logout($user)

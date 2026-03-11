@@ -31,9 +31,20 @@ class AlumniDirectoryResource extends JsonResource
                 $role = $latestRiwayat->pekerjaan->posisi;
                 $company = $latestRiwayat->pekerjaan->perusahaan?->nama_perusahaan;
             } elseif ($latestRiwayat->kuliah) {
-                $role = $latestRiwayat->kuliah->jenjang
-                    ? $latestRiwayat->kuliah->jenjang . ' - ' . ($latestRiwayat->kuliah->jurusanKuliah?->nama ?? '')
-                    : ($latestRiwayat->kuliah->jurusanKuliah?->nama ?? 'Mahasiswa');
+                // For studying alumni: show "jenjang - jurusan kuliah"
+                $jenjang = $latestRiwayat->kuliah->jenjang ?? '';
+                $jurusan = $latestRiwayat->kuliah->jurusanKuliah?->nama_jurusan ?? '';
+                
+                if ($jenjang && $jurusan) {
+                    $role = $jenjang . ' - ' . $jurusan;
+                } elseif ($jenjang) {
+                    $role = $jenjang;
+                } elseif ($jurusan) {
+                    $role = $jurusan;
+                } else {
+                    $role = 'Mahasiswa';
+                }
+                
                 $company = $latestRiwayat->kuliah->universitas?->nama_universitas;
             } elseif ($latestRiwayat->wirausaha) {
                 $role = 'Wirausaha';
