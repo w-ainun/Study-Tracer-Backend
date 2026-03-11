@@ -19,4 +19,6 @@ interface AdminRepositoryInterface
     public function getPendingCareerUpdates();
     public function approveCareerUpdate(int $riwayatId);
     public function rejectCareerUpdate(int $riwayatId);
+    public function getPendingProfileUpdates();
+    public function findPendingProfileUpdate(int $id);
 }

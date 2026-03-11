@@ -44,6 +44,7 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus.wirausaha.bidangUsaha',
             'riwayatStatus.deskripsiKarier', // ✓ Eager-loaded
             'portofolio', // ✓ Eager-loaded
+            'pendingProfileUpdates' => fn($q) => $q->where('status', 'pending')->orderByDesc('created_at'),
         ])
             ->where('id_users', $userId)
             ->first();

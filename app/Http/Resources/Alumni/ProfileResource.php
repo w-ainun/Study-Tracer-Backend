@@ -136,6 +136,24 @@ class ProfileResource extends JsonResource
             }, []),
             'portofolio' => PortofolioResource::collection($this->whenLoaded('portofolio') ?? collect()),
 
+            // Pending profile updates (visible only to the alumni themselves)
+            'pending_updates' => $this->whenLoaded('pendingProfileUpdates', function () {
+                return $this->pendingProfileUpdates->map(function ($pending) {
+                    return [
+                        'id' => $pending->id,
+                        'section' => $pending->section,
+                        'action' => $pending->action,
+                        'new_data' => $pending->new_data,
+                        'old_data' => $pending->old_data,
+                        'foto_path' => $pending->foto_path,
+                        'gambar_path' => $pending->gambar_path,
+                        'related_id' => $pending->related_id,
+                        'status' => 'pending',
+                        'created_at' => $pending->created_at,
+                    ];
+                });
+            }, []),
+
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

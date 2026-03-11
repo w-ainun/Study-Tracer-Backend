@@ -38,7 +38,7 @@ class PortofolioController extends Controller
 
             $portofolio = $this->portofolioService->create($alumniId, $validated, $gambar);
 
-            return $this->createdResponse($portofolio, 'Portofolio berhasil ditambahkan');
+            return $this->createdResponse($portofolio, 'Portofolio berhasil dikirim, menunggu persetujuan admin.');
         } catch (ValidationException $e) {
             return $this->errorResponse($e->getMessage(), 422, $e->errors());
         } catch (\Exception $e) {
@@ -65,7 +65,7 @@ class PortofolioController extends Controller
 
             $portofolio = $this->portofolioService->update($alumniId, $id, $validated, $gambar);
 
-            return $this->successResponse($portofolio, 'Portofolio berhasil diperbarui');
+            return $this->successResponse($portofolio, 'Pembaruan portofolio berhasil dikirim, menunggu persetujuan admin.');
         } catch (ValidationException $e) {
             return $this->errorResponse($e->getMessage(), 422, $e->errors());
         } catch (\Exception $e) {
@@ -83,7 +83,7 @@ class PortofolioController extends Controller
             $alumniId = $request->user()->alumni->id_alumni;
             $this->portofolioService->delete($alumniId, $id);
 
-            return $this->successResponse(null, 'Portofolio berhasil dihapus');
+            return $this->successResponse(null, 'Penghapusan portofolio menunggu persetujuan admin.');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus portofolio: ' . $e->getMessage());
         }

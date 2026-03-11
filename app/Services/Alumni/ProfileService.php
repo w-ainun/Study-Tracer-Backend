@@ -5,6 +5,7 @@ namespace App\Services\Alumni;
 use App\Interfaces\Alumni\ProfileRepositoryInterface;
 use App\Models\Kuliah;
 use App\Models\Pekerjaan;
+use App\Models\PendingProfileUpdate;
 use App\Models\Perusahaan;
 use App\Models\RiwayatStatus;
 use App\Models\Universitas;
@@ -32,8 +33,7 @@ class ProfileService
     }
 
     /**
-     * Update personal profile data (nama, alamat, foto, skills, social media).
-     * Does NOT change status_create — personal info edits don't need re-approval.
+     * Update personal profile data — saves as pending for admin approval.
      */
     public function updateProfile(int $userId, array $data, $foto = null)
     {
@@ -44,31 +44,103 @@ class ProfileService
         }
 
         return DB::transaction(function () use ($alumni, $data, $foto) {
-            // Handle foto upload with thumbnail
-            if ($foto) {
-                if ($alumni->foto) {
-                    $this->deleteWithThumbnail($alumni->foto);
-                }
-                $result = $this->storeWithThumbnail($foto, 'alumni/foto');
-                $data['foto'] = $result['path'];
+            // Check for existing pending personal_info update
+            $existingPending = PendingProfileUpdate::where('id_alumni', $alumni->id_alumni)
+                ->where('section', 'personal_info')
+                ->where('status', 'pending')
+                ->first();
+
+            if ($existingPending) {
+                throw new \Exception('Anda sudah memiliki pembaruan profil yang sedang menunggu persetujuan admin.');
             }
 
-            // Extract skills and social media before updating profile
+            // Handle foto upload to temp location
+            $fotoPath = null;
+            if ($foto) {
+                try {
+                    $result = $this->storeWithThumbnail($foto, 'alumni/foto/pending');
+                    $fotoPath = $result['path'];
+                } catch (\Error $e) {
+                    $fotoPath = $foto->store('alumni/foto/pending', 'public');
+                }
+            }
+
+            // Extract skills and social media
             $skills = $data['skills'] ?? null;
             $socialMedia = $data['social_media'] ?? null;
             unset($data['skills'], $data['social_media']);
 
-            // Update basic profile
-            $this->profileRepository->updateProfile($alumni->id_alumni, $data);
+            // Build old data snapshot
+            $oldData = [
+                'nama_alumni' => $alumni->nama_alumni,
+                'nis' => $alumni->nis,
+                'nisn' => $alumni->nisn,
+                'jenis_kelamin' => $alumni->jenis_kelamin,
+                'tanggal_lahir' => $alumni->tanggal_lahir?->format('Y-m-d'),
+                'tempat_lahir' => $alumni->tempat_lahir,
+                'tahun_masuk' => $alumni->tahun_masuk,
+                'alamat' => $alumni->alamat,
+                'no_hp' => $alumni->no_hp,
+                'id_jurusan' => $alumni->id_jurusan,
+                'tahun_lulus' => $alumni->tahun_lulus?->format('Y-m-d'),
+                'foto' => $alumni->foto,
+            ];
 
-            // Sync skills if provided
-            if ($skills !== null) {
-                $this->profileRepository->syncSkills($alumni->id_alumni, $skills);
+            // Build new data
+            $newData = $data;
+            if ($fotoPath) {
+                $newData['foto'] = $fotoPath;
             }
 
-            // Sync social media if provided
+            // Create pending personal info update
+            PendingProfileUpdate::create([
+                'id_alumni' => $alumni->id_alumni,
+                'section' => 'personal_info',
+                'action' => 'update',
+                'old_data' => $oldData,
+                'new_data' => $newData,
+                'foto_path' => $fotoPath,
+            ]);
+
+            // If skills are provided, create separate pending update
+            if ($skills !== null) {
+                $existingSkillsPending = PendingProfileUpdate::where('id_alumni', $alumni->id_alumni)
+                    ->where('section', 'skills')
+                    ->where('status', 'pending')
+                    ->first();
+
+                if (!$existingSkillsPending) {
+                    $oldSkills = $alumni->skills->pluck('id_skills')->toArray();
+                    PendingProfileUpdate::create([
+                        'id_alumni' => $alumni->id_alumni,
+                        'section' => 'skills',
+                        'action' => 'update',
+                        'old_data' => ['skill_ids' => $oldSkills],
+                        'new_data' => ['skill_ids' => $skills],
+                    ]);
+                }
+            }
+
+            // If social media are provided, create separate pending update
             if ($socialMedia !== null) {
-                $this->profileRepository->syncSocialMedia($alumni->id_alumni, $socialMedia);
+                $existingSocialPending = PendingProfileUpdate::where('id_alumni', $alumni->id_alumni)
+                    ->where('section', 'social_media')
+                    ->where('status', 'pending')
+                    ->first();
+
+                if (!$existingSocialPending) {
+                    $oldSocial = $alumni->socialMedia->map(fn($sm) => [
+                        'id_sosmed' => $sm->pivot->id_sosmed ?? $sm->id_sosmed,
+                        'url' => $sm->pivot->url ?? '',
+                    ])->toArray();
+                    PendingProfileUpdate::create([
+                        'id_alumni' => $alumni->id_alumni,
+                        'section' => 'social_media',
+                        'action' => 'update',
+                        'old_data' => ['social_media' => $oldSocial],
+                        'new_data' => ['social_media' => $socialMedia],
+                    ]);
+                }
             }
 
             return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);

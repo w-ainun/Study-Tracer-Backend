@@ -257,4 +257,37 @@ class NotificationService
             ['kuesioner_id' => $kuesionerId, 'kuesioner_title' => $title, 'status_name' => $statusName]
         );
     }
+
+    /**
+     * Notifikasi saat pembaruan profil disetujui
+     */
+    public function notifyProfileUpdateApproved(int $userId, int $pendingId, string $sectionLabel)
+    {
+        return $this->create(
+            $userId,
+            'profile_update',
+            'Pembaruan Profil Disetujui',
+            "Pembaruan {$sectionLabel} Anda telah disetujui oleh admin dan sekarang terlihat di profil Anda.",
+            ['pending_id' => $pendingId, 'section' => $sectionLabel]
+        );
+    }
+
+    /**
+     * Notifikasi saat pembaruan profil ditolak
+     */
+    public function notifyProfileUpdateRejected(int $userId, int $pendingId, string $sectionLabel, ?string $reason = null)
+    {
+        $message = "Pembaruan {$sectionLabel} Anda ditolak oleh admin.";
+        if ($reason) {
+            $message .= ' Alasan: ' . $reason;
+        }
+
+        return $this->create(
+            $userId,
+            'profile_update',
+            'Pembaruan Profil Ditolak',
+            $message,
+            ['pending_id' => $pendingId, 'section' => $sectionLabel, 'reason' => $reason]
+        );
+    }
 }

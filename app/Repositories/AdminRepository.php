@@ -339,4 +339,24 @@ class AdminRepository implements AdminRepositoryInterface
         $riwayat->delete();
         return true;
     }
+
+    /**
+     * Get all pending profile updates.
+     */
+    public function getPendingProfileUpdates()
+    {
+        return \App\Models\PendingProfileUpdate::with(['alumni.user', 'alumni.jurusan'])
+            ->where('status', 'pending')
+            ->orderByDesc('created_at')
+            ->get();
+    }
+
+    /**
+     * Find a pending profile update by ID.
+     */
+    public function findPendingProfileUpdate(int $id)
+    {
+        return \App\Models\PendingProfileUpdate::with(['alumni.user'])
+            ->findOrFail($id);
+    }
 }
