@@ -369,7 +369,7 @@ class AdminController extends Controller
     public function approveProfileUpdate(int $id, Request $request)
     {
         try {
-            $adminUserId = $request->user()->id;
+            $adminUserId = $request->user()->id_users;
             $this->adminService->approveProfileUpdate($id, $adminUserId);
             return $this->successResponse(null, 'Perubahan profil berhasil disetujui');
         } catch (\Exception $e) {
@@ -383,7 +383,7 @@ class AdminController extends Controller
     public function rejectProfileUpdate(int $id, Request $request)
     {
         try {
-            $adminUserId = $request->user()->id;
+            $adminUserId = $request->user()->id_users;
             $reason = $request->input('reason');
             $this->adminService->rejectProfileUpdate($id, $adminUserId, $reason);
             return $this->successResponse(null, 'Perubahan profil berhasil ditolak');
