@@ -54,7 +54,7 @@ class DeskripsiKarierController extends Controller
 
     /**
      * POST /alumni/deskripsi-karier
-     * Create deskripsi karier for a riwayat_status
+     * Create deskripsi karier for a riwayat_status (pending approval)
      */
     public function store(Request $request)
     {
@@ -65,9 +65,9 @@ class DeskripsiKarierController extends Controller
             ]);
 
             $alumniId = $request->user()->alumni->id_alumni;
-            $deskripsi = $this->deskripsiKarierService->create($alumniId, $validated);
+            $pending = $this->deskripsiKarierService->create($alumniId, $validated);
 
-            return $this->createdResponse($deskripsi, 'Deskripsi karier berhasil ditambahkan');
+            return $this->createdResponse($pending, 'Deskripsi karier berhasil dikirim, menunggu persetujuan admin.');
         } catch (ValidationException $e) {
             return $this->errorResponse($e->getMessage(), 422, $e->errors());
         } catch (\Exception $e) {
@@ -77,7 +77,7 @@ class DeskripsiKarierController extends Controller
 
     /**
      * PUT /alumni/deskripsi-karier/{id}
-     * Update deskripsi karier (delete old and create new)
+     * Update deskripsi karier (pending approval)
      */
     public function update(Request $request, int $id)
     {
@@ -88,9 +88,9 @@ class DeskripsiKarierController extends Controller
             ]);
 
             $alumniId = $request->user()->alumni->id_alumni;
-            $deskripsi = $this->deskripsiKarierService->update($alumniId, $id, $validated);
+            $pending = $this->deskripsiKarierService->update($alumniId, $id, $validated);
 
-            return $this->successResponse($deskripsi, 'Deskripsi karier berhasil diperbarui');
+            return $this->successResponse($pending, 'Pembaruan deskripsi karier berhasil dikirim, menunggu persetujuan admin.');
         } catch (ValidationException $e) {
             return $this->errorResponse($e->getMessage(), 422, $e->errors());
         } catch (\Exception $e) {
@@ -100,15 +100,15 @@ class DeskripsiKarierController extends Controller
 
     /**
      * DELETE /alumni/deskripsi-karier/{id}
-     * Delete deskripsi karier
+     * Delete deskripsi karier (pending approval)
      */
     public function destroy(Request $request, int $id)
     {
         try {
             $alumniId = $request->user()->alumni->id_alumni;
-            $this->deskripsiKarierService->delete($alumniId, $id);
+            $pending = $this->deskripsiKarierService->delete($alumniId, $id);
 
-            return $this->successResponse(null, 'Deskripsi karier berhasil dihapus');
+            return $this->successResponse($pending, 'Penghapusan deskripsi karier menunggu persetujuan admin.');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus deskripsi karier: ' . $e->getMessage());
         }

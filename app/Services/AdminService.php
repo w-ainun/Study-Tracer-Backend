@@ -3,7 +3,15 @@
 namespace App\Services;
 
 use App\Interfaces\AdminRepositoryInterface;
+use App\Models\Alumni;
+use App\Models\AlumniSkill;
+use App\Models\AlumniSocialMedia;
+use App\Models\DeskripsiKarier;
+use App\Models\PendingProfileUpdate;
+use App\Models\Portofolio;
 use App\Traits\GeneratesThumbnail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminService
 {
@@ -159,5 +167,284 @@ class AdminService
         }
         
         return $result;
+    }
+
+    // ── Pending Profile Updates ──────────────────────
+
+    public function getPendingProfileUpdates()
+    {
+        return $this->adminRepository->getPendingProfileUpdates();
+    }
+
+    public function approveProfileUpdate(int $id, int $adminUserId)
+    {
+        $pending = $this->adminRepository->findPendingProfileUpdate($id);
+
+        if ($pending->status !== 'pending') {
+            throw new \Exception('Permintaan ini sudah diproses.');
+        }
+
+        return DB::transaction(function () use ($pending, $adminUserId) {
+            $this->applyProfileUpdate($pending);
+
+            $pending->update([
+                'status' => 'approved',
+                'reviewed_by' => $adminUserId,
+                'reviewed_at' => now(),
+            ]);
+
+            // Notify alumni
+            if ($pending->alumni && $pending->alumni->id_users) {
+                $sectionLabel = $this->getSectionLabel($pending->section);
+                $this->notificationService->notifyProfileUpdateApproved(
+                    $pending->alumni->id_users,
+                    $pending->id,
+                    $sectionLabel
+                );
+            }
+
+            return $pending;
+        });
+    }
+
+    public function rejectProfileUpdate(int $id, int $adminUserId, ?string $reason = null)
+    {
+        $pending = $this->adminRepository->findPendingProfileUpdate($id);
+
+        if ($pending->status !== 'pending') {
+            throw new \Exception('Permintaan ini sudah diproses.');
+        }
+
+        return DB::transaction(function () use ($pending, $adminUserId, $reason) {
+            // Clean up temp files if any
+            if ($pending->foto_path) {
+                $this->deleteWithThumbnail($pending->foto_path);
+            }
+            if ($pending->gambar_path) {
+                $this->deleteWithThumbnail($pending->gambar_path);
+            }
+
+            $pending->update([
+                'status' => 'rejected',
+                'reviewed_by' => $adminUserId,
+                'reviewed_at' => now(),
+            ]);
+
+            // Notify alumni
+            if ($pending->alumni && $pending->alumni->id_users) {
+                $sectionLabel = $this->getSectionLabel($pending->section);
+                $this->notificationService->notifyProfileUpdateRejected(
+                    $pending->alumni->id_users,
+                    $pending->id,
+                    $sectionLabel,
+                    $reason
+                );
+            }
+
+            return $pending;
+        });
+    }
+
+    /**
+     * Apply the pending profile update to the actual data.
+     */
+    private function applyProfileUpdate(PendingProfileUpdate $pending): void
+    {
+        $alumni = Alumni::findOrFail($pending->id_alumni);
+        $newData = $pending->new_data;
+
+        switch ($pending->section) {
+            case 'personal_info':
+                $this->applyPersonalInfo($alumni, $newData, $pending);
+                break;
+
+            case 'skills':
+                $this->applySkills($alumni, $newData);
+                break;
+
+            case 'social_media':
+                $this->applySocialMedia($alumni, $newData);
+                break;
+
+            case 'deskripsi_karier':
+                $this->applyDeskripsiKarier($alumni, $pending);
+                break;
+
+            case 'portofolio':
+                $this->applyPortofolio($alumni, $pending);
+                break;
+        }
+    }
+
+    private function applyPersonalInfo(Alumni $alumni, ?array $newData, PendingProfileUpdate $pending): void
+    {
+        if (!$newData) return;
+
+        // If new foto, move from pending to permanent location and delete old
+        if ($pending->foto_path) {
+            if ($alumni->foto) {
+                $this->deleteWithThumbnail($alumni->foto);
+            }
+            // Move pending foto to permanent location
+            $newPath = str_replace('alumni/foto/pending', 'alumni/foto', $pending->foto_path);
+            if (Storage::disk('public')->exists($pending->foto_path)) {
+                Storage::disk('public')->move($pending->foto_path, $newPath);
+                // Move thumbnail too
+                $oldThumb = GeneratesThumbnail::thumbnailPath($pending->foto_path);
+                $newThumb = GeneratesThumbnail::thumbnailPath($newPath);
+                if ($oldThumb && Storage::disk('public')->exists($oldThumb)) {
+                    Storage::disk('public')->move($oldThumb, $newThumb);
+                }
+            }
+            $newData['foto'] = $newPath;
+        } else {
+            unset($newData['foto']);
+        }
+
+        $alumni->update($newData);
+    }
+
+    private function applySkills(Alumni $alumni, ?array $newData): void
+    {
+        if (!$newData || !isset($newData['skill_ids'])) return;
+
+        AlumniSkill::where('id_alumni', $alumni->id_alumni)->delete();
+        foreach ($newData['skill_ids'] as $skillId) {
+            AlumniSkill::create([
+                'id_alumni' => $alumni->id_alumni,
+                'id_skills' => $skillId,
+            ]);
+        }
+    }
+
+    private function applySocialMedia(Alumni $alumni, ?array $newData): void
+    {
+        if (!$newData || !isset($newData['social_media'])) return;
+
+        AlumniSocialMedia::where('id_alumni', $alumni->id_alumni)->delete();
+        foreach ($newData['social_media'] as $item) {
+            AlumniSocialMedia::create([
+                'id_alumni' => $alumni->id_alumni,
+                'id_sosmed' => $item['id_sosmed'],
+                'url' => $item['url'],
+                'create_at' => now(),
+            ]);
+        }
+    }
+
+    private function applyDeskripsiKarier(Alumni $alumni, PendingProfileUpdate $pending): void
+    {
+        $newData = $pending->new_data;
+
+        switch ($pending->action) {
+            case 'create':
+                DeskripsiKarier::create([
+                    'id_riwayat' => $newData['id_riwayat'],
+                    'deskripsi' => $newData['deskripsi'],
+                ]);
+                break;
+
+            case 'update':
+                $deskripsi = DeskripsiKarier::find($pending->related_id);
+                if ($deskripsi) {
+                    // Delete old and create new (same as original behavior)
+                    $deskripsi->delete();
+                    DeskripsiKarier::create([
+                        'id_riwayat' => $newData['id_riwayat'],
+                        'deskripsi' => $newData['deskripsi'],
+                    ]);
+                }
+                break;
+
+            case 'delete':
+                $deskripsi = DeskripsiKarier::find($pending->related_id);
+                if ($deskripsi) {
+                    $deskripsi->delete();
+                }
+                break;
+        }
+    }
+
+    private function applyPortofolio(Alumni $alumni, PendingProfileUpdate $pending): void
+    {
+        $newData = $pending->new_data;
+
+        switch ($pending->action) {
+            case 'create':
+                $gambarPath = null;
+                if ($pending->gambar_path) {
+                    // Move from pending to permanent location
+                    $newPath = str_replace('portofolio/pending', 'portofolio', $pending->gambar_path);
+                    if (Storage::disk('public')->exists($pending->gambar_path)) {
+                        Storage::disk('public')->move($pending->gambar_path, $newPath);
+                        $oldThumb = GeneratesThumbnail::thumbnailPath($pending->gambar_path);
+                        $newThumb = GeneratesThumbnail::thumbnailPath($newPath);
+                        if ($oldThumb && Storage::disk('public')->exists($oldThumb)) {
+                            Storage::disk('public')->move($oldThumb, $newThumb);
+                        }
+                    }
+                    $gambarPath = $newPath;
+                }
+                Portofolio::create([
+                    'id_alumni' => $alumni->id_alumni,
+                    'judul' => $newData['judul'],
+                    'deskripsi' => $newData['deskripsi'] ?? null,
+                    'link_project' => $newData['link_project'] ?? null,
+                    'gambar' => $gambarPath,
+                ]);
+                break;
+
+            case 'update':
+                $portofolio = Portofolio::find($pending->related_id);
+                if ($portofolio) {
+                    $updateData = [
+                        'judul' => $newData['judul'] ?? $portofolio->judul,
+                        'deskripsi' => $newData['deskripsi'] ?? $portofolio->deskripsi,
+                        'link_project' => $newData['link_project'] ?? $portofolio->link_project,
+                    ];
+
+                    if ($pending->gambar_path) {
+                        // Delete old image
+                        if ($portofolio->gambar) {
+                            $this->deleteWithThumbnail($portofolio->gambar);
+                        }
+                        $newPath = str_replace('portofolio/pending', 'portofolio', $pending->gambar_path);
+                        if (Storage::disk('public')->exists($pending->gambar_path)) {
+                            Storage::disk('public')->move($pending->gambar_path, $newPath);
+                            $oldThumb = GeneratesThumbnail::thumbnailPath($pending->gambar_path);
+                            $newThumb = GeneratesThumbnail::thumbnailPath($newPath);
+                            if ($oldThumb && Storage::disk('public')->exists($oldThumb)) {
+                                Storage::disk('public')->move($oldThumb, $newThumb);
+                            }
+                        }
+                        $updateData['gambar'] = $newPath;
+                    }
+
+                    $portofolio->update($updateData);
+                }
+                break;
+
+            case 'delete':
+                $portofolio = Portofolio::find($pending->related_id);
+                if ($portofolio) {
+                    if ($portofolio->gambar) {
+                        $this->deleteWithThumbnail($portofolio->gambar);
+                    }
+                    $portofolio->delete();
+                }
+                break;
+        }
+    }
+
+    private function getSectionLabel(string $section): string
+    {
+        return match ($section) {
+            'personal_info' => 'Detail Pribadi',
+            'skills' => 'Keahlian',
+            'social_media' => 'Media Sosial',
+            'deskripsi_karier' => 'Deskripsi Karier',
+            'portofolio' => 'Portofolio',
+            default => 'Profil',
+        };
     }
 }

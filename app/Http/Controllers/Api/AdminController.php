@@ -304,4 +304,91 @@ class AdminController extends Controller
             return $this->errorResponse('Gagal menolak status karier: ' . $e->getMessage());
         }
     }
+
+    // ──────────────────────────────────────────────────
+    // Pending Profile Updates (personal_info, skills, social_media, deskripsi_karier, portofolio)
+    // ──────────────────────────────────────────────────
+
+    /**
+     * GET /admin/pending-profile-updates
+     */
+    public function getPendingProfileUpdates()
+    {
+        try {
+            $pending = $this->adminService->getPendingProfileUpdates();
+
+            $sectionLabels = [
+                'personal_info' => 'Detail Pribadi',
+                'skills' => 'Keahlian',
+                'social_media' => 'Media Sosial',
+                'deskripsi_karier' => 'Deskripsi Karier',
+                'portofolio' => 'Portofolio',
+            ];
+
+            $data = $pending->map(function ($item) use ($sectionLabels) {
+                $alumni = $item->alumni;
+
+                $changes = [];
+                $oldData = $item->old_data ?? [];
+                $newData = $item->new_data ?? [];
+
+                // Build changes array from old/new data comparison
+                $allKeys = array_unique(array_merge(array_keys($oldData), array_keys($newData)));
+                foreach ($allKeys as $key) {
+                    $old = $oldData[$key] ?? '-';
+                    $new = $newData[$key] ?? '-';
+                    if ($old !== $new) {
+                        $changes[] = ['label' => $key, 'old' => $old, 'new' => $new];
+                    }
+                }
+
+                return [
+                    'id' => $item->id,
+                    'name' => $alumni?->nama_alumni ?? '-',
+                    'angkatan' => $alumni?->tahun_masuk ?? '-',
+                    'userId' => $alumni?->nis ?? '-',
+                    'image' => $alumni?->foto ? asset('storage/' . $alumni->foto) : null,
+                    'initials' => strtoupper(substr($alumni?->nama_alumni ?? 'A', 0, 2)),
+                    'time' => $item->created_at?->diffForHumans() ?? '-',
+                    'section' => $item->section,
+                    'field' => $sectionLabels[$item->section] ?? $item->section,
+                    'action' => $item->action,
+                    'changes' => $changes,
+                ];
+            });
+
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil permintaan update profil: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /admin/profile-updates/{id}/approve
+     */
+    public function approveProfileUpdate(int $id, Request $request)
+    {
+        try {
+            $adminUserId = $request->user()->id;
+            $this->adminService->approveProfileUpdate($id, $adminUserId);
+            return $this->successResponse(null, 'Perubahan profil berhasil disetujui');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menyetujui perubahan profil: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /admin/profile-updates/{id}/reject
+     */
+    public function rejectProfileUpdate(int $id, Request $request)
+    {
+        try {
+            $adminUserId = $request->user()->id;
+            $reason = $request->input('reason');
+            $this->adminService->rejectProfileUpdate($id, $adminUserId, $reason);
+            return $this->successResponse(null, 'Perubahan profil berhasil ditolak');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menolak perubahan profil: ' . $e->getMessage());
+        }
+    }
 }

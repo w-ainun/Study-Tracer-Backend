@@ -151,6 +151,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/career-updates/{id}/approve', [AdminController::class, 'approveCareerUpdate']);
         Route::post('/career-updates/{id}/reject', [AdminController::class, 'rejectCareerUpdate']);
 
+        // Pending Profile Updates (personal_info, skills, social_media, deskripsi_karier, portofolio)
+        Route::get('/pending-profile-updates', [AdminController::class, 'getPendingProfileUpdates']);
+        Route::post('/profile-updates/{id}/approve', [AdminController::class, 'approveProfileUpdate']);
+        Route::post('/profile-updates/{id}/reject', [AdminController::class, 'rejectProfileUpdate']);
+
         // Lowongan Management
         Route::get('/lowongan', [LowonganController::class, 'index']);
         Route::get('/lowongan/pending', [LowonganController::class, 'pending']);

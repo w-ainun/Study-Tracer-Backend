@@ -2,6 +2,7 @@
 
 namespace App\Services\Alumni;
 
+use App\Models\PendingProfileUpdate;
 use App\Models\Portofolio;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Support\Facades\DB;
@@ -23,69 +24,120 @@ class PortofolioService
     }
 
     /**
-     * Create portofolio
+     * Create portofolio — saves as pending for admin approval.
      */
-    public function create(int $alumniId, array $data, ?UploadedFile $gambar = null): Portofolio
+    public function create(int $alumniId, array $data, ?UploadedFile $gambar = null): PendingProfileUpdate
     {
         return DB::transaction(function () use ($alumniId, $data, $gambar) {
-            // Handle image upload with thumbnail
+            $gambarPath = null;
             if ($gambar) {
-                $result = $this->storeWithThumbnail($gambar, 'portofolio');
-                $data['gambar'] = $result['path'];
-            }
-
-            return Portofolio::create([
-                'id_alumni' => $alumniId,
-                'judul' => $data['judul'],
-                'deskripsi' => $data['deskripsi'] ?? null,
-                'link_project' => $data['link_project'] ?? null,
-                'gambar' => $data['gambar'] ?? null,
-            ]);
-        });
-    }
-
-    /**
-     * Update portofolio
-     */
-    public function update(int $alumniId, int $id, array $data, ?UploadedFile $gambar = null): Portofolio
-    {
-        $portofolio = Portofolio::where('id_alumni', $alumniId)->findOrFail($id);
-
-        return DB::transaction(function () use ($portofolio, $data, $gambar) {
-            // Handle image upload with thumbnail
-            if ($gambar) {
-                // Delete old image
-                if ($portofolio->gambar) {
-                    $this->deleteWithThumbnail($portofolio->gambar);
+                try {
+                    $result = $this->storeWithThumbnail($gambar, 'portofolio/pending');
+                    $gambarPath = $result['path'];
+                } catch (\Error $e) {
+                    $gambarPath = $gambar->store('portofolio/pending', 'public');
                 }
-
-                $result = $this->storeWithThumbnail($gambar, 'portofolio');
-                $data['gambar'] = $result['path'];
             }
 
-            $portofolio->update([
-                'judul' => $data['judul'] ?? $portofolio->judul,
-                'deskripsi' => $data['deskripsi'] ?? $portofolio->deskripsi,
-                'link_project' => $data['link_project'] ?? $portofolio->link_project,
-                'gambar' => $data['gambar'] ?? $portofolio->gambar,
+            return PendingProfileUpdate::create([
+                'id_alumni' => $alumniId,
+                'section' => 'portofolio',
+                'action' => 'create',
+                'old_data' => null,
+                'new_data' => [
+                    'judul' => $data['judul'],
+                    'deskripsi' => $data['deskripsi'] ?? null,
+                    'link_project' => $data['link_project'] ?? null,
+                    'gambar' => $gambarPath,
+                ],
+                'gambar_path' => $gambarPath,
             ]);
-
-            return $portofolio->fresh();
         });
     }
 
     /**
-     * Delete portofolio
+     * Update portofolio — saves as pending for admin approval.
      */
-    public function delete(int $alumniId, int $id): bool
+    public function update(int $alumniId, int $id, array $data, ?UploadedFile $gambar = null): PendingProfileUpdate
     {
         $portofolio = Portofolio::where('id_alumni', $alumniId)->findOrFail($id);
 
-        // Delete image if exists
-        if ($portofolio->gambar) {
-            $this->deleteWithThumbnail($portofolio->gambar);
+        return DB::transaction(function () use ($alumniId, $id, $portofolio, $data, $gambar) {
+            // Check for existing pending update
+            $existingPending = PendingProfileUpdate::where('id_alumni', $alumniId)
+                ->where('section', 'portofolio')
+                ->where('action', 'update')
+                ->where('related_id', $id)
+                ->where('status', 'pending')
+                ->first();
+
+            if ($existingPending) {
+                throw new \Exception('Anda sudah memiliki pembaruan portofolio ini yang sedang menunggu persetujuan admin.');
+            }
+
+            $gambarPath = null;
+            if ($gambar) {
+                try {
+                    $result = $this->storeWithThumbnail($gambar, 'portofolio/pending');
+                    $gambarPath = $result['path'];
+                } catch (\Error $e) {
+                    $gambarPath = $gambar->store('portofolio/pending', 'public');
+                }
+            }
+
+            return PendingProfileUpdate::create([
+                'id_alumni' => $alumniId,
+                'section' => 'portofolio',
+                'action' => 'update',
+                'related_id' => $id,
+                'old_data' => [
+                    'judul' => $portofolio->judul,
+                    'deskripsi' => $portofolio->deskripsi,
+                    'link_project' => $portofolio->link_project,
+                    'gambar' => $portofolio->gambar,
+                ],
+                'new_data' => [
+                    'judul' => $data['judul'] ?? $portofolio->judul,
+                    'deskripsi' => $data['deskripsi'] ?? $portofolio->deskripsi,
+                    'link_project' => $data['link_project'] ?? $portofolio->link_project,
+                    'gambar' => $gambarPath ?? $portofolio->gambar,
+                ],
+                'gambar_path' => $gambarPath,
+            ]);
+        });
+    }
+
+    /**
+     * Delete portofolio — saves as pending for admin approval.
+     */
+    public function delete(int $alumniId, int $id): PendingProfileUpdate
+    {
+        $portofolio = Portofolio::where('id_alumni', $alumniId)->findOrFail($id);
+
+        // Check for existing pending delete
+        $existingPending = PendingProfileUpdate::where('id_alumni', $alumniId)
+            ->where('section', 'portofolio')
+            ->where('action', 'delete')
+            ->where('related_id', $id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingPending) {
+            throw new \Exception('Penghapusan portofolio ini sudah menunggu persetujuan admin.');
         }
 
-        return $portofolio->delete();
+        return PendingProfileUpdate::create([
+            'id_alumni' => $alumniId,
+            'section' => 'portofolio',
+            'action' => 'delete',
+            'related_id' => $id,
+            'old_data' => [
+                'judul' => $portofolio->judul,
+                'deskripsi' => $portofolio->deskripsi,
+                'link_project' => $portofolio->link_project,
+                'gambar' => $portofolio->gambar,
+            ],
+            'new_data' => null,
+        ]);
     }
 }

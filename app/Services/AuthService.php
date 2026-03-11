@@ -42,7 +42,6 @@ class AuthService
                     $profileData['foto'] = $result['path'];
                 } catch (\Error $e) {
                     // Fallback: If Intervention Image not installed, just store without thumbnail
-                    \Log::warning('Intervention Image not available, storing image without thumbnail: ' . $e->getMessage());
                     $profileData['foto'] = $profileData['foto']->store('alumni/foto', 'public');
                 }
             }

@@ -57,7 +57,7 @@ class ProfileController extends Controller
 
             return $this->successResponse(
                 new ProfileResource($alumni),
-                'Profil berhasil diperbarui'
+                'Pembaruan profil berhasil dikirim, menunggu persetujuan admin.'
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal memperbarui profil: ' . $e->getMessage());

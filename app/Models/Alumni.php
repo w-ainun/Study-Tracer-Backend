@@ -67,4 +67,9 @@ class Alumni extends Model
     {
         return $this->hasMany(Portofolio::class, 'id_alumni', 'id_alumni');
     }
+
+    public function pendingProfileUpdates()
+    {
+        return $this->hasMany(PendingProfileUpdate::class, 'id_alumni', 'id_alumni');
+    }
 }
