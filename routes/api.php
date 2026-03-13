@@ -18,9 +18,7 @@ use App\Http\Controllers\Api\Alumni\DeskripsiKarierController;
 use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
 
-// ╔══════════════════════════════════════════════════════╗
-// ║                  PUBLIC ROUTES                       ║
-// ╚══════════════════════════════════════════════════════╝
+// PUBLIC ROUTES
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -61,9 +59,7 @@ Route::get('/landing/stats', [LandingController::class, 'stats']);
 Route::get('/landing/featured-jobs', [LandingController::class, 'featuredJobs']);
 Route::get('/landing/featured-alumni', [LandingController::class, 'featuredAlumni']);
 
-// ╔══════════════════════════════════════════════════════╗
-// ║               PROTECTED ROUTES (AUTH)                ║
-// ╚══════════════════════════════════════════════════════╝
+// PROTECTED ROUTES (AUTH)
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -71,7 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // ── Alumni Routes ────────────────────────────────────
+    // Alumni Routes 
     Route::middleware('role:alumni')->prefix('alumni')->group(function () {
         // Always accessible (even if not verified)
         Route::get('/profile', [ProfileController::class, 'show']);
@@ -101,7 +97,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
-        // ── Restricted routes (verified alumni only) ──
+        // Restricted routes (verified alumni only)
         Route::middleware('alumni.verified')->group(function () {
             // Lowongan for alumni (sorted by skill match)
             Route::get('/lowongan', [AlumniLowonganController::class, 'index']);
@@ -136,7 +132,7 @@ Route::middleware('auth:sanctum')->group(function () {
         });
     });
 
-    // ── Admin Routes ─────────────────────────────────────
+    // Admin Routes 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
 
         // Dashboard
