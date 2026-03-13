@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Models\LandingStat;
 use App\Models\Alumni;
 use App\Models\Lowongan;
-use App\Models\Perusahaan;
 use App\Models\RiwayatStatus;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class LandingService
 {
@@ -95,7 +93,7 @@ class LandingService
     /**
      * Get featured alumni for landing page
      */
-    public function getFeaturedAlumni(int $limit = 8): array
+    public function getFeaturedAlumni(int $limit = 4): array
     {
         return Alumni::with([
             'jurusan',
@@ -110,7 +108,7 @@ class LandingService
             'riwayatStatus.wirausaha',
         ])
         ->where('status_create', 'ok')
-        ->inRandomOrder()
+        ->orderBy('created_at', 'desc')
         ->limit($limit)
         ->get()
         ->toArray();
