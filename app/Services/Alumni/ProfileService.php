@@ -50,10 +50,6 @@ class ProfileService
                 ->where('status', 'pending')
                 ->first();
 
-            if ($existingPending) {
-                throw new \Exception('Anda sudah memiliki pembaruan profil yang sedang menunggu persetujuan admin.');
-            }
-
             // Handle foto upload to temp location
             $fotoPath = null;
             if ($foto) {
@@ -65,10 +61,10 @@ class ProfileService
                 }
             }
 
-            // Extract skills and social media
+            // Extract skills and social media, remove non-serializable fields
             $skills = $data['skills'] ?? null;
             $socialMedia = $data['social_media'] ?? null;
-            unset($data['skills'], $data['social_media']);
+            unset($data['skills'], $data['social_media'], $data['foto'], $data['_method']);
 
             // Build old data snapshot
             $oldData = [
@@ -86,21 +82,48 @@ class ProfileService
                 'foto' => $alumni->foto,
             ];
 
-            // Build new data
+            // Build new data (only serializable text fields)
             $newData = $data;
-            if ($fotoPath) {
-                $newData['foto'] = $fotoPath;
-            }
 
-            // Create pending personal info update
-            PendingProfileUpdate::create([
-                'id_alumni' => $alumni->id_alumni,
-                'section' => 'personal_info',
-                'action' => 'update',
-                'old_data' => $oldData,
-                'new_data' => $newData,
-                'foto_path' => $fotoPath,
-            ]);
+            // Check if there are actual personal field changes or foto change
+            $hasPersonalChanges = false;
+            foreach ($newData as $key => $value) {
+                if (isset($oldData[$key]) && (string) $oldData[$key] !== (string) $value) {
+                    $hasPersonalChanges = true;
+                    break;
+                }
+            }
+            $hasPersonalChanges = $hasPersonalChanges || $fotoPath !== null;
+
+            // Only create/update personal_info pending if there are actual changes
+            if ($hasPersonalChanges) {
+                if ($existingPending) {
+                    // Update existing pending record with new data
+                    $updateData = [
+                        'old_data' => $oldData,
+                        'new_data' => $newData,
+                        'updated_at' => now(),
+                    ];
+                    if ($fotoPath) {
+                        // Delete old pending foto if exists
+                        if ($existingPending->foto_path) {
+                            Storage::disk('public')->delete($existingPending->foto_path);
+                        }
+                        $updateData['foto_path'] = $fotoPath;
+                    }
+                    $existingPending->update($updateData);
+                } else {
+                    // Create new pending personal info update
+                    PendingProfileUpdate::create([
+                        'id_alumni' => $alumni->id_alumni,
+                        'section' => 'personal_info',
+                        'action' => 'update',
+                        'old_data' => $oldData,
+                        'new_data' => $newData,
+                        'foto_path' => $fotoPath,
+                    ]);
+                }
+            }
 
             // If skills are provided, create separate pending update
             if ($skills !== null) {
@@ -121,18 +144,25 @@ class ProfileService
                 }
             }
 
-            // If social media are provided, create separate pending update
+            // If social media are provided, create or update separate pending update
             if ($socialMedia !== null) {
                 $existingSocialPending = PendingProfileUpdate::where('id_alumni', $alumni->id_alumni)
                     ->where('section', 'social_media')
                     ->where('status', 'pending')
                     ->first();
 
-                if (!$existingSocialPending) {
-                    $oldSocial = $alumni->socialMedia->map(fn($sm) => [
-                        'id_sosmed' => $sm->pivot->id_sosmed ?? $sm->id_sosmed,
-                        'url' => $sm->pivot->url ?? '',
-                    ])->toArray();
+                $oldSocial = $alumni->socialMedia->map(fn($sm) => [
+                    'id_sosmed' => $sm->pivot->id_sosmed ?? $sm->id_sosmed,
+                    'url' => $sm->pivot->url ?? '',
+                ])->toArray();
+
+                if ($existingSocialPending) {
+                    $existingSocialPending->update([
+                        'old_data' => ['social_media' => $oldSocial],
+                        'new_data' => ['social_media' => $socialMedia],
+                        'updated_at' => now(),
+                    ]);
+                } else {
                     PendingProfileUpdate::create([
                         'id_alumni' => $alumni->id_alumni,
                         'section' => 'social_media',
@@ -331,6 +361,98 @@ class ProfileService
                 'kuliah.jurusanKuliah',
                 'wirausaha.bidangUsaha',
             ]);
+        });
+    }
+
+    /**
+     * Update skills - creates pending update for admin approval
+     */
+    public function updateSkills(int $userId, array $skillIds)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $skillIds) {
+            // Check for existing pending skills update
+            $existingPending = PendingProfileUpdate::where('id_alumni', $alumni->id_alumni)
+                ->where('section', 'skills')
+                ->where('status', 'pending')
+                ->first();
+
+            $oldSkills = $alumni->skills->pluck('id_skills')->toArray();
+
+            if ($existingPending) {
+                // Update existing pending request
+                $existingPending->update([
+                    'new_data' => ['skill_ids' => $skillIds],
+                    'updated_at' => now(),
+                ]);
+            } else {
+                // Create new pending request
+                PendingProfileUpdate::create([
+                    'id_alumni' => $alumni->id_alumni,
+                    'section' => 'skills',
+                    'action' => 'update',
+                    'old_data' => ['skill_ids' => $oldSkills],
+                    'new_data' => ['skill_ids' => $skillIds],
+                ]);
+            }
+
+            return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
+        });
+    }
+
+    /**
+     * Update pending skills request
+     */
+    public function updatePendingSkills(int $userId, int $pendingId, array $skillIds)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $pendingId, $skillIds) {
+            $pending = PendingProfileUpdate::where('id', $pendingId)
+                ->where('id_alumni', $alumni->id_alumni)
+                ->where('section', 'skills')
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            $pending->update([
+                'new_data' => ['skill_ids' => $skillIds],
+                'updated_at' => now(),
+            ]);
+
+            return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
+        });
+    }
+
+    /**
+     * Cancel pending skills update
+     */
+    public function cancelPendingSkills(int $userId, int $pendingId)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $pendingId) {
+            $pending = PendingProfileUpdate::where('id', $pendingId)
+                ->where('id_alumni', $alumni->id_alumni)
+                ->where('section', 'skills')
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            $pending->delete();
+
+            return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
         });
     }
 }

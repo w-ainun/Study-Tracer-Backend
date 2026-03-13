@@ -332,13 +332,60 @@ class AdminController extends Controller
                 $oldData = $item->old_data ?? [];
                 $newData = $item->new_data ?? [];
 
-                // Build changes array from old/new data comparison
-                $allKeys = array_unique(array_merge(array_keys($oldData), array_keys($newData)));
-                foreach ($allKeys as $key) {
-                    $old = $oldData[$key] ?? '-';
-                    $new = $newData[$key] ?? '-';
-                    if ($old !== $new) {
-                        $changes[] = ['label' => $key, 'old' => $old, 'new' => $new];
+                $fieldLabels = [
+                    'nama_alumni' => 'Nama Lengkap',
+                    'nis' => 'NIS',
+                    'nisn' => 'NISN',
+                    'jenis_kelamin' => 'Jenis Kelamin',
+                    'tanggal_lahir' => 'Tanggal Lahir',
+                    'tempat_lahir' => 'Tempat Lahir',
+                    'tahun_masuk' => 'Tahun Masuk',
+                    'alamat' => 'Alamat',
+                    'no_hp' => 'No. HP',
+                    'id_jurusan' => 'Jurusan',
+                    'tahun_lulus' => 'Tahun Lulus',
+                    'foto' => 'Foto Profil',
+                ];
+
+                if ($item->section === 'social_media') {
+                    // Build per-platform comparison for social media
+                    $oldSocial = $oldData['social_media'] ?? [];
+                    $newSocial = $newData['social_media'] ?? [];
+                    $socialMediaNames = \App\Models\SocialMedia::pluck('nama_sosmed', 'id_sosmed');
+
+                    $oldByPlatform = collect($oldSocial)->keyBy('id_sosmed');
+                    $newByPlatform = collect($newSocial)->keyBy('id_sosmed');
+                    $allIds = $oldByPlatform->keys()->merge($newByPlatform->keys())->unique();
+
+                    foreach ($allIds as $id) {
+                        $oldUrl = $oldByPlatform->has($id) ? ($oldByPlatform->get($id)['url'] ?? '-') : '-';
+                        $newUrl = $newByPlatform->has($id) ? ($newByPlatform->get($id)['url'] ?? '-') : '-';
+                        $platformName = $socialMediaNames->get($id, 'Platform #' . $id);
+                        if ($oldUrl !== $newUrl) {
+                            $changes[] = ['label' => $platformName, 'old' => $oldUrl, 'new' => $newUrl];
+                        }
+                    }
+                } else {
+                    // Build changes array from old/new data comparison
+                    $allKeys = array_unique(array_merge(array_keys($oldData), array_keys($newData)));
+                    foreach ($allKeys as $key) {
+                        $old = $oldData[$key] ?? '-';
+                        $new = $newData[$key] ?? '-';
+                        if ($old !== $new) {
+                            $label = $fieldLabels[$key] ?? $key;
+                            $changes[] = ['label' => $label, 'old' => $old, 'new' => $new];
+                        }
+                    }
+
+                    // Add foto change for personal_info section
+                    if ($item->section === 'personal_info' && $item->foto_path) {
+                        $oldFoto = $oldData['foto'] ?? null;
+                        $changes[] = [
+                            'label' => 'Foto Profil',
+                            'old' => $oldFoto ? asset('storage/' . $oldFoto) : '-',
+                            'new' => asset('storage/' . $item->foto_path),
+                            'type' => 'image',
+                        ];
                     }
                 }
 

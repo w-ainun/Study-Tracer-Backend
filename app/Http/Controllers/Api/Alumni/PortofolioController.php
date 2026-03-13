@@ -88,4 +88,47 @@ class PortofolioController extends Controller
             return $this->errorResponse('Gagal menghapus portofolio: ' . $e->getMessage());
         }
     }
+
+    /**
+     * PUT /alumni/portofolio/pending/{pendingId}
+     * Update a pending portfolio request
+     */
+    public function updatePending(Request $request, int $pendingId)
+    {
+        try {
+            $validated = $request->validate([
+                'judul' => ['sometimes', 'required', 'string', 'max:255'],
+                'deskripsi' => ['nullable', 'string'],
+                'link_project' => ['nullable', 'url', 'max:500'],
+                'gambar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            ]);
+
+            $alumniId = $request->user()->alumni->id_alumni;
+            $gambar = $request->hasFile('gambar') ? $request->file('gambar') : null;
+
+            $pending = $this->portofolioService->updatePending($alumniId, $pendingId, $validated, $gambar);
+
+            return $this->successResponse($pending, 'Pengajuan portofolio berhasil diperbarui.');
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui pengajuan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /alumni/portofolio/pending/{pendingId}
+     * Cancel a pending portfolio request
+     */
+    public function cancelPending(Request $request, int $pendingId)
+    {
+        try {
+            $alumniId = $request->user()->alumni->id_alumni;
+            $this->portofolioService->cancelPending($alumniId, $pendingId);
+
+            return $this->successResponse(null, 'Pengajuan portofolio berhasil dibatalkan.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal membatalkan pengajuan: ' . $e->getMessage());
+        }
+    }
 }

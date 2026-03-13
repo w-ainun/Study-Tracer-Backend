@@ -21,6 +21,7 @@ class PendingProfileUpdate extends Model
         'status',
         'reviewed_by',
         'reviewed_at',
+        'updated_at',
     ];
 
     protected function casts(): array

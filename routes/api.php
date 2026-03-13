@@ -75,9 +75,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:alumni')->prefix('alumni')->group(function () {
         // Always accessible (even if not verified)
         Route::get('/profile', [ProfileController::class, 'show']);
-        Route::put('/profile', [ProfileController::class, 'update']);
+        Route::match(['put', 'post'], '/profile', [ProfileController::class, 'update']);
         Route::post('/career-status', [ProfileController::class, 'updateCareerStatus']);
         Route::put('/career-status/{id}', [ProfileController::class, 'updateExistingCareerStatus']);
+        
+        // Skills management (with pending approval)
+        Route::put('/profile/skills', [ProfileController::class, 'updateSkills']);
+        Route::put('/profile/pending-skills/{pendingId}', [ProfileController::class, 'updatePendingSkills']);
+        Route::delete('/profile/pending-skills/{pendingId}', [ProfileController::class, 'cancelPendingSkills']);
+        
         Route::get('/beranda', [BerandaController::class, 'index']);
         Route::get('/status-pengajuan', [BerandaController::class, 'statusPengajuan']);
 
@@ -119,6 +125,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/portofolio', [PortofolioController::class, 'store']);
         Route::match(['put', 'post'], '/portofolio/{id}', [PortofolioController::class, 'update']);
         Route::delete('/portofolio/{id}', [PortofolioController::class, 'destroy']);
+        
+        // Pending portofolio operations
+        Route::match(['put', 'post'], '/portofolio/pending/{pendingId}', [PortofolioController::class, 'updatePending']);
+        Route::delete('/portofolio/pending/{pendingId}', [PortofolioController::class, 'cancelPending']);
             // Alumni directory (Direktori Alumni)
             Route::get('/directory', [AlumniDirectoryController::class, 'index']);
             Route::get('/directory/filters', [AlumniDirectoryController::class, 'filterOptions']);

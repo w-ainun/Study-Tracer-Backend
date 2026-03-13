@@ -107,4 +107,78 @@ class ProfileController extends Controller
             return $this->errorResponse('Gagal memperbarui status karir: ' . $e->getMessage());
         }
     }
+
+    /**
+     * PUT /alumni/profile/skills
+     * Update skills (creates pending update for admin approval)
+     */
+    public function updateSkills(Request $request)
+    {
+        try {
+            $request->validate([
+                'skills' => 'required|array',
+                'skills.*' => 'integer|exists:skills,id_skills',
+            ]);
+
+            $alumni = $this->profileService->updateSkills(
+                $request->user()->id_users,
+                $request->skills
+            );
+
+            return $this->successResponse(
+                new ProfileResource($alumni),
+                'Perubahan keahlian telah dikirim, menunggu persetujuan admin.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui keahlian: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * PUT /alumni/profile/pending-skills/{pendingId}
+     * Update pending skills request
+     */
+    public function updatePendingSkills(Request $request, $pendingId)
+    {
+        try {
+            $request->validate([
+                'skills' => 'required|array',
+                'skills.*' => 'integer|exists:skills,id_skills',
+            ]);
+
+            $alumni = $this->profileService->updatePendingSkills(
+                $request->user()->id_users,
+                $pendingId,
+                $request->skills
+            );
+
+            return $this->successResponse(
+                new ProfileResource($alumni),
+                'Perubahan keahlian yang pending berhasil diperbarui.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui keahlian: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /alumni/profile/pending-skills/{pendingId}
+     * Cancel pending skills update
+     */
+    public function cancelPendingSkills(Request $request, $pendingId)
+    {
+        try {
+            $alumni = $this->profileService->cancelPendingSkills(
+                $request->user()->id_users,
+                $pendingId
+            );
+
+            return $this->successResponse(
+                new ProfileResource($alumni),
+                'Pengajuan perubahan keahlian berhasil dibatalkan.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal membatalkan perubahan: ' . $e->getMessage());
+        }
+    }
 }

@@ -19,7 +19,7 @@ class UpdateProfileRequest extends FormRequest
             'nama_alumni' => ['sometimes', 'string', 'max:255'],
             'nis' => ['nullable', 'string', 'max:20'],
             'nisn' => ['nullable', 'string', 'max:20'],
-            'jenis_kelamin' => ['sometimes', 'in:Laki-laki,Perempuan'],
+            'jenis_kelamin' => ['nullable', 'sometimes', 'in:Laki-laki,Perempuan'],
             'tanggal_lahir' => ['nullable', 'date'],
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tahun_masuk' => ['nullable', 'integer'],

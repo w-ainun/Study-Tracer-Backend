@@ -6,6 +6,7 @@ use App\Models\PendingProfileUpdate;
 use App\Models\Portofolio;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 
 class PortofolioService
@@ -139,5 +140,75 @@ class PortofolioService
             ],
             'new_data' => null,
         ]);
+    }
+
+    /**
+     * Update a pending portfolio request
+     */
+    public function updatePending(int $alumniId, int $pendingId, array $data, ?UploadedFile $gambar = null): PendingProfileUpdate
+    {
+        $pending = PendingProfileUpdate::where('id_alumni', $alumniId)
+            ->where('id', $pendingId)
+            ->where('section', 'portofolio')
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        return DB::transaction(function () use ($pending, $data, $gambar) {
+            $newData = $pending->new_data ?? [];
+            $gambarPath = $pending->gambar_path;
+
+            // Upload new image if provided
+            if ($gambar) {
+                // Delete old pending image if exists
+                if ($gambarPath && Storage::disk('public')->exists($gambarPath)) {
+                    Storage::disk('public')->delete($gambarPath);
+                }
+
+                try {
+                    $result = $this->storeWithThumbnail($gambar, 'portofolio/pending');
+                    $gambarPath = $result['path'];
+                } catch (\Error $e) {
+                    $gambarPath = $gambar->store('portofolio/pending', 'public');
+                }
+            }
+
+            // Update new_data with provided fields
+            $newData['judul'] = $data['judul'] ?? $newData['judul'] ?? null;
+            $newData['deskripsi'] = $data['deskripsi'] ?? $newData['deskripsi'] ?? null;
+            $newData['link_project'] = $data['link_project'] ?? $newData['link_project'] ?? null;
+            
+            if ($gambar) {
+                $newData['gambar'] = $gambarPath;
+            }
+
+            $pending->update([
+                'new_data' => $newData,
+                'gambar_path' => $gambarPath,
+            ]);
+
+            return $pending->fresh();
+        });
+    }
+
+    /**
+     * Cancel/delete a pending portfolio request
+     */
+    public function cancelPending(int $alumniId, int $pendingId): bool
+    {
+        $pending = PendingProfileUpdate::where('id_alumni', $alumniId)
+            ->where('id', $pendingId)
+            ->where('section', 'portofolio')
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        return DB::transaction(function () use ($pending) {
+            // Delete uploaded image if exists
+            if ($pending->gambar_path && Storage::disk('public')->exists($pending->gambar_path)) {
+                Storage::disk('public')->delete($pending->gambar_path);
+            }
+
+            $pending->delete();
+            return true;
+        });
     }
 }
