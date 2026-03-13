@@ -118,6 +118,7 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus.wirausaha.bidangUsaha',
             'riwayatStatus.deskripsiKarier',
             'portofolio',
+            'pendingProfileUpdates' => fn($q) => $q->where('status', 'pending')->orderByDesc('created_at'),
         ])->findOrFail($alumniId);
     }
 

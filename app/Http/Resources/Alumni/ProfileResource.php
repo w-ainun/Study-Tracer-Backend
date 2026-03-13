@@ -9,6 +9,7 @@ use App\Http\Resources\UserResource;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Arr;
 
 class ProfileResource extends JsonResource
 {
@@ -41,6 +42,67 @@ class ProfileResource extends JsonResource
         $latestRiwayat = $this->relationLoaded('riwayatStatus')
             ? $this->riwayatStatus->where('approval_status', 'approved')->first()
             : null;
+
+        $pendingUpdatesCollection = $this->relationLoaded('pendingProfileUpdates')
+            ? $this->pendingProfileUpdates
+            : collect();
+        $pendingPersonalInfo = $pendingUpdatesCollection
+            ->where('section', 'personal_info')
+            ->where('status', 'pending')
+            ->sortByDesc('created_at')
+            ->first();
+
+        $latestPersonalInfo = [
+            'id' => $this->id_alumni,
+            'nama' => $this->nama_alumni,
+            'nis' => $this->nis,
+            'nisn' => $this->nisn,
+            'jenis_kelamin' => $this->jenis_kelamin,
+            'tanggal_lahir' => $this->tanggal_lahir?->format('Y-m-d'),
+            'tempat_lahir' => $this->tempat_lahir,
+            'tahun_masuk' => $this->tahun_masuk,
+            'foto' => $this->foto ?: null,
+            'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
+            'alamat' => $this->alamat,
+            'no_hp' => $this->no_hp,
+            'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),
+            'status' => 'approved',
+            'pending_update_id' => null,
+            'changed_fields' => [],
+            'updated_at' => $this->updated_at,
+        ];
+
+        if ($pendingPersonalInfo) {
+            $newData = is_array($pendingPersonalInfo->new_data) ? $pendingPersonalInfo->new_data : [];
+            $oldData = is_array($pendingPersonalInfo->old_data) ? $pendingPersonalInfo->old_data : [];
+
+            foreach ($newData as $key => $value) {
+                if (Arr::has($latestPersonalInfo, $key)) {
+                    $latestPersonalInfo[$key] = $value;
+                }
+            }
+
+            if (!empty($pendingPersonalInfo->foto_path)) {
+                $latestPersonalInfo['foto'] = $pendingPersonalInfo->foto_path;
+                $latestPersonalInfo['foto_thumbnail'] = GeneratesThumbnail::thumbnailPath($pendingPersonalInfo->foto_path);
+            }
+
+            $changedFields = [];
+            foreach ($newData as $field => $newValue) {
+                $oldValue = $oldData[$field] ?? null;
+                if ((string) $oldValue !== (string) $newValue) {
+                    $changedFields[] = $field;
+                }
+            }
+            if (!empty($pendingPersonalInfo->foto_path)) {
+                $changedFields[] = 'foto';
+            }
+
+            $latestPersonalInfo['status'] = 'pending';
+            $latestPersonalInfo['pending_update_id'] = $pendingPersonalInfo->id;
+            $latestPersonalInfo['changed_fields'] = array_values(array_unique($changedFields));
+            $latestPersonalInfo['updated_at'] = $pendingPersonalInfo->updated_at;
+        }
 
         $currentCareer = null;
         if ($latestRiwayat) {
@@ -146,6 +208,7 @@ class ProfileResource extends JsonResource
                         'new_data' => $pending->new_data,
                         'old_data' => $pending->old_data,
                         'foto_path' => $pending->foto_path,
+                        'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($pending->foto_path),
                         'gambar_path' => $pending->gambar_path,
                         'related_id' => $pending->related_id,
                         'status' => 'pending',
@@ -153,6 +216,10 @@ class ProfileResource extends JsonResource
                     ];
                 });
             }, []),
+
+            // Profile data that should be displayed as the latest state in alumni UI.
+            // If there is a pending personal_info update, this is a merged preview with status=pending.
+            'latest_personal_info' => $latestPersonalInfo,
 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
