@@ -157,4 +157,20 @@ class PengumumanController extends Controller
             return $this->errorResponse('Gagal mengubah status pin: ' . $e->getMessage());
         }
     }
+    public function published(Request $request)
+    {
+    try {
+        $filters = ['status' => 'aktif'];
+        if ($request->has('search')) {
+            $filters['search'] = $request->input('search');
+        }
+        $perPage = $request->input('per_page', 10);
+        $pengumuman = $this->pengumumanService->getAll($filters, $perPage);
+        return $this->successResponse(
+            PengumumanResource::collection($pengumuman)->response()->getData(true)
+        );
+    } catch (\Exception $e) {
+        return $this->errorResponse('Gagal mengambil data pengumuman');
+    }
+}
 }

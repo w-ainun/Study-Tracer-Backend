@@ -98,6 +98,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
+        Route::get('/pengumuman', [PengumumanController::class, 'published']);
+Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
+
         // Restricted routes (verified alumni only)
         Route::middleware('alumni.verified')->group(function () {
             // Lowongan for alumni (sorted by skill match)
@@ -117,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/deskripsi-karier', [DeskripsiKarierController::class, 'store']);
         Route::put('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'update']);
         Route::delete('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'destroy']);
+
 
         // Portofolio (accessible even if not verified)
         Route::post('/portofolio', [PortofolioController::class, 'store']);
