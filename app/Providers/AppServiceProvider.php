@@ -12,6 +12,7 @@ use App\Interfaces\LowonganRepositoryInterface;
 use App\Interfaces\KuesionerRepositoryInterface;
 use App\Interfaces\MasterDataRepositoryInterface;
 use App\Interfaces\StatusKarierRepositoryInterface;
+use App\Interfaces\PengumumanRepositoryInterface;
 use App\Interfaces\Alumni\BerandaRepositoryInterface;
 use App\Interfaces\Alumni\LowonganAlumniRepositoryInterface;
 use App\Interfaces\Alumni\AlumniDirectoryRepositoryInterface;
@@ -24,6 +25,7 @@ use App\Repositories\LowonganRepository;
 use App\Repositories\KuesionerRepository;
 use App\Repositories\MasterDataRepository;
 use App\Repositories\StatusKarierRepository;
+use App\Repositories\PengumumanRepository;
 use App\Repositories\Alumni\BerandaRepository;
 use App\Repositories\Alumni\LowonganAlumniRepository;
 use App\Repositories\Alumni\AlumniDirectoryRepository;
@@ -47,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(LowonganAlumniRepositoryInterface::class, LowonganAlumniRepository::class);
         $this->app->bind(AlumniDirectoryRepositoryInterface::class, AlumniDirectoryRepository::class);
         $this->app->bind(ProfileRepositoryInterface::class, ProfileRepository::class);
+        $this->app->bind(PengumumanRepositoryInterface::class, PengumumanRepository::class);
 
         // Register Laravel Telescope (DISABLED untuk performa)
         // if ($this->app->environment('local')) {
