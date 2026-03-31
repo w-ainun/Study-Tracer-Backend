@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\AdminRepositoryInterface;
+use App\Jobs\SendNotificationJob;
 use App\Models\Alumni;
 use App\Models\AlumniSkill;
 use App\Models\AlumniSocialMedia;
@@ -46,9 +47,9 @@ class AdminService
     {
         $alumni = $this->adminRepository->approveAlumni($alumniId);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($alumni && $alumni->id_users) {
-            $this->notificationService->notifyAccountVerified($alumni->id_users);
+            SendNotificationJob::dispatch($alumni->id_users, 'notifyAccountVerified');
             
             // Clear cache setelah approve alumni
             \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:can_access_all");
@@ -62,9 +63,9 @@ class AdminService
     {
         $alumni = $this->adminRepository->rejectAlumni($alumniId);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($alumni && $alumni->id_users) {
-            $this->notificationService->notifyAccountRejected($alumni->id_users);
+            SendNotificationJob::dispatch($alumni->id_users, 'notifyAccountRejected');
             
             // Clear cache setelah reject alumni
             \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:can_access_all");
@@ -78,9 +79,9 @@ class AdminService
     {
         $alumni = $this->adminRepository->banAlumni($alumniId);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($alumni && $alumni->id_users) {
-            $this->notificationService->notifyAccountBanned($alumni->id_users);
+            SendNotificationJob::dispatch($alumni->id_users, 'notifyAccountBanned');
         }
         
         return $alumni;
@@ -135,13 +136,13 @@ class AdminService
     {
         $riwayat = $this->adminRepository->approveCareerUpdate($riwayatId);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($riwayat && $riwayat->alumni && $riwayat->alumni->id_users) {
             $statusName = $riwayat->status->nama_status ?? 'Status Karir';
-            $this->notificationService->notifyCareerStatusApproved(
+            SendNotificationJob::dispatch(
                 $riwayat->alumni->id_users,
-                $riwayatId,
-                $statusName
+                'notifyCareerStatusApproved',
+                [$riwayatId, $statusName]
             );
         }
         
@@ -157,12 +158,12 @@ class AdminService
         
         $result = $this->adminRepository->rejectCareerUpdate($riwayatId);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($userId) {
-            $this->notificationService->notifyCareerStatusRejected(
+            SendNotificationJob::dispatch(
                 $userId,
-                $riwayatId,
-                $statusName
+                'notifyCareerStatusRejected',
+                [$riwayatId, $statusName]
             );
         }
         
@@ -193,13 +194,13 @@ class AdminService
                 'reviewed_at' => now(),
             ]);
 
-            // Notify alumni
+            // Dispatch notifikasi ke queue (non-blocking)
             if ($pending->alumni && $pending->alumni->id_users) {
                 $sectionLabel = $this->getSectionLabel($pending->section);
-                $this->notificationService->notifyProfileUpdateApproved(
+                SendNotificationJob::dispatch(
                     $pending->alumni->id_users,
-                    $pending->id,
-                    $sectionLabel
+                    'notifyProfileUpdateApproved',
+                    [$pending->id, $sectionLabel]
                 );
             }
 
@@ -230,14 +231,13 @@ class AdminService
                 'reviewed_at' => now(),
             ]);
 
-            // Notify alumni
+            // Dispatch notifikasi ke queue (non-blocking)
             if ($pending->alumni && $pending->alumni->id_users) {
                 $sectionLabel = $this->getSectionLabel($pending->section);
-                $this->notificationService->notifyProfileUpdateRejected(
+                SendNotificationJob::dispatch(
                     $pending->alumni->id_users,
-                    $pending->id,
-                    $sectionLabel,
-                    $reason
+                    'notifyProfileUpdateRejected',
+                    [$pending->id, $sectionLabel, $reason]
                 );
             }
 

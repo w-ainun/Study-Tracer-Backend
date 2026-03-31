@@ -139,11 +139,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllJurusanKuliah()
     {
-        return JurusanKuliah::with('universitas')->orderBy('nama_jurusan')->get();
+        return Cache::remember('master.jurusan_kuliah', $this->cacheTtl, function () {
+            return JurusanKuliah::with('universitas')->orderBy('nama_jurusan')->get();
+        });
     }
 
     public function createJurusanKuliah(array $data)
     {
+        Cache::forget('master.jurusan_kuliah');
         return JurusanKuliah::create($data);
     }
 
@@ -151,12 +154,14 @@ class MasterDataRepository implements MasterDataRepositoryInterface
     {
         $jurusan = JurusanKuliah::findOrFail($id);
         $jurusan->update($data);
+        Cache::forget('master.jurusan_kuliah');
         return $jurusan->fresh();
     }
 
     public function deleteJurusanKuliah(int $id)
     {
         JurusanKuliah::findOrFail($id)->delete();
+        Cache::forget('master.jurusan_kuliah');
         return true;
     }
 
@@ -324,11 +329,15 @@ class MasterDataRepository implements MasterDataRepositoryInterface
 
     public function getAllUniversitas()
     {
-        return Universitas::with('jurusanKuliah')->orderBy('nama_universitas')->get();
+        return Cache::remember('master.universitas', $this->cacheTtl, function () {
+            return Universitas::with('jurusanKuliah')->orderBy('nama_universitas')->get();
+        });
     }
 
     public function createUniversitas(array $data)
     {
+        Cache::forget('master.universitas');
+        Cache::forget('master.jurusan_kuliah');
         return Universitas::create($data);
     }
 
