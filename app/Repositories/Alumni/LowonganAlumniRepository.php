@@ -18,6 +18,8 @@ class LowonganAlumniRepository implements LowonganAlumniRepositoryInterface
             ->where('approval_status', 'approved')
             ->where('status', 'published');
 
+        $sort = strtolower((string) ($filters['sort'] ?? 'terbaru'));
+
         // Search filter
         if (!empty($filters['search'])) {
             $search = $filters['search'];
@@ -34,6 +36,21 @@ class LowonganAlumniRepository implements LowonganAlumniRepositoryInterface
             $query->where('tipe_pekerjaan', $filters['tipe_pekerjaan']);
         }
 
+        // Lokasi filters from frontend dropdowns
+        if (!empty($filters['provinsi'])) {
+            $provinsi = $filters['provinsi'];
+            $query->whereHas('perusahaan.kota.provinsi', function ($q) use ($provinsi) {
+                $q->where('nama_provinsi', 'like', "%{$provinsi}%");
+            });
+        }
+
+        if (!empty($filters['kota'])) {
+            $kota = $filters['kota'];
+            $query->whereHas('perusahaan.kota', function ($q) use ($kota) {
+                $q->where('nama_kota', 'like', "%{$kota}%");
+            });
+        }
+
         // Sort by skill match when alumni has skills
         if (!empty($alumniSkillIds)) {
             $placeholders = implode(',', array_map('intval', $alumniSkillIds));
@@ -43,11 +60,17 @@ class LowonganAlumniRepository implements LowonganAlumniRepositoryInterface
                 ->selectRaw(
                     "COALESCE(SUM(CASE WHEN lowongan_skills.id_skills IN ({$placeholders}) THEN 1 ELSE 0 END), 0) as skill_match_count"
                 )
+                ->selectRaw(
+                    "CASE WHEN COALESCE(SUM(CASE WHEN lowongan_skills.id_skills IN ({$placeholders}) THEN 1 ELSE 0 END), 0) > 0 THEN 1 ELSE 0 END as has_skill_match"
+                )
                 ->groupBy('lowongan.id_lowongan')
+                ->orderByDesc('has_skill_match')
                 ->orderByDesc('skill_match_count')
-                ->orderByDesc('lowongan.created_at');
+                ->when($sort === 'terlama', fn($q) => $q->orderBy('lowongan.created_at'))
+                ->when($sort !== 'terlama', fn($q) => $q->orderByDesc('lowongan.created_at'));
         } else {
-            $query->orderByDesc('created_at');
+            $query->when($sort === 'terlama', fn($q) => $q->orderBy('created_at'))
+                ->when($sort !== 'terlama', fn($q) => $q->orderByDesc('created_at'));
         }
 
         return $query->paginate($perPage);
