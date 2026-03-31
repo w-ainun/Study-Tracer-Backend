@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Alumni\ProfileController;
 use App\Http\Controllers\Api\Alumni\DeskripsiKarierController;
 use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
+use App\Http\Controllers\Api\PengumumanController;
 
 // PUBLIC ROUTES
 
@@ -97,6 +98,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
+        Route::get('/pengumuman', [PengumumanController::class, 'published']);
+Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
+
         // Restricted routes (verified alumni only)
         Route::middleware('alumni.verified')->group(function () {
             // Lowongan for alumni (sorted by skill match)
@@ -116,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/deskripsi-karier', [DeskripsiKarierController::class, 'store']);
         Route::put('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'update']);
         Route::delete('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'destroy']);
+
 
         // Portofolio (accessible even if not verified)
         Route::post('/portofolio', [PortofolioController::class, 'store']);
@@ -283,5 +288,14 @@ Route::middleware('auth:sanctum')->group(function () {
             // Tipe Pekerjaan
             Route::get('/tipe-pekerjaan', [MasterDataController::class, 'tipePekerjaan']);
         });
+
+        // Pengumuman Management
+        Route::get('/pengumuman/stats', [PengumumanController::class, 'stats']);
+        Route::get('/pengumuman', [PengumumanController::class, 'index']);
+        Route::post('/pengumuman', [PengumumanController::class, 'store']);
+        Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
+        Route::match(['put', 'post'], '/pengumuman/{id}', [PengumumanController::class, 'update']);
+        Route::delete('/pengumuman/{id}', [PengumumanController::class, 'destroy']);
+        Route::patch('/pengumuman/{id}/pin', [PengumumanController::class, 'togglePin']);
     });
 });
