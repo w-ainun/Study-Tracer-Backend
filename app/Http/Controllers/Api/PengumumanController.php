@@ -76,7 +76,7 @@ class PengumumanController extends Controller
     public function store(PengumumanRequest $request)
     {
         try {
-            $data = $request->only(['judul', 'konten', 'status']);
+            $data = $request->only(['judul', 'konten', 'status', 'is_pinned']);
             $data['id_users'] = $request->user()->id_users;
 
             $foto = $request->file('foto');
@@ -98,7 +98,7 @@ class PengumumanController extends Controller
     public function update(PengumumanRequest $request, int $id)
     {
         try {
-            $data = $request->only(['judul', 'konten', 'status']);
+            $data = $request->only(['judul', 'konten', 'status', 'is_pinned']);
 
             // Handle explicit foto removal
             if ($request->has('remove_foto') && $request->input('remove_foto')) {

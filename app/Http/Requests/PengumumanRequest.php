@@ -18,6 +18,7 @@ class PengumumanRequest extends FormRequest
             'konten' => 'required|string',
             'status' => 'sometimes|in:aktif,draft,berakhir',
             'foto'   => 'nullable|image|mimes:jpeg,jpg,png,webp|max:2048',
+            'is_pinned' => 'sometimes|boolean', 
         ];
 
         // On update, make judul and konten optional
