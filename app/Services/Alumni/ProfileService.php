@@ -455,4 +455,86 @@ class ProfileService
             return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
         });
     }
+
+    /**
+     * Update pending social media request
+     */
+    public function updatePendingSocialMedia(int $userId, int $pendingId, array $socialMedia)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $pendingId, $socialMedia) {
+            $pending = PendingProfileUpdate::where('id', $pendingId)
+                ->where('id_alumni', $alumni->id_alumni)
+                ->where('section', 'social_media')
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            $pending->update([
+                'new_data' => ['social_media' => $socialMedia],
+                'updated_at' => now(),
+            ]);
+
+            return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
+        });
+    }
+
+    /**
+     * Cancel pending social media update
+     */
+    public function cancelPendingSocialMedia(int $userId, int $pendingId)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $pendingId) {
+            $pending = PendingProfileUpdate::where('id', $pendingId)
+                ->where('id_alumni', $alumni->id_alumni)
+                ->where('section', 'social_media')
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            $pending->delete();
+
+            return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
+        });
+    }
+
+    /**
+     * Cancel any pending profile update by id (general — any section)
+     */
+    public function cancelPendingProfileUpdate(int $userId, int $pendingId)
+    {
+        $alumni = $this->profileRepository->getProfileByUserId($userId);
+
+        if (!$alumni) {
+            throw new \Exception('Profil alumni tidak ditemukan.');
+        }
+
+        return DB::transaction(function () use ($alumni, $pendingId) {
+            $pending = PendingProfileUpdate::where('id', $pendingId)
+                ->where('id_alumni', $alumni->id_alumni)
+                ->where('status', 'pending')
+                ->firstOrFail();
+
+            // Hapus file foto/gambar sementara jika ada
+            if ($pending->foto_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pending->foto_path);
+            }
+            if ($pending->gambar_path) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($pending->gambar_path);
+            }
+
+            $pending->delete();
+
+            return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);
+        });
+    }
 }

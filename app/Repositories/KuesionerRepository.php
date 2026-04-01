@@ -581,20 +581,35 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             ->get();
 
         // Get total unique respondents (alumni) for this kuesioner
-        $totalResponden = Jawaban::whereIn('id_pertanyaan', $pertanyaans->pluck('id_pertanyaan'))
+        $pertanyaanIds = $pertanyaans->pluck('id_pertanyaan');
+
+        $totalResponden = Jawaban::whereIn('id_pertanyaan', $pertanyaanIds)
             ->distinct('id_user')
             ->count('id_user');
 
-        // Build statistics for each question
+        // FIX N+1: Batch load ALL jawaban counts in 2 queries instead of N*M
+        $opsiCounts = Jawaban::whereIn('id_pertanyaan', $pertanyaanIds)
+            ->whereNotNull('id_opsiJawaban')
+            ->selectRaw('id_pertanyaan, id_opsiJawaban, COUNT(*) as cnt')
+            ->groupBy('id_pertanyaan', 'id_opsiJawaban')
+            ->get()
+            ->groupBy('id_pertanyaan')
+            ->map(fn ($g) => $g->keyBy('id_opsiJawaban'));
+
+        $textCounts = Jawaban::whereIn('id_pertanyaan', $pertanyaanIds)
+            ->whereNull('id_opsiJawaban')
+            ->selectRaw('id_pertanyaan, COUNT(*) as cnt')
+            ->groupBy('id_pertanyaan')
+            ->pluck('cnt', 'id_pertanyaan');
+
+        // Build statistics using pre-fetched data (0 queries in loop)
         $statistics = [];
         foreach ($pertanyaans as $index => $pertanyaan) {
             $opsiStatistics = [];
-            
+            $pertanyaanCounts = $opsiCounts->get($pertanyaan->id_pertanyaan, collect());
+
             foreach ($pertanyaan->opsiJawaban as $opsi) {
-                // Count how many times this option was selected
-                $count = Jawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)
-                    ->where('id_opsiJawaban', $opsi->id_opsi)
-                    ->count();
+                $count = (int) ($pertanyaanCounts->get($opsi->id_opsi)?->cnt ?? 0);
 
                 $opsiStatistics[] = [
                     'opsi' => $opsi->opsi,
@@ -603,10 +618,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                 ];
             }
 
-            // Count text answers (if no opsi selected)
-            $textAnswerCount = Jawaban::where('id_pertanyaan', $pertanyaan->id_pertanyaan)
-                ->whereNull('id_opsiJawaban')
-                ->count();
+            $textAnswerCount = (int) ($textCounts->get($pertanyaan->id_pertanyaan, 0));
 
             $statistics[] = [
                 'pertanyaan_number' => $index + 1,

@@ -112,6 +112,7 @@ class ProfileController extends Controller
      * PUT /alumni/profile/skills
      * Update skills (creates pending update for admin approval)
      */
+    
     public function updateSkills(Request $request)
     {
         try {
@@ -176,6 +177,76 @@ class ProfileController extends Controller
             return $this->successResponse(
                 new ProfileResource($alumni),
                 'Pengajuan perubahan keahlian berhasil dibatalkan.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal membatalkan perubahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * PUT /alumni/profile/pending-social/{pendingId}
+     * Update pending social media request
+     */
+    public function updatePendingSocialMedia(Request $request, $pendingId)
+    {
+        try {
+            $request->validate([
+                'social_media' => 'required|array',
+                'social_media.*.id_sosmed' => 'required|exists:social_media,id_sosmed',
+                'social_media.*.url' => 'required|string',
+            ]);
+
+            $alumni = $this->profileService->updatePendingSocialMedia(
+                $request->user()->id_users,
+                $pendingId,
+                $request->social_media
+            );
+
+            return $this->successResponse(
+                new ProfileResource($alumni),
+                'Pengajuan tautan sosial berhasil diperbarui.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui tautan sosial: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /alumni/profile/pending-social/{pendingId}
+     * Cancel pending social media update
+     */
+    public function cancelPendingSocialMedia(Request $request, $pendingId)
+    {
+        try {
+            $alumni = $this->profileService->cancelPendingSocialMedia(
+                $request->user()->id_users,
+                $pendingId
+            );
+
+            return $this->successResponse(
+                new ProfileResource($alumni),
+                'Pengajuan perubahan tautan sosial berhasil dibatalkan.'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal membatalkan perubahan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /alumni/profile/pending/{pendingId}
+     * Cancel any pending profile update (personal_info, dll.) by its ID
+     */
+    public function cancelPendingProfileUpdate(Request $request, $pendingId)
+    {
+        try {
+            $alumni = $this->profileService->cancelPendingProfileUpdate(
+                $request->user()->id_users,
+                $pendingId
+            );
+
+            return $this->successResponse(
+                new ProfileResource($alumni),
+                'Pengajuan perubahan profil berhasil dibatalkan.'
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal membatalkan perubahan: ' . $e->getMessage());

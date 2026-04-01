@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Alumni\ProfileController;
 use App\Http\Controllers\Api\Alumni\DeskripsiKarierController;
 use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
+use App\Http\Controllers\Api\PengumumanController;
 
 // PUBLIC ROUTES
 
@@ -79,6 +80,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/profile/skills', [ProfileController::class, 'updateSkills']);
         Route::put('/profile/pending-skills/{pendingId}', [ProfileController::class, 'updatePendingSkills']);
         Route::delete('/profile/pending-skills/{pendingId}', [ProfileController::class, 'cancelPendingSkills']);
+
+        // Social media pending management
+        Route::put('/profile/pending-social/{pendingId}', [ProfileController::class, 'updatePendingSocialMedia']);
+        Route::delete('/profile/pending-social/{pendingId}', [ProfileController::class, 'cancelPendingSocialMedia']);
+
+        // General pending profile update management (personal_info, etc.)
+        Route::delete('/profile/pending/{pendingId}', [ProfileController::class, 'cancelPendingProfileUpdate']);
         
         Route::get('/beranda', [BerandaController::class, 'index']);
         Route::get('/status-pengajuan', [BerandaController::class, 'statusPengajuan']);
@@ -96,6 +104,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
         Route::delete('/notifications/{id}', [NotificationController::class, 'destroy']);
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
+
+        Route::get('/pengumuman', [PengumumanController::class, 'published']);
+Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
 
         // Restricted routes (verified alumni only)
         Route::middleware('alumni.verified')->group(function () {
@@ -119,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Pending deskripsi karier management
         Route::put('/deskripsi-karier/pending/{pendingId}', [DeskripsiKarierController::class, 'updatePending']);
         Route::delete('/deskripsi-karier/pending/{pendingId}', [DeskripsiKarierController::class, 'cancelPending']);
+
 
         // Portofolio (accessible even if not verified)
         Route::post('/portofolio', [PortofolioController::class, 'store']);
@@ -286,5 +298,14 @@ Route::middleware('auth:sanctum')->group(function () {
             // Tipe Pekerjaan
             Route::get('/tipe-pekerjaan', [MasterDataController::class, 'tipePekerjaan']);
         });
+
+        // Pengumuman Management
+        Route::get('/pengumuman/stats', [PengumumanController::class, 'stats']);
+        Route::get('/pengumuman', [PengumumanController::class, 'index']);
+        Route::post('/pengumuman', [PengumumanController::class, 'store']);
+        Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
+        Route::match(['put', 'post'], '/pengumuman/{id}', [PengumumanController::class, 'update']);
+        Route::delete('/pengumuman/{id}', [PengumumanController::class, 'destroy']);
+        Route::patch('/pengumuman/{id}/pin', [PengumumanController::class, 'togglePin']);
     });
 });

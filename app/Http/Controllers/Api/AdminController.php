@@ -150,7 +150,6 @@ class AdminController extends Controller
     public function exportAlumniCsv(Request $request): StreamedResponse
     {
         $filters = $request->only(['status_create', 'id_jurusan', 'search', 'tahun_lulus']);
-        $alumni  = $this->adminService->getAllAlumni($filters, 99999);
 
         $headers = [
             'Content-Type'        => 'text/csv; charset=UTF-8',
@@ -160,37 +159,52 @@ class AdminController extends Controller
             'Expires'             => '0',
         ];
 
-        $callback = function () use ($alumni) {
+        // FIX: Use chunk() streaming instead of paginate(99999) to avoid OOM
+        $callback = function () use ($filters) {
             $handle = fopen('php://output', 'w');
-            // UTF-8 BOM for Excel compatibility
             fputs($handle, "\xEF\xBB\xBF");
 
-            // Header row
             fputcsv($handle, [
                 'ID', 'Nama', 'NIS', 'NISN', 'Jenis Kelamin',
                 'Tanggal Lahir', 'Tempat Lahir', 'Tahun Masuk', 'Tahun Lulus',
                 'Alamat', 'No HP', 'Jurusan', 'Status', 'Email', 'Dibuat',
             ]);
 
-            foreach ($alumni as $item) {
-                fputcsv($handle, [
-                    $item->id_alumni,
-                    $item->nama_alumni,
-                    $item->nis,
-                    $item->nisn,
-                    $item->jenis_kelamin,
-                    $item->tanggal_lahir?->format('Y-m-d'),
-                    $item->tempat_lahir,
-                    $item->tahun_masuk,
-                    $item->tahun_lulus?->format('Y-m-d'),
-                    $item->alamat,
-                    $item->no_hp,
-                    $item->jurusan?->nama_jurusan ?? '-',
-                    $item->status_create,
-                    $item->user?->email_users ?? '-',
-                    $item->created_at?->format('Y-m-d H:i:s'),
-                ]);
-            }
+            $query = \App\Models\Alumni::with(['user', 'jurusan'])
+                ->when(!empty($filters['status_create']), fn($q) => $q->where('status_create', $filters['status_create']))
+                ->when(!empty($filters['id_jurusan']), fn($q) => $q->where('id_jurusan', $filters['id_jurusan']))
+                ->when(!empty($filters['tahun_lulus']), fn($q) => $q->whereYear('tahun_lulus', $filters['tahun_lulus']))
+                ->when(!empty($filters['search']), function ($q) use ($filters) {
+                    $search = $filters['search'];
+                    $q->where(function ($sq) use ($search) {
+                        $sq->where('nama_alumni', 'like', "%{$search}%")
+                           ->orWhere('nis', 'like', "%{$search}%")
+                           ->orWhere('nisn', 'like', "%{$search}%");
+                    });
+                })
+                ->orderBy('created_at', 'desc');
+
+            $query->chunk(500, function ($chunk) use ($handle) {
+                foreach ($chunk as $item) {
+                    fputcsv($handle, [
+                        $item->id_alumni,
+                        $item->nama_alumni,
+                        $item->nis,
+                        $item->nisn,
+                        $item->jenis_kelamin,
+                        $item->tanggal_lahir?->format('Y-m-d'),
+                        $item->tempat_lahir,
+                        $item->tahun_masuk,
+                        $item->tahun_lulus?->format('Y-m-d'),
+                        $item->alamat,
+                        $item->no_hp,
+                        $item->jurusan?->nama_jurusan ?? '-',
+                        $item->status_create,
+                        $item->user?->email_users ?? '-',
+                        $item->created_at?->format('Y-m-d H:i:s'),
+                    ]);
+                }
+            });
 
             fclose($handle);
         };
@@ -209,26 +223,32 @@ class AdminController extends Controller
         try {
             $pending = $this->adminService->getPendingCareerUpdates();
 
-            $data = $pending->map(function ($riwayat) {
+            // ── FIX N+1: Batch load ALL previous approved riwayat in 1 query ──
+            $alumniIds = $pending->pluck('id_alumni')->unique()->filter();
+            $pendingIds = $pending->pluck('id_riwayat')->toArray();
+
+            $previousRiwayatMap = collect();
+            if ($alumniIds->isNotEmpty()) {
+                $previousRiwayatMap = \App\Models\RiwayatStatus::with([
+                        'status', 'pekerjaan.perusahaan',
+                        'kuliah.universitas', 'kuliah.jurusanKuliah',
+                        'wirausaha.bidangUsaha',
+                    ])
+                    ->whereIn('id_alumni', $alumniIds)
+                    ->where('approval_status', 'approved')
+                    ->whereNotIn('id_riwayat', $pendingIds)
+                    ->orderByDesc('id_riwayat')
+                    ->get()
+                    ->groupBy('id_alumni')
+                    ->map(fn ($group) => $group->first());
+            }
+
+            $data = $pending->map(function ($riwayat) use ($previousRiwayatMap) {
                 $alumni = $riwayat->alumni;
                 $changes = [];
 
-                // ── Find the alumni's previous APPROVED riwayat to show "old" values ──
-                $previousRiwayat = null;
-                if ($alumni) {
-                    $previousRiwayat = \App\Models\RiwayatStatus::with([
-                        'status',
-                        'pekerjaan.perusahaan',
-                        'kuliah.universitas',
-                        'kuliah.jurusanKuliah',
-                        'wirausaha.bidangUsaha',
-                    ])
-                        ->where('id_alumni', $alumni->id_alumni)
-                        ->where('approval_status', 'approved')
-                        ->where('id_riwayat', '!=', $riwayat->id_riwayat)
-                        ->orderByDesc('id_riwayat')
-                        ->first();
-                }
+                // Lookup dari pre-loaded map (0 queries)
+                $previousRiwayat = $alumni ? $previousRiwayatMap->get($alumni->id_alumni) : null;
 
                 $oldStatus = $previousRiwayat?->status?->nama_status ?? '-';
                 $newStatus = $riwayat->status?->nama_status ?? '-';
@@ -325,7 +345,10 @@ class AdminController extends Controller
                 'portofolio' => 'Portofolio',
             ];
 
-            $data = $pending->map(function ($item) use ($sectionLabels) {
+            // ── FIX N+1: Pre-load social media names SEKALI ──
+            $socialMediaNames = \App\Models\SocialMedia::pluck('nama_sosmed', 'id_sosmed');
+
+            $data = $pending->map(function ($item) use ($sectionLabels, $socialMediaNames) {
                 $alumni = $item->alumni;
 
                 $changes = [];
@@ -351,7 +374,7 @@ class AdminController extends Controller
                     // Build per-platform comparison for social media
                     $oldSocial = $oldData['social_media'] ?? [];
                     $newSocial = $newData['social_media'] ?? [];
-                    $socialMediaNames = \App\Models\SocialMedia::pluck('nama_sosmed', 'id_sosmed');
+                    // $socialMediaNames sudah di-load dari luar loop (0 queries)
 
                     $oldByPlatform = collect($oldSocial)->keyBy('id_sosmed');
                     $newByPlatform = collect($newSocial)->keyBy('id_sosmed');

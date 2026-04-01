@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\LowonganRepositoryInterface;
+use App\Jobs\SendNotificationJob;
 use App\Traits\GeneratesThumbnail;
 
 class LowonganService
@@ -98,12 +99,12 @@ class LowonganService
             'rejected_at' => null, // clear any previous rejection
         ]);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($lowongan && $lowongan->id_users) {
-            $this->notificationService->notifyLowonganApproved(
+            SendNotificationJob::dispatch(
                 $lowongan->id_users,
-                $id,
-                $lowongan->judul_lowongan
+                'notifyLowonganApproved',
+                [$id, $lowongan->judul_lowongan]
             );
         }
         
@@ -120,12 +121,12 @@ class LowonganService
             'rejected_at' => now(),
         ]);
         
-        // Trigger notifikasi
+        // Dispatch notifikasi ke queue (non-blocking)
         if ($lowongan && $lowongan->id_users) {
-            $this->notificationService->notifyLowonganRejected(
+            SendNotificationJob::dispatch(
                 $lowongan->id_users,
-                $id,
-                $lowongan->judul_lowongan
+                'notifyLowonganRejected',
+                [$id, $lowongan->judul_lowongan]
             );
         }
         
