@@ -66,7 +66,7 @@ Route::get('/settings/tampilan', [PengaturanTampilanController::class, 'show']);
 
 // PROTECTED ROUTES (AUTH)
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
 
     // Auth
     Route::get('/me', [AuthController::class, 'me']);

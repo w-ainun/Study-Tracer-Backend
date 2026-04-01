@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Interfaces\PengumumanRepositoryInterface;
+use App\Jobs\SendPengumumanNotifications;
+use App\Models\Alumni;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -44,17 +46,27 @@ class PengumumanService
             $data['foto'] = $result['path'];
         }
 
-        return $this->pengumumanRepository->create($data);
+        $pengumuman = $this->pengumumanRepository->create($data);
+
+        // Kirim notifikasi ke semua alumni jika pengumuman langsung aktif
+        if (($data['status'] ?? null) === 'aktif') {
+            $this->notifyAllAlumni($pengumuman);
+        }
+
+        return $pengumuman;
     }
 
     // ── Update ───────────────────────────────────
 
     public function update(int $id, array $data, ?UploadedFile $foto = null): mixed
     {
+        // Cek status lama sebelum update
+        $existing = $this->pengumumanRepository->getById($id);
+        $oldStatus = $existing->status;
+
         // Handle foto replacement
         if ($foto) {
             // Delete old foto if exists
-            $existing = $this->pengumumanRepository->getById($id);
             if ($existing->foto) {
                 $this->deleteWithThumbnail($existing->foto);
             }
@@ -63,7 +75,15 @@ class PengumumanService
             $data['foto'] = $result['path'];
         }
 
-        return $this->pengumumanRepository->update($id, $data);
+        $pengumuman = $this->pengumumanRepository->update($id, $data);
+
+        // Kirim notifikasi jika status berubah menjadi 'aktif'
+        $newStatus = $data['status'] ?? $oldStatus;
+        if ($newStatus === 'aktif' && $oldStatus !== 'aktif') {
+            $this->notifyAllAlumni($pengumuman);
+        }
+
+        return $pengumuman;
     }
 
     // ── Delete ───────────────────────────────────
@@ -84,5 +104,31 @@ class PengumumanService
     public function togglePin(int $id)
     {
         return $this->pengumumanRepository->togglePin($id);
+    }
+
+    // ── Notifications ────────────────────────────
+
+    /**
+     * Kirim notifikasi pengumuman baru ke semua alumni terverifikasi (via queue)
+     */
+    private function notifyAllAlumni($pengumuman): void
+    {
+        $userIds = Alumni::where('status_create', 'ok')
+            ->whereNotNull('id_users')
+            ->pluck('id_users')
+            ->toArray();
+
+        if (empty($userIds)) {
+            return;
+        }
+
+        // Dispatch ke queue dalam batch per 100 user
+        foreach (array_chunk($userIds, 100) as $chunk) {
+            SendPengumumanNotifications::dispatch(
+                $chunk,
+                $pengumuman->id_pengumuman,
+                $pengumuman->judul,
+            );
+        }
     }
 }

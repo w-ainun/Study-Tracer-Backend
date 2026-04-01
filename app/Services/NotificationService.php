@@ -290,4 +290,18 @@ class NotificationService
             ['pending_id' => $pendingId, 'section' => $sectionLabel, 'reason' => $reason]
         );
     }
+
+    /**
+     * Notifikasi saat ada pengumuman baru
+     */
+    public function notifyNewPengumuman(int $userId, int $pengumumanId, string $judul)
+    {
+        return $this->create(
+            $userId,
+            'pengumuman',
+            'Pengumuman Baru',
+            "Ada pengumuman baru: \"{$judul}\". Silakan baca untuk informasi terbaru.",
+            ['pengumuman_id' => $pengumumanId, 'pengumuman_judul' => $judul]
+        );
+    }
 }

@@ -564,7 +564,15 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function updateKuesionerStatus(int $kuesionerId, string $status)
     {
         $kuesioner = Kuesioner::findOrFail($kuesionerId);
-        $kuesioner->update(['status' => $status]);
+        
+        $updateData = ['status' => $status];
+
+        // Auto-set tanggal_publikasi saat diaktifkan jika belum ada
+        if ($status === 'aktif' && !$kuesioner->tanggal_publikasi) {
+            $updateData['tanggal_publikasi'] = now();
+        }
+
+        $kuesioner->update($updateData);
         return $kuesioner->fresh()->load('statusKarir');
     }
 
