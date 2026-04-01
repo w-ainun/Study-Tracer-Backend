@@ -19,10 +19,31 @@ class UpdatePengaturanTampilanRequest extends FormRequest
      */
     public function rules(): array
     {
+        $logoRules = ['nullable'];
+        $loginBgRules = ['nullable'];
+
+        // If sent as file upload → validate as image
+        if ($this->hasFile('logo')) {
+            $logoRules[] = 'image';
+            $logoRules[] = 'mimes:png';
+            $logoRules[] = 'max:2048'; // Max 2MB
+        } else {
+            // If sent as base64 data URL string → validate as string
+            $logoRules[] = 'string';
+        }
+
+        if ($this->hasFile('login_bg')) {
+            $loginBgRules[] = 'image';
+            $loginBgRules[] = 'mimes:jpg,jpeg,png';
+            $loginBgRules[] = 'max:5120'; // Max 5MB
+        } else {
+            $loginBgRules[] = 'string';
+        }
+
         return [
             'nama_sekolah'    => 'sometimes|string|max:255',
-            'logo'            => 'nullable|image|mimes:png|max:2048',     // Max 2MB, PNG only
-            'login_bg'        => 'nullable|image|mimes:jpg,jpeg,png|max:5120', // Max 5MB
+            'logo'            => $logoRules,
+            'login_bg'        => $loginBgRules,
             'primary_color'   => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'secondary_color' => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'third_color'     => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
