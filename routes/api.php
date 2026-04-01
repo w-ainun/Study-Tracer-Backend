@@ -116,6 +116,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/deskripsi-karier', [DeskripsiKarierController::class, 'store']);
         Route::put('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'update']);
         Route::delete('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'destroy']);
+        // Pending deskripsi karier management
+        Route::put('/deskripsi-karier/pending/{pendingId}', [DeskripsiKarierController::class, 'updatePending']);
+        Route::delete('/deskripsi-karier/pending/{pendingId}', [DeskripsiKarierController::class, 'cancelPending']);
 
         // Portofolio (accessible even if not verified)
         Route::post('/portofolio', [PortofolioController::class, 'store']);
