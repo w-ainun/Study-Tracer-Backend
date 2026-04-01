@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Alumni\DeskripsiKarierController;
 use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
 use App\Http\Controllers\Api\PengumumanController;
+use App\Http\Controllers\Api\PengaturanTampilanController;
 
 // PUBLIC ROUTES
 
@@ -59,6 +60,9 @@ Route::get('/kuesioner/published', [KuesionerController::class, 'published']);
 Route::get('/landing/stats', [LandingController::class, 'stats']);
 Route::get('/landing/featured-jobs', [LandingController::class, 'featuredJobs']);
 Route::get('/landing/featured-alumni', [LandingController::class, 'featuredAlumni']);
+
+// Public display settings (for ThemeContext on page load)
+Route::get('/settings/tampilan', [PengaturanTampilanController::class, 'show']);
 
 // PROTECTED ROUTES (AUTH)
 
@@ -297,5 +301,9 @@ Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
         Route::match(['put', 'post'], '/pengumuman/{id}', [PengumumanController::class, 'update']);
         Route::delete('/pengumuman/{id}', [PengumumanController::class, 'destroy']);
         Route::patch('/pengumuman/{id}/pin', [PengumumanController::class, 'togglePin']);
+
+        // Pengaturan Tampilan
+        Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
+        Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
     });
 });
