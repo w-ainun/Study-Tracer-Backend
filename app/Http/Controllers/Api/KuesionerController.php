@@ -73,15 +73,16 @@ class KuesionerController extends Controller
 
     /**
      * Get published kuesioner by status (e.g., kuesioner for "Bekerja")
+     * Returns all matching kuesioner — both status-specific AND global (id_status IS NULL)
      */
     public function publishedByStatus(int $statusId)
     {
         try {
             $kuesioner = $this->kuesionerService->getPublishedByStatus($statusId);
-            if (!$kuesioner) {
+            if ($kuesioner->isEmpty()) {
                 return $this->notFoundResponse('Kuesioner untuk status ini belum tersedia');
             }
-            return $this->successResponse(new KuesionerResource($kuesioner));
+            return $this->successResponse(KuesionerResource::collection($kuesioner));
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil kuesioner berdasarkan status: ' . $e->getMessage());
         }

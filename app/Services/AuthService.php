@@ -228,9 +228,13 @@ class AuthService
                     ->orWhere('tanggal_selesai', '>=', now());
             });
 
-        if ($statusId !== null) {
-            $query->where('id_status', $statusId);
-        }
+        // Include BOTH status-specific AND global kuesioner (id_status IS NULL)
+        $query->where(function ($q) use ($statusId) {
+            $q->whereNull('id_status');
+            if ($statusId !== null) {
+                $q->orWhere('id_status', $statusId);
+            }
+        });
 
         $activeKuesioner = $query->get();
 

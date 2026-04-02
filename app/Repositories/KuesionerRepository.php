@@ -377,7 +377,10 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function getPublishedByStatus(int $statusId)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
-            ->where('id_status', $statusId)
+            ->where(function ($q) use ($statusId) {
+                $q->whereNull('id_status')
+                  ->orWhere('id_status', $statusId);
+            })
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_publikasi')
             ->where(function ($query) {
@@ -388,7 +391,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                 $query->whereNull('tanggal_selesai')
                       ->orWhere('tanggal_selesai', '>=', now());
             })
-            ->first();
+            ->get();
     }
 
     public function getAllPublished(array $filters = [], int $perPage = 15)
