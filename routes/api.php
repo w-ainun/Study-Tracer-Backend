@@ -18,6 +18,8 @@ use App\Http\Controllers\Api\Alumni\DeskripsiKarierController;
 use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
 use App\Http\Controllers\Api\PengumumanController;
+use App\Http\Controllers\Api\PengaturanTampilanController;
+use App\Http\Controllers\Api\MetaDataController;
 
 // PUBLIC ROUTES
 
@@ -59,6 +61,12 @@ Route::get('/kuesioner/published', [KuesionerController::class, 'published']);
 Route::get('/landing/stats', [LandingController::class, 'stats']);
 Route::get('/landing/featured-jobs', [LandingController::class, 'featuredJobs']);
 Route::get('/landing/featured-alumni', [LandingController::class, 'featuredAlumni']);
+
+// Public display settings (for ThemeContext on page load)
+Route::get('/settings/tampilan', [PengaturanTampilanController::class, 'show']);
+
+// Public metadata
+Route::get('/metadata', [MetaDataController::class, 'index']);
 
 // PROTECTED ROUTES (AUTH)
 
@@ -106,7 +114,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
         Route::get('/pengumuman', [PengumumanController::class, 'published']);
-Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
+        Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
 
         // Restricted routes (verified alumni only)
         Route::middleware('alumni.verified')->group(function () {
@@ -307,5 +315,12 @@ Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
         Route::match(['put', 'post'], '/pengumuman/{id}', [PengumumanController::class, 'update']);
         Route::delete('/pengumuman/{id}', [PengumumanController::class, 'destroy']);
         Route::patch('/pengumuman/{id}/pin', [PengumumanController::class, 'togglePin']);
+
+        // Pengaturan Tampilan
+        Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
+        Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
+        
+        // Meta Data Management
+        Route::post('/metadata', [MetaDataController::class, 'update']);
     });
 });

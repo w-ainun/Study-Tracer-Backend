@@ -110,7 +110,7 @@ class LandingService
             'riwayatStatus.wirausaha',
         ])
         ->where('status_create', 'ok')
-        ->inRandomOrder()
+        ->orderBy('id_alumni', 'desc')
         ->limit($limit)
         ->get()
         ->toArray();
