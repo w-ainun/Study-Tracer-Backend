@@ -109,12 +109,42 @@ class KuesionerService
     {
         $kuesioner = $this->kuesionerRepository->updateKuesionerStatus($kuesionerId, $status);
         
+        // Clear cache kuesioner untuk semua alumni yang relevan
+        $this->clearKuesionerCache($kuesioner);
+
         // Trigger notifikasi ke alumni yang sesuai jika status berubah menjadi 'aktif'
         if ($status === 'aktif' && $kuesioner) {
             $this->notifyRelevantAlumni($kuesioner);
         }
         
         return $kuesioner;
+    }
+
+    /**
+     * Clear cache kuesioner_completed dan can_access_all untuk alumni yang relevan
+     */
+    private function clearKuesionerCache($kuesioner)
+    {
+        $statusId = $kuesioner->id_status;
+        
+        if ($statusId) {
+            // Clear cache untuk alumni dengan status karir yang sesuai
+            $userIds = Alumni::whereHas('riwayatStatus', function ($query) use ($statusId) {
+                $query->where('id_status', $statusId)
+                    ->where('approval_status', 'approved');
+            })->whereNotNull('id_users')->pluck('id_users')->toArray();
+        } else {
+            // Clear cache untuk semua alumni
+            $userIds = Alumni::where('status_create', 'ok')
+                ->whereNotNull('id_users')
+                ->pluck('id_users')
+                ->toArray();
+        }
+
+        foreach ($userIds as $userId) {
+            \Illuminate\Support\Facades\Cache::forget("user:{$userId}:kuesioner_completed");
+            \Illuminate\Support\Facades\Cache::forget("user:{$userId}:can_access_all");
+        }
     }
 
     /**
