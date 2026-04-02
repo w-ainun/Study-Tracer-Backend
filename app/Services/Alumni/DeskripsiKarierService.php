@@ -83,7 +83,14 @@ class DeskripsiKarierService
             ->first();
 
         if ($existingPending) {
-            throw new \Exception('Anda sudah memiliki pembaruan deskripsi karier ini yang sedang menunggu persetujuan admin.');
+            // Update the existing pending instead of creating new one
+            $existingPending->update([
+                'new_data' => [
+                    'id_riwayat' => $data['id_riwayat'],
+                    'deskripsi' => $data['deskripsi'],
+                ],
+            ]);
+            return $existingPending->fresh();
         }
 
         return PendingProfileUpdate::create([
@@ -134,5 +141,40 @@ class DeskripsiKarierService
             ],
             'new_data' => null,
         ]);
+    }
+
+    /**
+     * Update an existing pending deskripsi karier (re-edit before admin approval).
+     */
+    public function updatePending(int $alumniId, int $pendingId, array $data): PendingProfileUpdate
+    {
+        $pending = PendingProfileUpdate::where('id', $pendingId)
+            ->where('id_alumni', $alumniId)
+            ->where('section', 'deskripsi_karier')
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $pending->update([
+            'new_data' => [
+                'id_riwayat' => $data['id_riwayat'] ?? $pending->new_data['id_riwayat'],
+                'deskripsi'  => $data['deskripsi'],
+            ],
+        ]);
+
+        return $pending->fresh();
+    }
+
+    /**
+     * Cancel (delete) a pending deskripsi karier update.
+     */
+    public function cancelPending(int $alumniId, int $pendingId): void
+    {
+        $pending = PendingProfileUpdate::where('id', $pendingId)
+            ->where('id_alumni', $alumniId)
+            ->where('section', 'deskripsi_karier')
+            ->where('status', 'pending')
+            ->firstOrFail();
+
+        $pending->delete();
     }
 }

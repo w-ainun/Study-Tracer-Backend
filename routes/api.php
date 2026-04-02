@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
 use App\Http\Controllers\Api\PengumumanController;
 use App\Http\Controllers\Api\PengaturanTampilanController;
+use App\Http\Controllers\Api\MetaDataController;
 
 // PUBLIC ROUTES
 
@@ -64,6 +65,9 @@ Route::get('/landing/featured-alumni', [LandingController::class, 'featuredAlumn
 // Public display settings (for ThemeContext on page load)
 Route::get('/settings/tampilan', [PengaturanTampilanController::class, 'show']);
 
+// Public metadata
+Route::get('/metadata', [MetaDataController::class, 'index']);
+
 // PROTECTED ROUTES (AUTH)
 
 Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
@@ -84,6 +88,13 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::put('/profile/skills', [ProfileController::class, 'updateSkills']);
         Route::put('/profile/pending-skills/{pendingId}', [ProfileController::class, 'updatePendingSkills']);
         Route::delete('/profile/pending-skills/{pendingId}', [ProfileController::class, 'cancelPendingSkills']);
+
+        // Social media pending management
+        Route::put('/profile/pending-social/{pendingId}', [ProfileController::class, 'updatePendingSocialMedia']);
+        Route::delete('/profile/pending-social/{pendingId}', [ProfileController::class, 'cancelPendingSocialMedia']);
+
+        // General pending profile update management (personal_info, etc.)
+        Route::delete('/profile/pending/{pendingId}', [ProfileController::class, 'cancelPendingProfileUpdate']);
         
         Route::get('/beranda', [BerandaController::class, 'index']);
         Route::get('/status-pengajuan', [BerandaController::class, 'statusPengajuan']);
@@ -103,7 +114,7 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::delete('/notifications', [NotificationController::class, 'destroyAll']);
 
         Route::get('/pengumuman', [PengumumanController::class, 'published']);
-Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
+        Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
 
         // Restricted routes (verified alumni only)
         Route::middleware('alumni.verified')->group(function () {
@@ -124,6 +135,9 @@ Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
         Route::post('/deskripsi-karier', [DeskripsiKarierController::class, 'store']);
         Route::put('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'update']);
         Route::delete('/deskripsi-karier/{id}', [DeskripsiKarierController::class, 'destroy']);
+        // Pending deskripsi karier management
+        Route::put('/deskripsi-karier/pending/{pendingId}', [DeskripsiKarierController::class, 'updatePending']);
+        Route::delete('/deskripsi-karier/pending/{pendingId}', [DeskripsiKarierController::class, 'cancelPending']);
 
 
         // Portofolio (accessible even if not verified)
@@ -305,5 +319,8 @@ Route::get('/pengumuman/{id}', [PengumumanController::class, 'show']);
         // Pengaturan Tampilan
         Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
         Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
+        
+        // Meta Data Management
+        Route::post('/metadata', [MetaDataController::class, 'update']);
     });
 });

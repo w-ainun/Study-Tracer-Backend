@@ -113,4 +113,42 @@ class DeskripsiKarierController extends Controller
             return $this->errorResponse('Gagal menghapus deskripsi karier: ' . $e->getMessage());
         }
     }
+
+    /**
+     * PUT /alumni/deskripsi-karier/pending/{pendingId}
+     * Update an existing pending deskripsi karier (re-edit before admin approves)
+     */
+    public function updatePending(Request $request, int $pendingId)
+    {
+        try {
+            $validated = $request->validate([
+                'deskripsi' => ['required', 'string', 'min:10'],
+            ]);
+
+            $alumniId = $request->user()->alumni->id_alumni;
+            $pending = $this->deskripsiKarierService->updatePending($alumniId, $pendingId, $validated);
+
+            return $this->successResponse($pending, 'Pengajuan deskripsi karier berhasil diperbarui.');
+        } catch (ValidationException $e) {
+            return $this->errorResponse($e->getMessage(), 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui pengajuan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /alumni/deskripsi-karier/pending/{pendingId}
+     * Cancel a pending deskripsi karier submission
+     */
+    public function cancelPending(Request $request, int $pendingId)
+    {
+        try {
+            $alumniId = $request->user()->alumni->id_alumni;
+            $this->deskripsiKarierService->cancelPending($alumniId, $pendingId);
+
+            return $this->successResponse(null, 'Pengajuan deskripsi karier berhasil dibatalkan.');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal membatalkan pengajuan: ' . $e->getMessage());
+        }
+    }
 }

@@ -55,6 +55,7 @@ class ProfileResource extends JsonResource
         $latestPersonalInfo = [
             'id' => $this->id_alumni,
             'nama' => $this->nama_alumni,
+            'nama_alumni' => $this->nama_alumni,
             'nis' => $this->nis,
             'nisn' => $this->nisn,
             'jenis_kelamin' => $this->jenis_kelamin,
@@ -80,6 +81,10 @@ class ProfileResource extends JsonResource
                 if (Arr::has($latestPersonalInfo, $key)) {
                     $latestPersonalInfo[$key] = $value;
                 }
+            }
+
+            if (isset($newData['nama_alumni'])) {
+                $latestPersonalInfo['nama'] = $newData['nama_alumni'];
             }
 
             if (!empty($pendingPersonalInfo->foto_path)) {
