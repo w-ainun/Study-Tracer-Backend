@@ -21,6 +21,7 @@ class UpdatePengaturanTampilanRequest extends FormRequest
     {
         $logoRules = ['nullable'];
         $loginBgRules = ['nullable'];
+        $landingBgRules = ['nullable'];
 
         // If sent as file upload → validate as image
         if ($this->hasFile('logo')) {
@@ -40,15 +41,39 @@ class UpdatePengaturanTampilanRequest extends FormRequest
             $loginBgRules[] = 'string';
         }
 
+        if ($this->hasFile('landing_bg')) {
+            $landingBgRules[] = 'image';
+            $landingBgRules[] = 'mimes:jpg,jpeg,png';
+            $landingBgRules[] = 'max:5120'; // Max 5MB
+        } else {
+            $landingBgRules[] = 'string';
+        }
+
         return [
-            'nama_sekolah'    => 'sometimes|string|max:255',
-            'logo'            => $logoRules,
-            'login_bg'        => $loginBgRules,
-            'primary_color'   => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'secondary_color' => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'third_color'     => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
-            'remove_logo'     => 'sometimes|boolean',
-            'remove_login_bg' => 'sometimes|boolean',
+            // Identitas & Media
+            'nama_sekolah'     => 'sometimes|string|max:255',
+            'logo'             => $logoRules,
+            'login_bg'         => $loginBgRules,
+            'landing_bg'       => $landingBgRules,
+            'remove_logo'      => 'sometimes|boolean',
+            'remove_login_bg'  => 'sometimes|boolean',
+            'remove_landing_bg'=> 'sometimes|boolean',
+
+            // Palet Warna
+            'primary_color'    => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'secondary_color'  => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'third_color'      => ['sometimes', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+
+            // Konten Footer & Kontak
+            'deskripsi_footer' => 'sometimes|nullable|string|max:1000',
+            'email_kontak'     => 'sometimes|nullable|email|max:255',
+            'web_kontak'       => 'sometimes|nullable|string|max:255',
+            'telp_kontak'      => 'sometimes|nullable|string|max:50',
+
+            // Teks Modal
+            'teks_privasi'     => 'sometimes|nullable|string|max:50000',
+            'teks_layanan'     => 'sometimes|nullable|string|max:50000',
+            'teks_dukungan'    => 'sometimes|nullable|string|max:5000',
         ];
     }
 
@@ -65,9 +90,17 @@ class UpdatePengaturanTampilanRequest extends FormRequest
             'login_bg.image'         => 'Background login harus berupa file gambar.',
             'login_bg.mimes'         => 'Background login harus berformat JPG atau PNG.',
             'login_bg.max'           => 'Ukuran background login maksimal 5MB.',
+            'landing_bg.image'       => 'Background landing harus berupa file gambar.',
+            'landing_bg.mimes'       => 'Background landing harus berformat JPG atau PNG.',
+            'landing_bg.max'         => 'Ukuran background landing maksimal 5MB.',
             'primary_color.regex'    => 'Format warna primary tidak valid (contoh: #3C5759).',
             'secondary_color.regex'  => 'Format warna secondary tidak valid (contoh: #F3F4F4).',
             'third_color.regex'      => 'Format warna third tidak valid (contoh: #9CA3AF).',
+            'email_kontak.email'     => 'Format email kontak tidak valid.',
+            'deskripsi_footer.max'   => 'Deskripsi footer maksimal 1000 karakter.',
+            'teks_privasi.max'       => 'Teks privasi maksimal 50.000 karakter.',
+            'teks_layanan.max'       => 'Teks layanan maksimal 50.000 karakter.',
+            'teks_dukungan.max'      => 'Teks dukungan maksimal 5.000 karakter.',
         ];
     }
 }

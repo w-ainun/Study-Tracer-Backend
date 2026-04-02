@@ -50,12 +50,30 @@ class PengaturanTampilanController extends Controller
         try {
             // Only collect fields that are actually present in the request
             // This ensures partial updates work correctly
-            $fields = ['nama_sekolah', 'primary_color', 'secondary_color', 'third_color'];
+            $fields = [
+                'nama_sekolah',
+                'primary_color',
+                'secondary_color',
+                'third_color',
+                // Footer & contact
+                'deskripsi_footer',
+                'email_kontak',
+                'web_kontak',
+                'telp_kontak',
+                // Modal texts
+                'teks_privasi',
+                'teks_layanan',
+                'teks_dukungan',
+            ];
             $data = [];
 
             foreach ($fields as $field) {
                 if ($request->filled($field)) {
                     $data[$field] = $request->input($field);
+                }
+                // Allow explicitly setting nullable text fields to null/empty
+                elseif ($request->has($field) && $request->input($field) === null) {
+                    $data[$field] = null;
                 }
             }
 
@@ -66,14 +84,19 @@ class PengaturanTampilanController extends Controller
             if ($request->filled('remove_login_bg')) {
                 $data['remove_login_bg'] = $request->boolean('remove_login_bg');
             }
+            if ($request->filled('remove_landing_bg')) {
+                $data['remove_landing_bg'] = $request->boolean('remove_landing_bg');
+            }
 
             // Handle images — can be file upload OR base64 data URL string
-            $logo    = $request->file('logo');
-            $loginBg = $request->file('login_bg');
+            $logo      = $request->file('logo');
+            $loginBg   = $request->file('login_bg');
+            $landingBg = $request->file('landing_bg');
 
-            // If logo was sent as a base64 string (data URL from frontend)
-            $logoBase64    = null;
-            $loginBgBase64 = null;
+            // If images were sent as base64 strings (data URL from frontend)
+            $logoBase64      = null;
+            $loginBgBase64   = null;
+            $landingBgBase64 = null;
 
             if (!$logo && $request->filled('logo') && str_starts_with($request->input('logo'), 'data:image')) {
                 $logoBase64 = $request->input('logo');
@@ -83,7 +106,19 @@ class PengaturanTampilanController extends Controller
                 $loginBgBase64 = $request->input('login_bg');
             }
 
-            $settings = $this->service->update($data, $logo, $loginBg, $logoBase64, $loginBgBase64);
+            if (!$landingBg && $request->filled('landing_bg') && str_starts_with($request->input('landing_bg'), 'data:image')) {
+                $landingBgBase64 = $request->input('landing_bg');
+            }
+
+            $settings = $this->service->update(
+                $data,
+                $logo,
+                $loginBg,
+                $landingBg,
+                $logoBase64,
+                $loginBgBase64,
+                $landingBgBase64
+            );
 
             return $this->successResponse(
                 new PengaturanTampilanResource($settings),
