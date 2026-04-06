@@ -172,11 +172,8 @@ class AuthService
                 ]);
             }
             
-            if ($user->alumni->status_create === 'pending') {
-                throw ValidationException::withMessages([
-                    'email' => ['Akun Anda masih menunggu persetujuan admin.'],
-                ]);
-            }
+            // Pending alumni diperbolehkan login — mereka bisa melihat status pengajuan
+            // tetapi akses fitur dibatasi oleh middleware EnsureAlumniVerified
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
