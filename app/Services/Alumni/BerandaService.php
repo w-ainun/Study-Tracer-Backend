@@ -46,6 +46,7 @@ class BerandaService
 
             // Kuesioner: filtered by current career status, always accessible
             'kuesioner_pending' => $this->berandaRepository->getPendingKuesioner($userId, $currentStatusId),
+            'mitra_logos' => $this->berandaRepository->getMitraLogos(20),
 
             // Restricted sections: always returned (visible) but with locked flag
             'alumni_terbaru' => [
