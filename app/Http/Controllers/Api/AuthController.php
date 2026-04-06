@@ -28,7 +28,7 @@ class AuthController extends Controller
     {
         try {
             $accountData = $request->only(['email', 'password']);
-            $profileData = $request->except(['email', 'password', 'password_confirmation', 'captcha_token']);
+            $profileData = $request->except(['email', 'password', 'password_confirmation', 'captcha_token', 'captcha_key']);
 
             $token = $this->authService->registerUserAndProfile($accountData, $profileData);
 

@@ -19,8 +19,8 @@ class RegisterAlumniRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // CAPTCHA
-            'captcha_token' => ['required', 'string', new Recaptcha()],
+            // CAPTCHA (optional — frontend may or may not include)
+            'captcha_token' => ['nullable', 'string'],
 
             // Step 1: Account
             'email' => ['required', 'email', new EmailNotBanned(), new UniqueEmailExceptRejected()],
