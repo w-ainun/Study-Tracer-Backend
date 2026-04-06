@@ -150,14 +150,14 @@ class AuthService
 
     public function login(array $credentials)
     {
-        // ── Verify captcha ──────────────────────────────
+        // ── Verify captcha (cache-based, not session) ───
         $captchaInput = strtolower(trim($credentials['captcha_token'] ?? ''));
-        $storedPhrase = strtolower(\Illuminate\Support\Facades\Session::get('captcha_phrase', ''));
+        $captchaKey = $credentials['captcha_key'] ?? '';
 
-        // Clear captcha from session after verification attempt (one-time use)
-        \Illuminate\Support\Facades\Session::forget('captcha_phrase');
+        // Pull = get + delete (one-time use)
+        $storedPhrase = $captchaKey ? \Illuminate\Support\Facades\Cache::pull($captchaKey) : null;
 
-        if (!$captchaInput || $captchaInput !== $storedPhrase) {
+        if (!$captchaInput || !$storedPhrase || $captchaInput !== $storedPhrase) {
             throw ValidationException::withMessages([
                 'captcha_token' => ['Captcha tidak valid. Silakan coba lagi.'],
             ]);
