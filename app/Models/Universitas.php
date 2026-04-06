@@ -31,4 +31,12 @@ class Universitas extends Model
     {
         return $this->hasMany(Kuliah::class, 'id_universitas', 'id_universitas');
     }
+
+    /**
+     * Kemitraan (partnerships) yang terkait dengan universitas ini.
+     */
+    public function kemitraan()
+    {
+        return $this->hasMany(Kemitraan::class, 'id_universitas', 'id_universitas');
+    }
 }

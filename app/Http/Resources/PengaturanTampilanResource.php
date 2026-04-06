@@ -24,6 +24,10 @@ class PengaturanTampilanResource extends JsonResource
             'landing_bg'            => $this->landing_bg ? Storage::disk('public')->url($this->landing_bg) : null,
             'landing_bg_thumbnail'  => $this->landing_bg ? Storage::disk('public')->url(GeneratesThumbnail::thumbnailPath($this->landing_bg)) : null,
 
+            // Konten Landing Page
+            'landing_title'         => $this->landing_title,
+            'landing_description'   => $this->landing_description,
+
             // Palet Warna
             'primary_color'         => $this->primary_color,
             'secondary_color'       => $this->secondary_color,

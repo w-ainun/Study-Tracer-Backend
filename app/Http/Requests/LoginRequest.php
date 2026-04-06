@@ -18,6 +18,8 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
+            'captcha_token' => ['required', 'string'],
+            'captcha_key' => ['nullable', 'string'],
         ];
     }
 
@@ -27,6 +29,8 @@ class LoginRequest extends FormRequest
             'email.required' => 'Email wajib diisi.',
             'email.email' => 'Format email tidak valid.',
             'password.required' => 'Password wajib diisi.',
+            'captcha_token.required' => 'Captcha wajib diisi.',
+            'captcha_key.required' => 'Captcha key wajib diisi.',
         ];
     }
 
