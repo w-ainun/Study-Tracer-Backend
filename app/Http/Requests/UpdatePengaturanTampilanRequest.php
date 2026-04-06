@@ -74,6 +74,10 @@ class UpdatePengaturanTampilanRequest extends FormRequest
             'teks_privasi'     => 'sometimes|nullable|string|max:50000',
             'teks_layanan'     => 'sometimes|nullable|string|max:50000',
             'teks_dukungan'    => 'sometimes|nullable|string|max:5000',
+
+            // Konten Landing Page
+            'landing_title'       => 'sometimes|nullable|string|max:500',
+            'landing_description' => 'sometimes|nullable|string|max:2000',
         ];
     }
 
@@ -101,6 +105,8 @@ class UpdatePengaturanTampilanRequest extends FormRequest
             'teks_privasi.max'       => 'Teks privasi maksimal 50.000 karakter.',
             'teks_layanan.max'       => 'Teks layanan maksimal 50.000 karakter.',
             'teks_dukungan.max'      => 'Teks dukungan maksimal 5.000 karakter.',
+            'landing_title.max'      => 'Judul landing page maksimal 500 karakter.',
+            'landing_description.max'=> 'Deskripsi landing page maksimal 2.000 karakter.',
         ];
     }
 }

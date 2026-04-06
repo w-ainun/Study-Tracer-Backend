@@ -13,6 +13,8 @@ class PengaturanTampilan extends Model
         'logo',
         'login_bg',
         'landing_bg',
+        'landing_title',
+        'landing_description',
         'primary_color',
         'secondary_color',
         'third_color',

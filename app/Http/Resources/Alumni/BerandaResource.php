@@ -44,6 +44,12 @@ class BerandaResource extends JsonResource
             // Always accessible sections
             'status_pengajuan' => new StatusPengajuanResource($this->resource['status_pengajuan']),
             'kuesioner_pending' => BerandaKuesionerResource::collection($this->resource['kuesioner_pending']),
+            'mitra_logos' => collect($this->resource['mitra_logos'])
+                ->map(fn($mitra) => [
+                    'name' => $mitra->nama,
+                    'image' => $mitra->logo ? url('storage/' . $mitra->logo) : null,
+                ])
+                ->values(),
 
             // Restricted sections — data always provided, `locked` flag controls frontend interaction
             'alumni_terbaru' => [
