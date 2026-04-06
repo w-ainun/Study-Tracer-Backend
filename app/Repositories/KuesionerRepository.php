@@ -29,7 +29,32 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         }
 
         if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
+            if ($filters['status'] === 'pending') {
+                $query->where('status', 'aktif')
+                      ->whereNotNull('tanggal_mulai')
+                      ->where('tanggal_mulai', '>', now());
+            } elseif ($filters['status'] === 'aktif') {
+                $query->where('status', 'aktif')
+                      ->where(function ($q) {
+                          $q->whereNull('tanggal_mulai')
+                            ->orWhere('tanggal_mulai', '<=', now());
+                      })
+                      ->where(function ($q) {
+                          $q->whereNull('tanggal_selesai')
+                            ->orWhere('tanggal_selesai', '>=', now());
+                      });
+            } elseif ($filters['status'] === 'hidden') {
+                $query->where(function ($q) {
+                    $q->where('status', 'hidden')
+                      ->orWhere(function ($q2) {
+                          $q2->where('status', 'aktif')
+                             ->whereNotNull('tanggal_selesai')
+                             ->where('tanggal_selesai', '<', now());
+                      });
+                });
+            } else {
+                $query->where('status', $filters['status']);
+            }
         }
 
         return $query->orderBy('created_at', 'desc')->paginate($perPage);

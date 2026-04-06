@@ -9,12 +9,21 @@ class KuesionerResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $currentStatus = $this->status;
+        if ($currentStatus === 'aktif') {
+            if ($this->tanggal_mulai && \Carbon\Carbon::parse($this->tanggal_mulai)->isFuture()) {
+                $currentStatus = 'pending';
+            } elseif ($this->tanggal_selesai && \Carbon\Carbon::parse($this->tanggal_selesai)->isPast()) {
+                $currentStatus = 'hidden';
+            }
+        }
+
         return [
             'id' => $this->id_kuesioner,
             'id_status' => $this->id_status,
             'title' => $this->title,
             'deskripsi' => $this->deskripsi,
-            'status' => $this->status,
+            'status' => $currentStatus,
             'tanggal_mulai' => $this->tanggal_mulai?->format('Y-m-d\TH:i:s'),
             'tanggal_selesai' => $this->tanggal_selesai?->format('Y-m-d\TH:i:s'),
             'tanggal_publikasi' => $this->tanggal_publikasi?->format('Y-m-d'),
