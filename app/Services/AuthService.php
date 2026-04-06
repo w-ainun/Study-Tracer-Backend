@@ -150,6 +150,20 @@ class AuthService
 
     public function login(array $credentials)
     {
+        // ── Verify captcha ──────────────────────────────
+        $captchaInput = strtolower(trim($credentials['captcha_token'] ?? ''));
+        $storedPhrase = strtolower(\Illuminate\Support\Facades\Session::get('captcha_phrase', ''));
+
+        // Clear captcha from session after verification attempt (one-time use)
+        \Illuminate\Support\Facades\Session::forget('captcha_phrase');
+
+        if (!$captchaInput || $captchaInput !== $storedPhrase) {
+            throw ValidationException::withMessages([
+                'captcha_token' => ['Captcha tidak valid. Silakan coba lagi.'],
+            ]);
+        }
+
+        // ── Verify credentials ──────────────────────────
         $user = $this->authRepository->findUserByEmail($credentials['email']);
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {

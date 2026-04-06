@@ -64,6 +64,9 @@ class PengaturanTampilanController extends Controller
                 'teks_privasi',
                 'teks_layanan',
                 'teks_dukungan',
+                // Landing page content
+                'landing_title',
+                'landing_description',
             ];
             $data = [];
 
