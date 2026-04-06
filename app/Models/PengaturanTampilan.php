@@ -12,8 +12,16 @@ class PengaturanTampilan extends Model
         'nama_sekolah',
         'logo',
         'login_bg',
+        'landing_bg',
         'primary_color',
         'secondary_color',
         'third_color',
+        'deskripsi_footer',
+        'email_kontak',
+        'web_kontak',
+        'telp_kontak',
+        'teks_privasi',
+        'teks_layanan',
+        'teks_dukungan',
     ];
 }

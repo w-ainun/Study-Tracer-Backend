@@ -52,6 +52,11 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         // Extract questions if present
         $questions = $data['questions'] ?? [];
         unset($data['questions']);
+
+        // Auto-set tanggal_publikasi saat dibuat dengan status 'aktif'
+        if (($data['status'] ?? null) === 'aktif' && empty($data['tanggal_publikasi'])) {
+            $data['tanggal_publikasi'] = now();
+        }
         
         // Create kuesioner
         $kuesioner = Kuesioner::create($data);
@@ -89,6 +94,12 @@ class KuesionerRepository implements KuesionerRepositoryInterface
         unset($data['questions']);
         
         $kuesioner = Kuesioner::findOrFail($id);
+
+        // Auto-set tanggal_publikasi saat diubah ke status 'aktif' dan belum punya
+        if (($data['status'] ?? null) === 'aktif' && !$kuesioner->tanggal_publikasi && empty($data['tanggal_publikasi'])) {
+            $data['tanggal_publikasi'] = now();
+        }
+
         $kuesioner->update($data);
         
         // Update pertanyaan and opsi jawaban if questions provided
@@ -366,7 +377,10 @@ class KuesionerRepository implements KuesionerRepositoryInterface
     public function getPublishedByStatus(int $statusId)
     {
         return Kuesioner::with(['statusKarir', 'pertanyaan.opsiJawaban'])
-            ->where('id_status', $statusId)
+            ->where(function ($q) use ($statusId) {
+                $q->whereNull('id_status')
+                  ->orWhere('id_status', $statusId);
+            })
             ->where('status', 'aktif')
             ->whereNotNull('tanggal_publikasi')
             ->where(function ($query) {
@@ -377,7 +391,7 @@ class KuesionerRepository implements KuesionerRepositoryInterface
                 $query->whereNull('tanggal_selesai')
                       ->orWhere('tanggal_selesai', '>=', now());
             })
-            ->first();
+            ->get();
     }
 
     public function getAllPublished(array $filters = [], int $perPage = 15)

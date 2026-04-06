@@ -31,12 +31,33 @@ class KuesionerService
 
     public function create(array $data)
     {
-        return $this->kuesionerRepository->create($data);
+        $kuesioner = $this->kuesionerRepository->create($data);
+
+        // Jika kuesioner langsung dibuat dengan status 'aktif', clear cache & notify
+        if (($data['status'] ?? null) === 'aktif' && $kuesioner) {
+            $this->clearKuesionerCache($kuesioner);
+            $this->notifyRelevantAlumni($kuesioner);
+        }
+
+        return $kuesioner;
     }
 
     public function update(int $id, array $data)
     {
-        return $this->kuesionerRepository->update($id, $data);
+        // Cek status lama sebelum update
+        $existing = $this->kuesionerRepository->getById($id);
+        $oldStatus = $existing->status;
+
+        $kuesioner = $this->kuesionerRepository->update($id, $data);
+
+        // Jika status berubah menjadi 'aktif', clear cache & notify
+        $newStatus = $data['status'] ?? $oldStatus;
+        if ($newStatus === 'aktif' && $oldStatus !== 'aktif' && $kuesioner) {
+            $this->clearKuesionerCache($kuesioner);
+            $this->notifyRelevantAlumni($kuesioner);
+        }
+
+        return $kuesioner;
     }
 
     public function delete(int $id)

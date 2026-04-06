@@ -31,18 +31,22 @@ class PengaturanTampilanService
     /**
      * Update display settings with optional file uploads or base64 images.
      *
-     * @param  array              $data          Validated settings data (only fields that were sent).
-     * @param  UploadedFile|null  $logo          New logo as file upload.
-     * @param  UploadedFile|null  $loginBg       New login background as file upload.
-     * @param  string|null        $logoBase64    New logo as base64 data URL string.
-     * @param  string|null        $loginBgBase64 New login background as base64 data URL string.
+     * @param  array              $data              Validated settings data (only fields that were sent).
+     * @param  UploadedFile|null  $logo              New logo as file upload.
+     * @param  UploadedFile|null  $loginBg           New login background as file upload.
+     * @param  UploadedFile|null  $landingBg         New landing background as file upload.
+     * @param  string|null        $logoBase64        New logo as base64 data URL string.
+     * @param  string|null        $loginBgBase64     New login background as base64 data URL string.
+     * @param  string|null        $landingBgBase64   New landing background as base64 data URL string.
      */
     public function update(
         array $data,
         ?UploadedFile $logo = null,
         ?UploadedFile $loginBg = null,
+        ?UploadedFile $landingBg = null,
         ?string $logoBase64 = null,
-        ?string $loginBgBase64 = null
+        ?string $loginBgBase64 = null,
+        ?string $landingBgBase64 = null
     ): PengaturanTampilan {
         $existing = $this->repository->get();
 
@@ -100,8 +104,35 @@ class PengaturanTampilanService
             unset($data['remove_login_bg']);
         }
 
-        // Remove removal flags from data (not DB columns)
-        unset($data['remove_logo'], $data['remove_login_bg']);
+        // ── Handle landing background ───────────────
+
+        // Option A: Landing BG as file upload
+        if ($landingBg) {
+            if ($existing->landing_bg) {
+                $this->deleteWithThumbnail($existing->landing_bg);
+            }
+            $result = $this->storeWithThumbnail($landingBg, 'pengaturan/landing_bg', 800, 450);
+            $data['landing_bg'] = $result['path'];
+        }
+        // Option B: Landing BG as base64 data URL string
+        elseif ($landingBgBase64) {
+            if ($existing->landing_bg) {
+                $this->deleteWithThumbnail($existing->landing_bg);
+            }
+            $data['landing_bg'] = $this->storeBase64Image($landingBgBase64, 'pengaturan/landing_bg');
+        }
+
+        // Handle explicit landing_bg removal
+        if (!empty($data['remove_landing_bg'])) {
+            if ($existing->landing_bg) {
+                $this->deleteWithThumbnail($existing->landing_bg);
+            }
+            $data['landing_bg'] = null;
+            unset($data['remove_landing_bg']);
+        }
+
+        // Remove all removal flags from data (not DB columns)
+        unset($data['remove_logo'], $data['remove_login_bg'], $data['remove_landing_bg']);
 
         return $this->repository->update($data);
     }
