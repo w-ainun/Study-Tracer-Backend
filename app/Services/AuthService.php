@@ -209,8 +209,11 @@ class AuthService
      * Check if the user has completed all required kuesioner for their current career status.
      * CACHED untuk menghindari query berulang.
      */
+
     private function hasCompletedKuesioner(int $userId): bool
     {
+        \Illuminate\Support\Facades\Cache::forget("user:{$userId}:kuesioner_completed");
+
         return \Illuminate\Support\Facades\Cache::remember(
             "user:{$userId}:kuesioner_completed",
             300, // Cache 5 menit
@@ -281,6 +284,8 @@ class AuthService
      */
     public function calculateCanAccessAll(int $userId): bool
     {
+        \Illuminate\Support\Facades\Cache::forget("user:{$userId}:can_access_all");
+
         return \Illuminate\Support\Facades\Cache::remember(
             "user:{$userId}:can_access_all",
             600, // Cache 10 menit
@@ -291,7 +296,6 @@ class AuthService
 
                 $isVerified = $alumni->status_create === 'ok';
                 $hasCompletedKuesioner = $this->hasCompletedKuesioner($userId);
-                
                 return $isVerified && $hasCompletedKuesioner;
             }
         );
