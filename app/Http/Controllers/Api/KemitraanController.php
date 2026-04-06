@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\KemitraanUniversitasRequest;
-use App\Http\Requests\KemitraanPerusahaanRequest;
-use App\Http\Resources\KemitraanUniversitasResource;
-use App\Http\Resources\KemitraanPerusahaanResource;
+use App\Http\Requests\KemitraanRequest;
+use App\Http\Resources\KemitraanResource;
 use App\Services\KemitraanService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
@@ -30,17 +28,14 @@ class KemitraanController extends Controller
 
     /**
      * GET /admin/kemitraan/universitas
-     *
-     * List all universitas with optional ?search= filter.
      */
     public function indexUniversitas(Request $request)
     {
         try {
-            $search = $request->query('search');
-            $data = $this->service->getAllUniversitas($search);
+            $data = $this->service->getAll('universitas', $request->query('search'));
 
             return $this->successResponse(
-                KemitraanUniversitasResource::collection($data)
+                KemitraanResource::collection($data)
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data mitra universitas: ' . $e->getMessage());
@@ -49,85 +44,71 @@ class KemitraanController extends Controller
 
     /**
      * POST /admin/kemitraan/universitas
-     *
-     * Create a new universitas mitra.
      */
-    public function storeUniversitas(KemitraanUniversitasRequest $request)
+    public function storeUniversitas(KemitraanRequest $request)
     {
         try {
             $data = [
-                'nama_universitas' => $request->input('nama'),
-                'alamat'           => $request->input('jalan'),
+                'tipe'            => 'universitas',
+                'nama'            => $request->input('nama'),
+                'alamat'          => $request->input('jalan'),
+                'id_universitas'  => $request->input('id_universitas'),
             ];
 
-            // Determine logo source (file upload or base64)
-            $logoFile = $request->file('logo');
-            $logoBase64 = null;
+            [$logoFile, $logoBase64] = $this->extractLogo($request);
 
-            if (!$logoFile && $request->filled('logo') && str_starts_with($request->input('logo'), 'data:image')) {
-                $logoBase64 = $request->input('logo');
-            }
-
-            $universitas = $this->service->createUniversitas($data, $logoFile, $logoBase64);
+            $kemitraan = $this->service->create($data, $logoFile, $logoBase64);
 
             return $this->createdResponse(
-                new KemitraanUniversitasResource($universitas),
-                'Universitas berhasil ditambahkan'
+                new KemitraanResource($kemitraan),
+                'Mitra universitas berhasil ditambahkan'
             );
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menambahkan universitas: ' . $e->getMessage());
+            return $this->errorResponse('Gagal menambahkan mitra universitas: ' . $e->getMessage());
         }
     }
 
     /**
      * PUT|POST /admin/kemitraan/universitas/{id}
-     *
-     * Update an existing universitas mitra.
      */
-    public function updateUniversitas(KemitraanUniversitasRequest $request, int $id)
+    public function updateUniversitas(KemitraanRequest $request, int $id)
     {
         try {
             $data = [
-                'nama_universitas' => $request->input('nama'),
-                'alamat'           => $request->input('jalan'),
+                'nama'            => $request->input('nama'),
+                'alamat'          => $request->input('jalan'),
+                'id_universitas'  => $request->input('id_universitas'),
             ];
 
-            $logoFile = $request->file('logo');
-            $logoBase64 = null;
+            [$logoFile, $logoBase64] = $this->extractLogo($request);
             $removeLogo = $request->boolean('remove_logo');
 
-            if (!$logoFile && $request->filled('logo') && str_starts_with($request->input('logo'), 'data:image')) {
-                $logoBase64 = $request->input('logo');
-            }
-
-            $universitas = $this->service->updateUniversitas($id, $data, $logoFile, $logoBase64, $removeLogo);
+            $kemitraan = $this->service->update($id, $data, $logoFile, $logoBase64, $removeLogo);
 
             return $this->successResponse(
-                new KemitraanUniversitasResource($universitas),
-                'Universitas berhasil diperbarui'
+                new KemitraanResource($kemitraan),
+                'Mitra universitas berhasil diperbarui'
             );
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal memperbarui universitas: ' . $e->getMessage());
+            return $this->errorResponse('Gagal memperbarui mitra universitas: ' . $e->getMessage());
         }
     }
 
     /**
      * DELETE /admin/kemitraan/universitas/{id}
-     *
-     * Delete a universitas mitra.
      */
     public function destroyUniversitas(int $id)
     {
         try {
-            $this->service->deleteUniversitas($id);
+            $this->service->delete($id);
 
-            return $this->successResponse(null, 'Universitas berhasil dihapus');
+            return $this->successResponse(null, 'Mitra universitas berhasil dihapus');
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menghapus universitas: ' . $e->getMessage());
+            return $this->errorResponse('Gagal menghapus mitra universitas: ' . $e->getMessage());
         }
     }
 
@@ -137,17 +118,14 @@ class KemitraanController extends Controller
 
     /**
      * GET /admin/kemitraan/perusahaan
-     *
-     * List all perusahaan with optional ?search= filter.
      */
     public function indexPerusahaan(Request $request)
     {
         try {
-            $search = $request->query('search');
-            $data = $this->service->getAllPerusahaan($search);
+            $data = $this->service->getAll('perusahaan', $request->query('search'));
 
             return $this->successResponse(
-                KemitraanPerusahaanResource::collection($data)
+                KemitraanResource::collection($data)
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil data mitra perusahaan: ' . $e->getMessage());
@@ -156,84 +134,71 @@ class KemitraanController extends Controller
 
     /**
      * POST /admin/kemitraan/perusahaan
-     *
-     * Create a new perusahaan mitra.
      */
-    public function storePerusahaan(KemitraanPerusahaanRequest $request)
+    public function storePerusahaan(KemitraanRequest $request)
     {
         try {
             $data = [
-                'nama_perusahaan' => $request->input('nama'),
-                'jalan'           => $request->input('jalan'),
+                'tipe'           => 'perusahaan',
+                'nama'           => $request->input('nama'),
+                'alamat'         => $request->input('jalan'),
+                'id_perusahaan'  => $request->input('id_perusahaan'),
             ];
 
-            $logoFile = $request->file('logo');
-            $logoBase64 = null;
+            [$logoFile, $logoBase64] = $this->extractLogo($request);
 
-            if (!$logoFile && $request->filled('logo') && str_starts_with($request->input('logo'), 'data:image')) {
-                $logoBase64 = $request->input('logo');
-            }
-
-            $perusahaan = $this->service->createPerusahaan($data, $logoFile, $logoBase64);
+            $kemitraan = $this->service->create($data, $logoFile, $logoBase64);
 
             return $this->createdResponse(
-                new KemitraanPerusahaanResource($perusahaan),
-                'Perusahaan berhasil ditambahkan'
+                new KemitraanResource($kemitraan),
+                'Mitra perusahaan berhasil ditambahkan'
             );
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menambahkan perusahaan: ' . $e->getMessage());
+            return $this->errorResponse('Gagal menambahkan mitra perusahaan: ' . $e->getMessage());
         }
     }
 
     /**
      * PUT|POST /admin/kemitraan/perusahaan/{id}
-     *
-     * Update an existing perusahaan mitra.
      */
-    public function updatePerusahaan(KemitraanPerusahaanRequest $request, int $id)
+    public function updatePerusahaan(KemitraanRequest $request, int $id)
     {
         try {
             $data = [
-                'nama_perusahaan' => $request->input('nama'),
-                'jalan'           => $request->input('jalan'),
+                'nama'           => $request->input('nama'),
+                'alamat'         => $request->input('jalan'),
+                'id_perusahaan'  => $request->input('id_perusahaan'),
             ];
 
-            $logoFile = $request->file('logo');
-            $logoBase64 = null;
+            [$logoFile, $logoBase64] = $this->extractLogo($request);
             $removeLogo = $request->boolean('remove_logo');
 
-            if (!$logoFile && $request->filled('logo') && str_starts_with($request->input('logo'), 'data:image')) {
-                $logoBase64 = $request->input('logo');
-            }
-
-            $perusahaan = $this->service->updatePerusahaan($id, $data, $logoFile, $logoBase64, $removeLogo);
+            $kemitraan = $this->service->update($id, $data, $logoFile, $logoBase64, $removeLogo);
 
             return $this->successResponse(
-                new KemitraanPerusahaanResource($perusahaan),
-                'Perusahaan berhasil diperbarui'
+                new KemitraanResource($kemitraan),
+                'Mitra perusahaan berhasil diperbarui'
             );
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal memperbarui perusahaan: ' . $e->getMessage());
+            return $this->errorResponse('Gagal memperbarui mitra perusahaan: ' . $e->getMessage());
         }
     }
 
     /**
      * DELETE /admin/kemitraan/perusahaan/{id}
-     *
-     * Delete a perusahaan mitra.
      */
     public function destroyPerusahaan(int $id)
     {
         try {
-            $this->service->deletePerusahaan($id);
+            $this->service->delete($id);
 
-            return $this->successResponse(null, 'Perusahaan berhasil dihapus');
+            return $this->successResponse(null, 'Mitra perusahaan berhasil dihapus');
         } catch (ModelNotFoundException $e) {
             return $this->notFoundResponse($e->getMessage());
         } catch (\Exception $e) {
-            return $this->errorResponse('Gagal menghapus perusahaan: ' . $e->getMessage());
+            return $this->errorResponse('Gagal menghapus mitra perusahaan: ' . $e->getMessage());
         }
     }
 
@@ -242,9 +207,7 @@ class KemitraanController extends Controller
     // ═══════════════════════════════════════════════════════════
 
     /**
-     * GET /admin/kemitraan/export?type=universitas|perusahaan&format=csv
-     *
-     * Export partnership data as CSV.
+     * GET /admin/kemitraan/export?type=universitas|perusahaan
      */
     public function export(Request $request)
     {
@@ -257,9 +220,7 @@ class KemitraanController extends Controller
 
             $exportData = $this->service->getExportData($type);
 
-            $fileName = $type === 'universitas'
-                ? 'laporan_mitra_universitas_' . date('Y-m-d') . '.csv'
-                : 'laporan_mitra_perusahaan_' . date('Y-m-d') . '.csv';
+            $fileName = 'laporan_mitra_' . $type . '_' . date('Y-m-d') . '.csv';
 
             return new StreamedResponse(function () use ($exportData) {
                 $handle = fopen('php://output', 'w');
@@ -267,10 +228,8 @@ class KemitraanController extends Controller
                 // BOM for UTF-8 Excel compatibility
                 fwrite($handle, "\xEF\xBB\xBF");
 
-                // Headers
                 fputcsv($handle, $exportData['headers']);
 
-                // Rows
                 foreach ($exportData['rows'] as $row) {
                     fputcsv($handle, $row);
                 }
@@ -283,5 +242,26 @@ class KemitraanController extends Controller
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengekspor data: ' . $e->getMessage());
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  PRIVATE HELPER
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Extract logo from request — either as file upload or base64 data URL.
+     *
+     * @return array{0: \Illuminate\Http\UploadedFile|null, 1: string|null}
+     */
+    private function extractLogo(Request $request): array
+    {
+        $logoFile = $request->file('logo');
+        $logoBase64 = null;
+
+        if (!$logoFile && $request->filled('logo') && str_starts_with($request->input('logo'), 'data:image')) {
+            $logoBase64 = $request->input('logo');
+        }
+
+        return [$logoFile, $logoBase64];
     }
 }

@@ -3,121 +3,68 @@
 namespace App\Repositories;
 
 use App\Interfaces\KemitraanRepositoryInterface;
-use App\Models\Universitas;
-use App\Models\Perusahaan;
+use App\Models\Kemitraan;
 use Illuminate\Database\Eloquent\Collection;
 
 class KemitraanRepository implements KemitraanRepositoryInterface
 {
-    // ═══════════════════════════════════════════════════════════
-    //  MITRA UNIVERSITAS
-    // ═══════════════════════════════════════════════════════════
-
     /**
-     * Get all universitas, optionally filtered by search term.
+     * Get all kemitraan by tipe with optional search.
      */
-    public function getAllUniversitas(?string $search = null): Collection
+    public function getAll(string $tipe, ?string $search = null): Collection
     {
-        $query = Universitas::query()->orderByDesc('id_universitas');
+        $query = Kemitraan::query()
+            ->where('tipe', $tipe)
+            ->orderByDesc('id_kemitraan');
 
         if ($search) {
-            $query->where('nama_universitas', 'like', "%{$search}%");
+            $query->where('nama', 'like', "%{$search}%");
+        }
+
+        // Eager-load relation based on tipe
+        if ($tipe === 'universitas') {
+            $query->with('universitas');
+        } else {
+            $query->with('perusahaan');
         }
 
         return $query->get();
     }
 
     /**
-     * Find a single universitas by ID.
+     * Find a single kemitraan by ID with its related entity.
      */
-    public function findUniversitas(int $id): ?Universitas
+    public function find(int $id): ?Kemitraan
     {
-        return Universitas::find($id);
+        return Kemitraan::with(['universitas', 'perusahaan'])->find($id);
     }
 
     /**
-     * Create a new universitas record.
+     * Create a new kemitraan record.
      */
-    public function createUniversitas(array $data): Universitas
+    public function create(array $data): Kemitraan
     {
-        return Universitas::create($data);
+        return Kemitraan::create($data);
     }
 
     /**
-     * Update an existing universitas record.
+     * Update an existing kemitraan record.
      */
-    public function updateUniversitas(int $id, array $data): Universitas
+    public function update(int $id, array $data): Kemitraan
     {
-        $universitas = Universitas::findOrFail($id);
-        $universitas->update($data);
+        $kemitraan = Kemitraan::findOrFail($id);
+        $kemitraan->update($data);
 
-        return $universitas->fresh();
+        return $kemitraan->fresh();
     }
 
     /**
-     * Delete a universitas record.
+     * Delete a kemitraan record.
      */
-    public function deleteUniversitas(int $id): bool
+    public function delete(int $id): bool
     {
-        $universitas = Universitas::findOrFail($id);
+        $kemitraan = Kemitraan::findOrFail($id);
 
-        return $universitas->delete();
-    }
-
-    // ═══════════════════════════════════════════════════════════
-    //  MITRA PERUSAHAAN
-    // ═══════════════════════════════════════════════════════════
-
-    /**
-     * Get all perusahaan, optionally filtered by search term.
-     */
-    public function getAllPerusahaan(?string $search = null): Collection
-    {
-        $query = Perusahaan::query()
-            ->with('kota')
-            ->orderByDesc('id_perusahaan');
-
-        if ($search) {
-            $query->where('nama_perusahaan', 'like', "%{$search}%");
-        }
-
-        return $query->get();
-    }
-
-    /**
-     * Find a single perusahaan by ID.
-     */
-    public function findPerusahaan(int $id): ?Perusahaan
-    {
-        return Perusahaan::with('kota')->find($id);
-    }
-
-    /**
-     * Create a new perusahaan record.
-     */
-    public function createPerusahaan(array $data): Perusahaan
-    {
-        return Perusahaan::create($data);
-    }
-
-    /**
-     * Update an existing perusahaan record.
-     */
-    public function updatePerusahaan(int $id, array $data): Perusahaan
-    {
-        $perusahaan = Perusahaan::findOrFail($id);
-        $perusahaan->update($data);
-
-        return $perusahaan->fresh();
-    }
-
-    /**
-     * Delete a perusahaan record.
-     */
-    public function deletePerusahaan(int $id): bool
-    {
-        $perusahaan = Perusahaan::findOrFail($id);
-
-        return $perusahaan->delete();
+        return $kemitraan->delete();
     }
 }

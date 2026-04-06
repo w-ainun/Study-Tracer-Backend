@@ -7,58 +7,42 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Add logo & alamat columns to universitas and perusahaan tables
-     * for the Kemitraan (Partnership) admin module.
+     * Create the kemitraan (partnership) table.
+     * Relates to both universitas and perusahaan via nullable FKs.
      */
     public function up(): void
     {
-        // ── Universitas: add alamat + logo ──────────────────────
-        Schema::table('universitas', function (Blueprint $table) {
-            $table->string('alamat', 500)->nullable()->after('nama_universitas');
-            $table->string('logo')->nullable()->after('alamat');
+        Schema::create('kemitraan', function (Blueprint $table) {
+            $table->id('id_kemitraan');
+            $table->enum('tipe', ['universitas', 'perusahaan']);
+            $table->string('nama');
+            $table->string('alamat', 500)->nullable();
+            $table->string('logo')->nullable();
+
+            // Optional FK to existing universitas
+            $table->unsignedBigInteger('id_universitas')->nullable();
+            $table->foreign('id_universitas')
+                  ->references('id_universitas')
+                  ->on('universitas')
+                  ->onDelete('set null');
+
+            // Optional FK to existing perusahaan
+            $table->unsignedBigInteger('id_perusahaan')->nullable();
+            $table->foreign('id_perusahaan')
+                  ->references('id_perusahaan')
+                  ->on('perusahaan')
+                  ->onDelete('set null');
+
+            $table->timestamps();
+
+            // Indexes for filtering
+            $table->index('tipe');
+            $table->index(['tipe', 'nama']);
         });
-
-        // ── Perusahaan: add logo, make id_kota & jalan nullable ─
-        Schema::table('perusahaan', function (Blueprint $table) {
-            $table->string('logo')->nullable()->after('jalan');
-        });
-
-        // Make id_kota nullable so Kemitraan can create without city FK
-        if (Schema::hasColumn('perusahaan', 'id_kota')) {
-            Schema::table('perusahaan', function (Blueprint $table) {
-                $table->unsignedBigInteger('id_kota')->nullable()->change();
-            });
-        }
-
-        // Make jalan nullable
-        if (Schema::hasColumn('perusahaan', 'jalan')) {
-            Schema::table('perusahaan', function (Blueprint $table) {
-                $table->string('jalan')->nullable()->change();
-            });
-        }
     }
 
     public function down(): void
     {
-        Schema::table('universitas', function (Blueprint $table) {
-            $table->dropColumn(['alamat', 'logo']);
-        });
-
-        Schema::table('perusahaan', function (Blueprint $table) {
-            $table->dropColumn('logo');
-        });
-
-        // Revert nullable changes
-        if (Schema::hasColumn('perusahaan', 'id_kota')) {
-            Schema::table('perusahaan', function (Blueprint $table) {
-                $table->unsignedBigInteger('id_kota')->nullable(false)->change();
-            });
-        }
-
-        if (Schema::hasColumn('perusahaan', 'jalan')) {
-            Schema::table('perusahaan', function (Blueprint $table) {
-                $table->string('jalan')->nullable(false)->change();
-            });
-        }
+        Schema::dropIfExists('kemitraan');
     }
 };

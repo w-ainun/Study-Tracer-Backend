@@ -2,63 +2,33 @@
 
 namespace App\Interfaces;
 
-use App\Models\Universitas;
-use App\Models\Perusahaan;
+use App\Models\Kemitraan;
 use Illuminate\Database\Eloquent\Collection;
 
 interface KemitraanRepositoryInterface
 {
-    // ── Mitra Universitas ────────────────────────────────────
+    /**
+     * Get all kemitraan by tipe, optionally filtered by search term.
+     */
+    public function getAll(string $tipe, ?string $search = null): Collection;
 
     /**
-     * Get all universitas, optionally filtered by search term.
+     * Find a single kemitraan by ID.
      */
-    public function getAllUniversitas(?string $search = null): Collection;
+    public function find(int $id): ?Kemitraan;
 
     /**
-     * Find a single universitas by ID.
+     * Create a new kemitraan record.
      */
-    public function findUniversitas(int $id): ?Universitas;
+    public function create(array $data): Kemitraan;
 
     /**
-     * Create a new universitas record.
+     * Update an existing kemitraan record.
      */
-    public function createUniversitas(array $data): Universitas;
+    public function update(int $id, array $data): Kemitraan;
 
     /**
-     * Update an existing universitas record.
+     * Delete a kemitraan record.
      */
-    public function updateUniversitas(int $id, array $data): Universitas;
-
-    /**
-     * Delete a universitas record.
-     */
-    public function deleteUniversitas(int $id): bool;
-
-    // ── Mitra Perusahaan ─────────────────────────────────────
-
-    /**
-     * Get all perusahaan, optionally filtered by search term.
-     */
-    public function getAllPerusahaan(?string $search = null): Collection;
-
-    /**
-     * Find a single perusahaan by ID.
-     */
-    public function findPerusahaan(int $id): ?Perusahaan;
-
-    /**
-     * Create a new perusahaan record.
-     */
-    public function createPerusahaan(array $data): Perusahaan;
-
-    /**
-     * Update an existing perusahaan record.
-     */
-    public function updatePerusahaan(int $id, array $data): Perusahaan;
-
-    /**
-     * Delete a perusahaan record.
-     */
-    public function deletePerusahaan(int $id): bool;
+    public function delete(int $id): bool;
 }

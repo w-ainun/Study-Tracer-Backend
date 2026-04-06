@@ -16,7 +16,6 @@ class Perusahaan extends Model
         'nama_perusahaan',
         'id_kota',
         'jalan',
-        'logo',
     ];
 
     public function kota()
@@ -32,5 +31,13 @@ class Perusahaan extends Model
     public function lowongan()
     {
         return $this->hasMany(Lowongan::class, 'id_perusahaan', 'id_perusahaan');
+    }
+
+    /**
+     * Kemitraan (partnerships) yang terkait dengan perusahaan ini.
+     */
+    public function kemitraan()
+    {
+        return $this->hasMany(Kemitraan::class, 'id_perusahaan', 'id_perusahaan');
     }
 }

@@ -14,8 +14,6 @@ class Universitas extends Model
 
     protected $fillable = [
         'nama_universitas',
-        'alamat',
-        'logo',
     ];
 
     /**
@@ -32,5 +30,13 @@ class Universitas extends Model
     public function kuliah()
     {
         return $this->hasMany(Kuliah::class, 'id_universitas', 'id_universitas');
+    }
+
+    /**
+     * Kemitraan (partnerships) yang terkait dengan universitas ini.
+     */
+    public function kemitraan()
+    {
+        return $this->hasMany(Kemitraan::class, 'id_universitas', 'id_universitas');
     }
 }

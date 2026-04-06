@@ -3,8 +3,7 @@
 namespace App\Services;
 
 use App\Interfaces\KemitraanRepositoryInterface;
-use App\Models\Universitas;
-use App\Models\Perusahaan;
+use App\Models\Kemitraan;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
@@ -23,54 +22,53 @@ class KemitraanService
     }
 
     // ═══════════════════════════════════════════════════════════
-    //  MITRA UNIVERSITAS
+    //  CRUD
     // ═══════════════════════════════════════════════════════════
 
     /**
-     * List all universitas with optional search filter.
+     * List all kemitraan by tipe with optional search.
      */
-    public function getAllUniversitas(?string $search = null): Collection
+    public function getAll(string $tipe, ?string $search = null): Collection
     {
-        return $this->repository->getAllUniversitas($search);
+        return $this->repository->getAll($tipe, $search);
     }
 
     /**
-     * Find a single universitas by ID.
+     * Find a single kemitraan by ID.
      */
-    public function findUniversitas(int $id): ?Universitas
+    public function find(int $id): ?Kemitraan
     {
-        return $this->repository->findUniversitas($id);
+        return $this->repository->find($id);
     }
 
     /**
-     * Create a new universitas with optional logo upload.
+     * Create a new kemitraan record with optional logo.
      */
-    public function createUniversitas(
+    public function create(
         array $data,
         ?UploadedFile $logoFile = null,
         ?string $logoBase64 = null
-    ): Universitas {
-        // Handle logo
-        $data['logo'] = $this->processLogoUpload($logoFile, $logoBase64, 'kemitraan/universitas');
+    ): Kemitraan {
+        $data['logo'] = $this->processLogoUpload($logoFile, $logoBase64, 'kemitraan/' . $data['tipe']);
 
-        return $this->repository->createUniversitas($data);
+        return $this->repository->create($data);
     }
 
     /**
-     * Update an existing universitas with optional logo replacement.
+     * Update an existing kemitraan record.
      */
-    public function updateUniversitas(
+    public function update(
         int $id,
         array $data,
         ?UploadedFile $logoFile = null,
         ?string $logoBase64 = null,
         bool $removeLogo = false
-    ): Universitas {
-        $existing = $this->repository->findUniversitas($id);
+    ): Kemitraan {
+        $existing = $this->repository->find($id);
 
         if (!$existing) {
             throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                "Universitas dengan ID {$id} tidak ditemukan."
+                "Kemitraan dengan ID {$id} tidak ditemukan."
             );
         }
 
@@ -82,108 +80,32 @@ class KemitraanService
         // Handle logo replacement
         elseif ($logoFile || $logoBase64) {
             $this->deleteLogo($existing->logo);
-            $data['logo'] = $this->processLogoUpload($logoFile, $logoBase64, 'kemitraan/universitas');
-        }
-
-        return $this->repository->updateUniversitas($id, $data);
-    }
-
-    /**
-     * Delete a universitas and its logo file.
-     */
-    public function deleteUniversitas(int $id): bool
-    {
-        $universitas = $this->repository->findUniversitas($id);
-
-        if (!$universitas) {
-            throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                "Universitas dengan ID {$id} tidak ditemukan."
+            $data['logo'] = $this->processLogoUpload(
+                $logoFile,
+                $logoBase64,
+                'kemitraan/' . $existing->tipe
             );
         }
 
-        $this->deleteLogo($universitas->logo);
-
-        return $this->repository->deleteUniversitas($id);
+        return $this->repository->update($id, $data);
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  MITRA PERUSAHAAN
-    // ═══════════════════════════════════════════════════════════
-
     /**
-     * List all perusahaan with optional search filter.
+     * Delete a kemitraan record and its logo.
      */
-    public function getAllPerusahaan(?string $search = null): Collection
+    public function delete(int $id): bool
     {
-        return $this->repository->getAllPerusahaan($search);
-    }
+        $kemitraan = $this->repository->find($id);
 
-    /**
-     * Find a single perusahaan by ID.
-     */
-    public function findPerusahaan(int $id): ?Perusahaan
-    {
-        return $this->repository->findPerusahaan($id);
-    }
-
-    /**
-     * Create a new perusahaan with optional logo upload.
-     */
-    public function createPerusahaan(
-        array $data,
-        ?UploadedFile $logoFile = null,
-        ?string $logoBase64 = null
-    ): Perusahaan {
-        $data['logo'] = $this->processLogoUpload($logoFile, $logoBase64, 'kemitraan/perusahaan');
-
-        return $this->repository->createPerusahaan($data);
-    }
-
-    /**
-     * Update an existing perusahaan with optional logo replacement.
-     */
-    public function updatePerusahaan(
-        int $id,
-        array $data,
-        ?UploadedFile $logoFile = null,
-        ?string $logoBase64 = null,
-        bool $removeLogo = false
-    ): Perusahaan {
-        $existing = $this->repository->findPerusahaan($id);
-
-        if (!$existing) {
+        if (!$kemitraan) {
             throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                "Perusahaan dengan ID {$id} tidak ditemukan."
+                "Kemitraan dengan ID {$id} tidak ditemukan."
             );
         }
 
-        if ($removeLogo) {
-            $this->deleteLogo($existing->logo);
-            $data['logo'] = null;
-        } elseif ($logoFile || $logoBase64) {
-            $this->deleteLogo($existing->logo);
-            $data['logo'] = $this->processLogoUpload($logoFile, $logoBase64, 'kemitraan/perusahaan');
-        }
+        $this->deleteLogo($kemitraan->logo);
 
-        return $this->repository->updatePerusahaan($id, $data);
-    }
-
-    /**
-     * Delete a perusahaan and its logo file.
-     */
-    public function deletePerusahaan(int $id): bool
-    {
-        $perusahaan = $this->repository->findPerusahaan($id);
-
-        if (!$perusahaan) {
-            throw new \Illuminate\Database\Eloquent\ModelNotFoundException(
-                "Perusahaan dengan ID {$id} tidak ditemukan."
-            );
-        }
-
-        $this->deleteLogo($perusahaan->logo);
-
-        return $this->repository->deletePerusahaan($id);
+        return $this->repository->delete($id);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -191,36 +113,30 @@ class KemitraanService
     // ═══════════════════════════════════════════════════════════
 
     /**
-     * Get export data for universitas or perusahaan.
+     * Get export data for a specific tipe.
      *
-     * @param  string  $type  'universitas' or 'perusahaan'
+     * @param  string  $tipe  'universitas' or 'perusahaan'
      * @return array{headers: array, rows: array, title: string}
      */
-    public function getExportData(string $type): array
+    public function getExportData(string $tipe): array
     {
-        if ($type === 'universitas') {
-            $data = $this->repository->getAllUniversitas();
+        $data = $this->repository->getAll($tipe);
 
-            return [
-                'title'   => 'Laporan Data Mitra Universitas',
-                'headers' => ['No', 'Nama Kampus/Universitas', 'Alamat Lengkap'],
-                'rows'    => $data->values()->map(fn($item, $index) => [
-                    $index + 1,
-                    $item->nama_universitas,
-                    $item->alamat ?? '-',
-                ])->toArray(),
-            ];
-        }
+        $title = $tipe === 'universitas'
+            ? 'Laporan Data Mitra Universitas'
+            : 'Laporan Data Mitra Perusahaan';
 
-        $data = $this->repository->getAllPerusahaan();
+        $label = $tipe === 'universitas'
+            ? 'Nama Kampus/Universitas'
+            : 'Nama Perusahaan';
 
         return [
-            'title'   => 'Laporan Data Mitra Perusahaan',
-            'headers' => ['No', 'Nama Perusahaan', 'Alamat Lengkap'],
+            'title'   => $title,
+            'headers' => ['No', $label, 'Alamat Lengkap'],
             'rows'    => $data->values()->map(fn($item, $index) => [
                 $index + 1,
-                $item->nama_perusahaan,
-                $item->jalan ?? '-',
+                $item->nama,
+                $item->alamat ?? '-',
             ])->toArray(),
         ];
     }
@@ -261,10 +177,6 @@ class KemitraanService
 
     /**
      * Decode a base64 data URL string and store it as a file.
-     *
-     * @param  string  $base64String  Format: "data:image/png;base64,iVBOR..."
-     * @param  string  $directory     Storage subdirectory.
-     * @return string  The stored file path (relative to storage/public).
      */
     private function storeBase64Image(string $base64String, string $directory): string
     {
