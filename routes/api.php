@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
 use App\Http\Controllers\Api\PengumumanController;
 use App\Http\Controllers\Api\PengaturanTampilanController;
+use App\Http\Controllers\Api\KemitraanController;
 use App\Http\Controllers\Api\MetaDataController;
 
 // PUBLIC ROUTES
@@ -320,6 +321,24 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
         Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
         
+        // Kemitraan (Partnership) Management
+        Route::prefix('kemitraan')->group(function () {
+            // Mitra Universitas
+            Route::get('/universitas', [KemitraanController::class, 'indexUniversitas']);
+            Route::post('/universitas', [KemitraanController::class, 'storeUniversitas']);
+            Route::match(['put', 'post'], '/universitas/{id}', [KemitraanController::class, 'updateUniversitas']);
+            Route::delete('/universitas/{id}', [KemitraanController::class, 'destroyUniversitas']);
+
+            // Mitra Perusahaan
+            Route::get('/perusahaan', [KemitraanController::class, 'indexPerusahaan']);
+            Route::post('/perusahaan', [KemitraanController::class, 'storePerusahaan']);
+            Route::match(['put', 'post'], '/perusahaan/{id}', [KemitraanController::class, 'updatePerusahaan']);
+            Route::delete('/perusahaan/{id}', [KemitraanController::class, 'destroyPerusahaan']);
+
+            // Export
+            Route::get('/export', [KemitraanController::class, 'export']);
+        });
+
         // Meta Data Management
         Route::post('/metadata', [MetaDataController::class, 'update']);
     });

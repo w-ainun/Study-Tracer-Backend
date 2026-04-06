@@ -16,6 +16,7 @@ class Perusahaan extends Model
         'nama_perusahaan',
         'id_kota',
         'jalan',
+        'logo',
     ];
 
     public function kota()
