@@ -27,7 +27,7 @@ class PengumumanController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['status', 'search']);
+            $filters = $request->only(['status', 'search', 'sort', 'pinned']);
             $perPage = $request->input('per_page', 15);
             $pengumuman = $this->pengumumanService->getAll($filters, $perPage);
 
@@ -163,6 +163,12 @@ class PengumumanController extends Controller
         $filters = ['status' => 'aktif'];
         if ($request->has('search')) {
             $filters['search'] = $request->input('search');
+        }
+        if ($request->has('sort')) {
+            $filters['sort'] = $request->input('sort');
+        }
+        if ($request->has('pinned')) {
+            $filters['pinned'] = $request->input('pinned');
         }
         $perPage = $request->input('per_page', 10);
         $pengumuman = $this->pengumumanService->getAll($filters, $perPage);

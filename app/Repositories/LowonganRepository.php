@@ -120,7 +120,25 @@ class LowonganRepository implements LowonganRepositoryInterface
             });
         }
 
-        // Jika alumni punya skill, urutkan berdasarkan jumlah skill yg cocok (desc), lalu random
+        if (!empty($filters['tipe_pekerjaan'])) {
+            $query->where('tipe_pekerjaan', $filters['tipe_pekerjaan']);
+        }
+
+        if (!empty($filters['provinsi'])) {
+            $query->whereHas('perusahaan.kota.provinsi', function ($q) use ($filters) {
+                $q->where('nama_provinsi', $filters['provinsi'])
+                  ->orWhere('nama', $filters['provinsi']);
+            });
+        }
+
+        if (!empty($filters['kota'])) {
+            $query->whereHas('perusahaan.kota', function ($q) use ($filters) {
+                $q->where('nama_kota', $filters['kota'])
+                  ->orWhere('nama', $filters['kota']);
+            });
+        }
+
+        // Jika alumni punya skill, hitung kecocokan skill
         if (!empty($alumniSkillIds)) {
             $query->leftJoin('lowongan_skills', 'lowongan.id_lowongan', '=', 'lowongan_skills.id_lowongan')
                 ->select('lowongan.*')
@@ -128,11 +146,19 @@ class LowonganRepository implements LowonganRepositoryInterface
                     'COALESCE(SUM(CASE WHEN lowongan_skills.id_skills IN (' . implode(',', array_map('intval', $alumniSkillIds)) . ') THEN 1 ELSE 0 END), 0) as skill_match_count'
                 )
                 ->groupBy('lowongan.id_lowongan')
-                ->orderByDesc('skill_match_count')
-                ->orderByRaw('RAND()');
+                ->orderByDesc('skill_match_count');
+        }
+
+        // Apply custom sorting
+        $sort = strtolower($filters['sort'] ?? 'terbaru');
+        if ($sort === 'terlama') {
+            $query->orderBy('lowongan.created_at', 'asc');
+        } elseif ($sort === 'mendekati deadline') {
+            // Urutkan berdasarkan deadline (paling dekat lebih dulu, asalkan belum selesai)
+            $query->orderBy('lowongan.lowongan_selesai', 'asc');
         } else {
-            // Jika alumni tidak punya skill, tampilkan random
-            $query->orderByRaw('RAND()');
+            // Default "terbaru"
+            $query->orderBy('lowongan.created_at', 'desc');
         }
 
         return $query->paginate($perPage);

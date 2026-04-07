@@ -30,9 +30,24 @@ class PengumumanRepository implements PengumumanRepositoryInterface
             });
         }
 
-        // Always order: pinned first, then newest
-        $query->orderByDesc('is_pinned')
-              ->orderByDesc('created_at');
+        // Filter by pinned status
+        if (isset($filters['pinned'])) {
+            $isPinned = filter_var($filters['pinned'], FILTER_VALIDATE_BOOLEAN);
+            $query->where('is_pinned', $isPinned);
+        }
+
+        // Apply sorting
+        if (!isset($filters['pinned'])) {
+            // Always order pinned first if we aren't explicitly filtering by pinned
+            $query->orderByDesc('is_pinned');
+        }
+
+        $sort = strtolower($filters['sort'] ?? 'terbaru');
+        if ($sort === 'terlama') {
+            $query->orderBy('created_at', 'asc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
 
         return $query->paginate($perPage);
     }
