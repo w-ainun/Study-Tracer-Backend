@@ -18,7 +18,7 @@ class UpdateKuesionerRequest extends FormRequest
         return [
             'id_status' => ['nullable', 'exists:status,id_status'],
             'title' => ['sometimes', 'string', 'max:255'],
-            'deskripsi' => ['sometimes', 'string'],
+            'deskripsi' => ['sometimes', 'nullable', 'string'],
             'status' => ['sometimes', 'in:hidden,aktif,draft'],
             'tanggal_mulai' => ['nullable', 'date'],
             'tanggal_selesai' => ['nullable', 'date', 'after_or_equal:tanggal_mulai'],
