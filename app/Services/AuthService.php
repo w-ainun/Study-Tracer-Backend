@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\DashboardStatsUpdated;
 use App\Interfaces\AuthRepositoryInterface;
 use App\Mail\ResetPasswordMail;
 use App\Models\Kuliah;
@@ -26,7 +27,7 @@ class AuthService
 
     public function registerUserAndProfile(array $accountData, array $profileData)
     {
-        return DB::transaction(function () use ($accountData, $profileData) {
+        $result = DB::transaction(function () use ($accountData, $profileData) {
             // Hapus akun lama jika status_create = 'rejected'
             $this->authRepository->deleteRejectedUserByEmail($accountData['email']);
             
@@ -146,6 +147,11 @@ class AuthService
 
             return $user->createToken('auth_token')->plainTextToken;
         });
+
+        // Broadcast to admin dashboard after transaction commits
+        broadcast(new DashboardStatsUpdated('new_registration'))->toOthers();
+
+        return $result;
     }
 
     public function login(array $credentials)

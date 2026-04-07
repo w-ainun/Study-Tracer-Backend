@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\AccountStatusChanged;
+use App\Events\AccessLockChanged;
+use App\Events\DashboardStatsUpdated;
 use App\Interfaces\AdminRepositoryInterface;
 use App\Jobs\SendNotificationJob;
 use App\Models\Alumni;
@@ -54,6 +57,10 @@ class AdminService
             // Clear cache setelah approve alumni
             \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:can_access_all");
             \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:kuesioner_completed");
+
+            // Broadcast account status change & access lock update
+            broadcast(new AccountStatusChanged($alumni->id_users, 'verified'))->toOthers();
+            broadcast(new AccessLockChanged($alumni->id_users, true))->toOthers();
         }
         
         return $alumni;
@@ -70,6 +77,9 @@ class AdminService
             // Clear cache setelah reject alumni
             \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:can_access_all");
             \Illuminate\Support\Facades\Cache::forget("user:{$alumni->id_users}:kuesioner_completed");
+
+            // Broadcast account rejection
+            broadcast(new AccountStatusChanged($alumni->id_users, 'rejected'))->toOthers();
         }
         
         return $alumni;
@@ -82,6 +92,9 @@ class AdminService
         // Dispatch notifikasi ke queue (non-blocking)
         if ($alumni && $alumni->id_users) {
             SendNotificationJob::dispatch($alumni->id_users, 'notifyAccountBanned');
+
+            // Broadcast ban status — frontend should force logout
+            broadcast(new AccountStatusChanged($alumni->id_users, 'banned'))->toOthers();
         }
         
         return $alumni;
