@@ -180,10 +180,17 @@ class KemitraanService
      */
     private function storeBase64Image(string $base64String, string $directory): string
     {
-        if (preg_match('/^data:image\/(\w+);base64,/', $base64String, $matches)) {
-            $extension = $matches[1];
-            if ($extension === 'jpeg') {
-                $extension = 'jpg';
+        if (preg_match('/^data:image\/([a-zA-Z0-9.+-]+);base64,/', $base64String, $matches)) {
+            $mimeSubtype = strtolower($matches[1]);
+
+            $extension = match ($mimeSubtype) {
+                'jpeg' => 'jpg',
+                'svg+xml' => 'svg',
+                default => $mimeSubtype,
+            };
+
+            if (!in_array($extension, ['jpg', 'png', 'webp', 'svg'], true)) {
+                throw new \InvalidArgumentException('Format gambar tidak didukung.');
             }
 
             $base64Data = substr($base64String, strpos($base64String, ',') + 1);

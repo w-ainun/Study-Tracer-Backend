@@ -63,8 +63,12 @@ class NotificationController extends Controller
         try {
             $userId = $request->user()->id_users;
             $notification = $this->notificationService->markAsRead($id, $userId);
+            $unreadCount = $this->notificationService->getUnreadCount($userId);
 
-            return $this->successResponse($notification, 'Notifikasi ditandai sebagai dibaca');
+            return $this->successResponse([
+                'notification' => $notification,
+                'unread_count' => $unreadCount,
+            ], 'Notifikasi ditandai sebagai dibaca');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menandai notifikasi');
         }
@@ -79,10 +83,10 @@ class NotificationController extends Controller
             $userId = $request->user()->id_users;
             $count = $this->notificationService->markAllAsRead($userId);
 
-            return $this->successResponse(
-                ['updated_count' => $count],
-                'Semua notifikasi ditandai sebagai dibaca'
-            );
+            return $this->successResponse([
+                'updated_count' => $count,
+                'unread_count' => 0,
+            ], 'Semua notifikasi ditandai sebagai dibaca');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menandai semua notifikasi');
         }
@@ -96,8 +100,12 @@ class NotificationController extends Controller
         try {
             $userId = $request->user()->id_users;
             $this->notificationService->delete($id, $userId);
+            $unreadCount = $this->notificationService->getUnreadCount($userId);
 
-            return $this->successResponse(null, 'Notifikasi berhasil dihapus');
+            return $this->successResponse(
+                ['unread_count' => $unreadCount],
+                'Notifikasi berhasil dihapus'
+            );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus notifikasi');
         }
@@ -112,10 +120,10 @@ class NotificationController extends Controller
             $userId = $request->user()->id_users;
             $count = $this->notificationService->deleteAll($userId);
 
-            return $this->successResponse(
-                ['deleted_count' => $count],
-                'Semua notifikasi berhasil dihapus'
-            );
+            return $this->successResponse([
+                'deleted_count' => $count,
+                'unread_count' => 0,
+            ], 'Semua notifikasi berhasil dihapus');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus semua notifikasi');
         }

@@ -31,6 +31,18 @@ trait GeneratesThumbnail
         $thumbnailDir = $directory . '/thumbnails';
         $filename = basename($originalPath);
         $thumbnailPath = $thumbnailDir . '/' . $filename;
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        // SVG cannot be resized by GD; keep a thumbnail copy with the same content.
+        if ($extension === 'svg') {
+            Storage::disk('public')->makeDirectory($thumbnailDir);
+            Storage::disk('public')->put($thumbnailPath, Storage::disk('public')->get($originalPath));
+
+            return [
+                'path' => $originalPath,
+                'thumbnail' => $thumbnailPath,
+            ];
+        }
 
         $manager = new ImageManager(new Driver());
         $image = $manager->read(Storage::disk('public')->path($originalPath));
@@ -39,7 +51,6 @@ trait GeneratesThumbnail
         // Ensure thumbnail directory exists and save
         Storage::disk('public')->makeDirectory($thumbnailDir);
 
-        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         $encoded = match ($extension) {
             'png' => $image->toPng(),
             default => $image->toJpeg(80),

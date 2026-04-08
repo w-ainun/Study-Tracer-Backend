@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Events\DashboardStatsUpdated;
+use App\Events\LowonganStatusChanged;
 use App\Interfaces\LowonganRepositoryInterface;
 use App\Jobs\SendNotificationJob;
 use App\Traits\GeneratesThumbnail;
@@ -41,6 +43,12 @@ class LowonganService
             $this->lowonganRepository->syncSkills($lowongan->id_lowongan, $skillIds);
             $lowongan->load('skills');
         }
+
+        // Notify admin dashboard of new lowongan submission
+        broadcast(new DashboardStatsUpdated('new_lowongan', [
+            'lowongan_id' => $lowongan->id_lowongan,
+            'judul' => $lowongan->judul_lowongan ?? null,
+        ]))->toOthers();
 
         return $lowongan;
     }
@@ -106,6 +114,14 @@ class LowonganService
                 'notifyLowonganApproved',
                 [$id, $lowongan->judul_lowongan]
             );
+
+            // Broadcast real-time status change to the submitter
+            broadcast(new LowonganStatusChanged(
+                $lowongan->id_users,
+                $id,
+                $lowongan->judul_lowongan,
+                'approved',
+            ))->toOthers();
         }
         
         return $updatedLowongan;
@@ -128,6 +144,14 @@ class LowonganService
                 'notifyLowonganRejected',
                 [$id, $lowongan->judul_lowongan]
             );
+
+            // Broadcast real-time status change to the submitter
+            broadcast(new LowonganStatusChanged(
+                $lowongan->id_users,
+                $id,
+                $lowongan->judul_lowongan,
+                'rejected',
+            ))->toOthers();
         }
         
         return $updatedLowongan;

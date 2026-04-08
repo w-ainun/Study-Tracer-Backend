@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\NotificationReceived;
 use App\Models\Notification;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +24,16 @@ class NotificationService
         
         // Clear cache setelah create notifikasi baru
         $this->clearNotificationCache($userId);
+
+        // Broadcast real-time event via Reverb
+        broadcast(new NotificationReceived($userId, [
+            'id' => $notification->id_notification,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'data' => $data,
+            'created_at' => $notification->created_at->toISOString(),
+        ]))->toOthers();
         
         return $notification;
     }
