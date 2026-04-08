@@ -157,12 +157,26 @@ class AdminController extends Controller
     public function setFeaturedAlumni(Request $request, int $id)
     {
         try {
-            $validated = $request->validate([
-                'is_selected' => ['required', 'boolean'],
-            ]);
+            $rawSelection = $request->input(
+                'is_selected',
+                $request->input('isFeatured', $request->input('featured', $request->input('starred')))
+            );
+
+            if ($rawSelection === null) {
+                // Backward compatibility: if no payload is sent, treat as toggle.
+                $alumni = $this->adminService->getAlumniDetail($id);
+                $isSelected = !((bool) ($alumni->is_featured ?? false));
+            } else {
+                $isSelected = filter_var($rawSelection, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+                if ($isSelected === null) {
+                    return $this->validationErrorResponse([
+                        'is_selected' => ['Nilai is_selected/featured harus boolean (true/false).'],
+                    ], 'Validasi status alumni pilihan gagal');
+                }
+            }
 
             $adminUserId = (int) $request->user()->id_users;
-            $isSelected = $this->adminService->setFeaturedAlumni($id, (bool) $validated['is_selected'], $adminUserId);
+            $isSelected = $this->adminService->setFeaturedAlumni($id, $isSelected, $adminUserId);
 
             return $this->successResponse([
                 'id_alumni' => $id,
