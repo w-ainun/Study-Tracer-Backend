@@ -27,6 +27,7 @@ class Alumni extends Model
         'tahun_lulus',
         'id_users',
         'status_create',
+        'is_featured',
     ];
 
     protected function casts(): array
@@ -34,6 +35,7 @@ class Alumni extends Model
         return [
             'tanggal_lahir' => 'date',
             'tahun_lulus' => 'date',
+            'is_featured' => 'boolean',
         ];
     }
 

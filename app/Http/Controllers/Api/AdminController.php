@@ -96,6 +96,87 @@ class AdminController extends Controller
         }
     }
 
+    /**
+     * GET /admin/alumni-featured
+     * List selected alumni for landing section.
+     */
+    public function getFeaturedAlumni(Request $request)
+    {
+        try {
+            $limit = (int) $request->input('limit', 8);
+            $featured = $this->adminService->getFeaturedAlumni($limit);
+
+            $data = $featured->map(function ($item) {
+                return [
+                    'id' => $item->id_alumni,
+                    'nama' => $item->nama_alumni,
+                    'status_create' => $item->status_create,
+                    'is_featured' => (bool) $item->is_featured,
+                    'foto' => $item->foto,
+                    'jurusan' => $item->jurusan?->nama_jurusan,
+                    'email' => $item->user?->email_users,
+                ];
+            })->values();
+
+            return $this->successResponse($data);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil alumni pilihan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * PUT /admin/alumni-featured
+     * Replace selected alumni list and order in one request.
+     */
+    public function syncFeaturedAlumni(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'alumni_ids' => ['required', 'array', 'max:8'],
+                'alumni_ids.*' => ['integer', 'distinct', 'exists:alumni,id_alumni'],
+            ]);
+
+            $adminUserId = (int) $request->user()->id_users;
+            $selectedIds = $this->adminService->syncFeaturedAlumni($validated['alumni_ids'], $adminUserId);
+
+            return $this->successResponse([
+                'selected_ids' => $selectedIds,
+                'total_selected' => count($selectedIds),
+            ], 'Alumni pilihan berhasil diperbarui');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationErrorResponse($e->errors(), 'Validasi alumni pilihan gagal');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui alumni pilihan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * POST /admin/alumni/{id}/featured
+     * Mark/unmark single alumni as selected for landing.
+     */
+    public function setFeaturedAlumni(Request $request, int $id)
+    {
+        try {
+            $validated = $request->validate([
+                'is_selected' => ['required', 'boolean'],
+            ]);
+
+            $adminUserId = (int) $request->user()->id_users;
+            $isSelected = $this->adminService->setFeaturedAlumni($id, (bool) $validated['is_selected'], $adminUserId);
+
+            return $this->successResponse([
+                'id_alumni' => $id,
+                'is_selected' => $isSelected,
+            ], 'Status alumni pilihan berhasil diperbarui');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return $this->validationErrorResponse($e->errors(), 'Validasi status alumni pilihan gagal');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Alumni tidak ditemukan atau belum aktif');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengubah status alumni pilihan: ' . $e->getMessage());
+        }
+    }
+
     public function getAlumniDetail(int $id)
     {
         try {

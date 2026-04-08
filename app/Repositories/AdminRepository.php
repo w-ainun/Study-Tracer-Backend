@@ -198,6 +198,53 @@ class AdminRepository implements AdminRepositoryInterface
         ])->findOrFail($alumniId);
     }
 
+    public function getFeaturedAlumni(int $limit = 8)
+    {
+        return Alumni::with(['user', 'jurusan'])
+            ->where('status_create', 'ok')
+            ->where('is_featured', true)
+            ->orderByDesc('updated_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function syncFeaturedAlumni(array $alumniIds, int $adminUserId): array
+    {
+        return DB::transaction(function () use ($alumniIds) {
+            $validatedIds = Alumni::whereIn('id_alumni', $alumniIds)
+                ->where('status_create', 'ok')
+                ->pluck('id_alumni')
+                ->toArray();
+
+            $validatedIds = array_values(array_unique(array_map('intval', $validatedIds)));
+
+            Alumni::query()->update(['is_featured' => false]);
+
+            if (!empty($validatedIds)) {
+                Alumni::whereIn('id_alumni', $validatedIds)->update(['is_featured' => true]);
+            }
+
+            Cache::forget('landing.featured_alumni.8');
+
+            return $validatedIds;
+        });
+    }
+
+    public function setFeaturedAlumni(int $alumniId, bool $isSelected, int $adminUserId): bool
+    {
+        unset($adminUserId);
+
+        $alumni = Alumni::where('id_alumni', $alumniId)
+            ->where('status_create', 'ok')
+            ->firstOrFail();
+
+        $alumni->update(['is_featured' => $isSelected]);
+
+        Cache::forget('landing.featured_alumni.8');
+
+        return $isSelected;
+    }
+
     public function deleteUser(int $userId)
     {
         $user = User::findOrFail($userId);

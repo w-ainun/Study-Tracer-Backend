@@ -97,7 +97,7 @@ class LandingService
      */
     public function getFeaturedAlumni(int $limit = 8): array
     {
-        return Alumni::with([
+        $selectedAlumni = Alumni::with([
             'jurusan',
             'riwayatStatus' => function ($query) {
                 $query->where('approval_status', 'approved')
@@ -110,10 +110,37 @@ class LandingService
             'riwayatStatus.wirausaha',
         ])
         ->where('status_create', 'ok')
-        ->orderBy('id_alumni', 'desc')
+        ->where('is_featured', true)
+        ->orderByDesc('updated_at')
         ->limit($limit)
         ->get()
-        ->toArray();
+        ->values();
+
+        if ($selectedAlumni->count() >= $limit) {
+            return $selectedAlumni->take($limit)->toArray();
+        }
+
+        $remaining = $limit - $selectedAlumni->count();
+
+        $fallback = Alumni::with([
+            'jurusan',
+            'riwayatStatus' => function ($query) {
+                $query->where('approval_status', 'approved')
+                      ->orderBy('tahun_mulai', 'desc')
+                      ->limit(1);
+            },
+            'riwayatStatus.status',
+            'riwayatStatus.pekerjaan.perusahaan',
+            'riwayatStatus.kuliah.universitas',
+            'riwayatStatus.wirausaha',
+        ])
+        ->where('status_create', 'ok')
+        ->where('is_featured', false)
+        ->orderBy('id_alumni', 'desc')
+        ->limit($remaining)
+        ->get();
+
+        return $selectedAlumni->concat($fallback)->values()->toArray();
     }
 
     /**
