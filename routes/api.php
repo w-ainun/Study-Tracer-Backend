@@ -322,6 +322,8 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::patch('/pengumuman/{id}/pin', [PengumumanController::class, 'togglePin']);
 
         // Pengaturan Tampilan
+        Route::post('/pengaturan-tampilan/revert', [PengaturanTampilanController::class, 'revert']);
+        Route::post('/pengaturan-tampilan/reset', [PengaturanTampilanController::class, 'resetToDefault']);
         Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
         Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
         

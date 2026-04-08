@@ -133,4 +133,53 @@ class PengaturanTampilanController extends Controller
             );
         }
     }
+
+    /**
+     * POST /admin/pengaturan-tampilan/revert
+     *
+     * Revert display settings to the state before the last change.
+     * Uses the history snapshot table to restore previous values.
+     */
+    public function revert()
+    {
+        try {
+            $settings = $this->service->revert();
+
+            return $this->successResponse(
+                new PengaturanTampilanResource($settings),
+                'Pengaturan tampilan berhasil dikembalikan ke versi sebelumnya'
+            );
+        } catch (\RuntimeException $e) {
+            return $this->notFoundResponse($e->getMessage());
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Gagal mengembalikan pengaturan tampilan: ' . $e->getMessage()
+            );
+        }
+    }
+
+    /**
+     * POST /admin/pengaturan-tampilan/reset
+     *
+     * Reset all display settings to factory defaults.
+     * This deletes all uploaded images (logo, backgrounds) and
+     * restores all text/color values to their original defaults.
+     * Current state is saved to history first, so it can be reverted.
+     */
+    public function resetToDefault()
+    {
+        try {
+            $settings = $this->service->resetToDefaults();
+
+            return $this->successResponse(
+                new PengaturanTampilanResource($settings),
+                'Pengaturan tampilan berhasil direset ke default'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Gagal mereset pengaturan tampilan: ' . $e->getMessage()
+            );
+        }
+    }
 }
+
