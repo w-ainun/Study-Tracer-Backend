@@ -43,6 +43,7 @@ class AlumniResource extends JsonResource
             'no_hp' => $this->no_hp,
             'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),
             'status_create' => $this->status_create,
+            'is_featured' => (bool) ($this->is_featured ?? false),
             'jurusan' => new JurusanResource($this->whenLoaded('jurusan')),
             'skills' => SkillResource::collection($this->whenLoaded('skills')),
             'social_media' => SocialMediaResource::collection($this->whenLoaded('socialMedia')),
