@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Interfaces\PengaturanTampilanRepositoryInterface;
 use App\Models\PengaturanTampilan;
+use App\Models\PengaturanTampilanHistory;
 use Illuminate\Support\Facades\Cache;
 
 class PengaturanTampilanRepository implements PengaturanTampilanRepositoryInterface
@@ -52,4 +53,54 @@ class PengaturanTampilanRepository implements PengaturanTampilanRepositoryInterf
 
         return $settings->fresh();
     }
+
+    /**
+     * Save a snapshot of current settings to history before an update.
+     */
+    public function saveHistory(PengaturanTampilan $settings, int $changedBy, string $changeType = 'update'): PengaturanTampilanHistory
+    {
+        return PengaturanTampilanHistory::create([
+            'pengaturan_tampilan_id' => $settings->id,
+            'snapshot'               => $settings->toSnapshot(),
+            'changed_by'             => $changedBy,
+            'change_type'            => $changeType,
+            'created_at'             => now(),
+        ]);
+    }
+
+    /**
+     * Get the most recent history snapshot (for revert).
+     */
+    public function getLatestHistory(): ?PengaturanTampilanHistory
+    {
+        return PengaturanTampilanHistory::where('pengaturan_tampilan_id', 1)
+            ->orderByDesc('created_at')
+            ->first();
+    }
+
+    /**
+     * Reset all settings to factory defaults and bust cache.
+     */
+    public function resetToDefaults(): PengaturanTampilan
+    {
+        $settings = PengaturanTampilan::firstOrCreate(
+            ['id' => 1],
+            PengaturanTampilan::FACTORY_DEFAULTS
+        );
+
+        $settings->update(PengaturanTampilan::FACTORY_DEFAULTS);
+
+        Cache::forget(self::CACHE_KEY);
+
+        return $settings->fresh();
+    }
+
+    /**
+     * Delete a specific history record.
+     */
+    public function deleteHistory(int $historyId): void
+    {
+        PengaturanTampilanHistory::where('id', $historyId)->delete();
+    }
 }
+

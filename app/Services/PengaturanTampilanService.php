@@ -6,6 +6,7 @@ use App\Interfaces\PengaturanTampilanRepositoryInterface;
 use App\Models\PengaturanTampilan;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,7 @@ class PengaturanTampilanService
 
     /**
      * Update display settings with optional file uploads or base64 images.
+     * Saves a history snapshot BEFORE applying changes.
      *
      * @param  array              $data              Validated settings data (only fields that were sent).
      * @param  UploadedFile|null  $logo              New logo as file upload.
@@ -49,6 +51,10 @@ class PengaturanTampilanService
         ?string $landingBgBase64 = null
     ): PengaturanTampilan {
         $existing = $this->repository->get();
+
+        // ── Save history snapshot BEFORE making any changes ──
+        $adminId = Auth::id() ?? 0;
+        $this->repository->saveHistory($existing, $adminId, 'update');
 
         // ── Handle logo ─────────────────────────────
 
@@ -138,6 +144,91 @@ class PengaturanTampilanService
     }
 
     /**
+     * Revert settings to the most recent history snapshot.
+     *
+     * Steps:
+     * 1. Get the latest history snapshot
+     * 2. Save current state as a new history entry (type: revert) for undo-undo
+     * 3. Clean up current image files that differ from snapshot
+     * 4. Apply snapshot data to settings
+     * 5. Delete the consumed history entry
+     *
+     * @return PengaturanTampilan
+     * @throws \RuntimeException If no history is available
+     */
+    public function revert(): PengaturanTampilan
+    {
+        $history = $this->repository->getLatestHistory();
+
+        if (!$history) {
+            throw new \RuntimeException('Tidak ada riwayat perubahan yang dapat dikembalikan.');
+        }
+
+        $existing = $this->repository->get();
+        $snapshot = $history->snapshot;
+
+        // Save current state before reverting (so the revert itself can be undone)
+        $adminId = Auth::id() ?? 0;
+        $this->repository->saveHistory($existing, $adminId, 'revert');
+
+        // ── Handle image file changes ──
+        // If the snapshot has different image paths, clean up current images
+        // Note: We do NOT delete snapshot images — they're being restored
+        $imageFields = ['logo', 'login_bg', 'landing_bg'];
+        foreach ($imageFields as $field) {
+            $currentPath  = $existing->{$field};
+            $snapshotPath = $snapshot[$field] ?? null;
+
+            // Current image exists but differs from snapshot → delete current
+            if ($currentPath && $currentPath !== $snapshotPath) {
+                $this->deleteWithThumbnail($currentPath);
+            }
+        }
+
+        // Apply snapshot data
+        $restoreData = [];
+        foreach (PengaturanTampilan::SNAPSHOTABLE_FIELDS as $field) {
+            if (array_key_exists($field, $snapshot)) {
+                $restoreData[$field] = $snapshot[$field];
+            }
+        }
+
+        // Delete the consumed history entry
+        $this->repository->deleteHistory($history->id);
+
+        return $this->repository->update($restoreData);
+    }
+
+    /**
+     * Reset all settings to factory defaults.
+     *
+     * Steps:
+     * 1. Save current state to history (type: reset) for undo
+     * 2. Delete all current image files
+     * 3. Apply factory default values
+     *
+     * @return PengaturanTampilan
+     */
+    public function resetToDefaults(): PengaturanTampilan
+    {
+        $existing = $this->repository->get();
+
+        // Save current state before reset (so the reset can be undone via revert)
+        $adminId = Auth::id() ?? 0;
+        $this->repository->saveHistory($existing, $adminId, 'reset');
+
+        // Delete all current image files
+        $imageFields = ['logo', 'login_bg', 'landing_bg'];
+        foreach ($imageFields as $field) {
+            if ($existing->{$field}) {
+                $this->deleteWithThumbnail($existing->{$field});
+            }
+        }
+
+        return $this->repository->resetToDefaults();
+    }
+
+    /**
      * Decode a base64 data URL string and store it as a file.
      *
      * @param  string  $base64String  Format: "data:image/png;base64,iVBOR..."
@@ -177,3 +268,4 @@ class PengaturanTampilanService
         throw new \InvalidArgumentException('Format data URL gambar tidak valid.');
     }
 }
+
