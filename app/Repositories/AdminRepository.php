@@ -10,6 +10,7 @@ use App\Models\Kuesioner;
 use App\Models\RiwayatStatus;
 use App\Models\Status;
 use App\Models\Pekerjaan;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -247,8 +248,19 @@ class AdminRepository implements AdminRepositoryInterface
 
     public function deleteUser(int $userId)
     {
-        $user = User::findOrFail($userId);
+        // Accept either id_users (User PK) or id_alumni from user management payload.
+        $user = User::where('id_users', $userId)
+            ->orWhereHas('alumni', function ($query) use ($userId) {
+                $query->where('id_alumni', $userId);
+            })
+            ->first();
+
+        if (!$user) {
+            throw (new ModelNotFoundException())->setModel(User::class, [$userId]);
+        }
+
         $user->delete();
+
         return true;
     }
 
