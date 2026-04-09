@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AlumniController;
 use App\Http\Controllers\Api\AdminController;
@@ -72,6 +73,9 @@ Route::get('/metadata', [MetaDataController::class, 'index']);
 // PROTECTED ROUTES (AUTH)
 
 Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
+
+    // Broadcasting auth (for Reverb WebSocket private channels)
+    Broadcast::routes();
 
     // Auth
     Route::get('/me', [AuthController::class, 'me']);

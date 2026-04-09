@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\AccessLockChanged;
+use App\Events\DashboardStatsUpdated;
+use App\Events\KuesionerUpdated;
 use App\Interfaces\KuesionerRepositoryInterface;
 use App\Jobs\SendBulkNotifications;
 use App\Models\Alumni;
@@ -92,6 +95,17 @@ class KuesionerService
         // Clear cache setelah submit jawaban kuesioner
         \Illuminate\Support\Facades\Cache::forget("user:{$userId}:kuesioner_completed");
         \Illuminate\Support\Facades\Cache::forget("user:{$userId}:can_access_all");
+
+        // Broadcast access lock change — recalculate via AuthService
+        $authService = app(AuthService::class);
+        $canAccessAll = $authService->calculateCanAccessAll($userId);
+        broadcast(new AccessLockChanged($userId, $canAccessAll))->toOthers();
+
+        // Notify admin dashboard of new kuesioner response
+        broadcast(new DashboardStatsUpdated('kuesioner_response', [
+            'user_id' => $userId,
+            'kuesioner_id' => $jawabanData['kuesioner_id'] ?? null,
+        ]))->toOthers();
         
         return $result;
     }
@@ -144,7 +158,7 @@ class KuesionerService
     /**
      * Clear cache kuesioner_completed dan can_access_all untuk alumni yang relevan
      */
-    private function clearKuesionerCache($kuesioner)
+    private function clearKuesionerCache($kuesioner, string $action = 'activated')
     {
         $statusId = $kuesioner->id_status;
         
@@ -165,6 +179,16 @@ class KuesionerService
         foreach ($userIds as $userId) {
             \Illuminate\Support\Facades\Cache::forget("user:{$userId}:kuesioner_completed");
             \Illuminate\Support\Facades\Cache::forget("user:{$userId}:can_access_all");
+
+            // Broadcast kuesioner update & access lock change to each affected user
+            broadcast(new KuesionerUpdated(
+                $userId,
+                $kuesioner->id_kuesioner,
+                $kuesioner->title,
+                $action,
+            ))->toOthers();
+
+            broadcast(new AccessLockChanged($userId, false))->toOthers();
         }
     }
 

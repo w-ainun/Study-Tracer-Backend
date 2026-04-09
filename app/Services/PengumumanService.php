@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\PengumumanCreated;
 use App\Interfaces\PengumumanRepositoryInterface;
 use App\Jobs\SendPengumumanNotifications;
 use App\Models\Alumni;
@@ -51,6 +52,12 @@ class PengumumanService
         // Kirim notifikasi ke semua alumni jika pengumuman langsung aktif
         if (($data['status'] ?? null) === 'aktif') {
             $this->notifyAllAlumni($pengumuman);
+
+            // Broadcast real-time ke semua alumni yang sedang online
+            broadcast(new PengumumanCreated(
+                $pengumuman->id_pengumuman,
+                $pengumuman->judul,
+            ))->toOthers();
         }
 
         return $pengumuman;
@@ -81,6 +88,12 @@ class PengumumanService
         $newStatus = $data['status'] ?? $oldStatus;
         if ($newStatus === 'aktif' && $oldStatus !== 'aktif') {
             $this->notifyAllAlumni($pengumuman);
+
+            // Broadcast real-time ke semua alumni yang sedang online
+            broadcast(new PengumumanCreated(
+                $pengumuman->id_pengumuman,
+                $pengumuman->judul,
+            ))->toOthers();
         }
 
         return $pengumuman;
