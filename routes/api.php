@@ -177,6 +177,9 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::post('/ban-user/{id}', [AdminController::class, 'banUser']);
         Route::get('/alumni/export', [AdminController::class, 'exportAlumniCsv']); // before {id}
         Route::get('/alumni', [AdminController::class, 'getAllAlumni']);
+        Route::get('/alumni-featured', [AdminController::class, 'getFeaturedAlumni']);
+        Route::put('/alumni-featured', [AdminController::class, 'syncFeaturedAlumni']);
+        Route::post('/alumni/{id}/featured', [AdminController::class, 'setFeaturedAlumni']);
         Route::get('/alumni/{id}', [AdminController::class, 'getAlumniDetail']);
         Route::delete('/users/{id}', [AdminController::class, 'deleteUser']);
 
@@ -322,6 +325,8 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::patch('/pengumuman/{id}/pin', [PengumumanController::class, 'togglePin']);
 
         // Pengaturan Tampilan
+        Route::post('/pengaturan-tampilan/revert', [PengaturanTampilanController::class, 'revert']);
+        Route::post('/pengaturan-tampilan/reset', [PengaturanTampilanController::class, 'resetToDefault']);
         Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
         Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
         

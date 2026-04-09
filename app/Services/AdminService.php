@@ -110,6 +110,21 @@ class AdminService
         return $this->adminRepository->getAlumniDetail($alumniId);
     }
 
+    public function getFeaturedAlumni(int $limit = 8)
+    {
+        return $this->adminRepository->getFeaturedAlumni($limit);
+    }
+
+    public function syncFeaturedAlumni(array $alumniIds, int $adminUserId): array
+    {
+        return $this->adminRepository->syncFeaturedAlumni($alumniIds, $adminUserId);
+    }
+
+    public function setFeaturedAlumni(int $alumniId, bool $isSelected, int $adminUserId): bool
+    {
+        return $this->adminRepository->setFeaturedAlumni($alumniId, $isSelected, $adminUserId);
+    }
+
     public function deleteUser(int $userId)
     {
         // Get user data before deleting to clean up files

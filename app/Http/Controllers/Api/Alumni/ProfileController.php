@@ -191,7 +191,7 @@ class ProfileController extends Controller
     {
         try {
             $request->validate([
-                'social_media' => 'required|array',
+                'social_media' => 'present|array',
                 'social_media.*.id_sosmed' => 'required|exists:social_media,id_sosmed',
                 'social_media.*.url' => 'required|string',
             ]);
