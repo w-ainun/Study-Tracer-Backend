@@ -128,7 +128,12 @@ class AdminService
     public function deleteUser(int $userId)
     {
         // Get user data before deleting to clean up files
-        $user = \App\Models\User::with('alumni')->find($userId);
+        $user = \App\Models\User::with('alumni')
+            ->where('id_users', $userId)
+            ->orWhereHas('alumni', function ($query) use ($userId) {
+                $query->where('id_alumni', $userId);
+            })
+            ->first();
         
         // Delete alumni foto and thumbnail if exists
         if ($user && $user->alumni && $user->alumni->foto) {

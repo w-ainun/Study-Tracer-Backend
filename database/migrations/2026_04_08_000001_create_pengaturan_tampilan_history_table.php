@@ -13,6 +13,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('pengaturan_tampilan_history')) {
+            return;
+        }
+
         Schema::create('pengaturan_tampilan_history', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('pengaturan_tampilan_id');
@@ -41,6 +45,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengaturan_tampilan_history');
+        if (Schema::hasTable('pengaturan_tampilan_history')) {
+            Schema::dropIfExists('pengaturan_tampilan_history');
+        }
     }
 };
