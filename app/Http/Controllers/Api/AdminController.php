@@ -206,6 +206,8 @@ class AdminController extends Controller
         try {
             $this->adminService->deleteUser($id);
             return $this->successResponse(null, 'User berhasil dihapus');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('User tidak ditemukan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus user: ' . $e->getMessage());
         }
