@@ -63,7 +63,26 @@ class LowonganAlumniRepository implements LowonganAlumniRepositoryInterface
                 ->selectRaw(
                     "CASE WHEN COALESCE(SUM(CASE WHEN lowongan_skills.id_skills IN ({$placeholders}) THEN 1 ELSE 0 END), 0) > 0 THEN 1 ELSE 0 END as has_skill_match"
                 )
-                ->groupBy('lowongan.id_lowongan')
+                ->groupBy(
+                    'lowongan.id_lowongan',
+                    'lowongan.judul_lowongan',
+                    'lowongan.deskripsi',
+                    'lowongan.tipe_pekerjaan',
+                    'lowongan.lokasi',
+                    'lowongan.status',
+                    'lowongan.approval_status',
+                    'lowongan.approved_at',
+                    'lowongan.rejected_at',
+                    'lowongan.lowongan_selesai',
+                    'lowongan.jam_mulai',
+                    'lowongan.jam_berakhir',
+                    'lowongan.id_pekerjaan',
+                    'lowongan.foto_lowongan',
+                    'lowongan.id_perusahaan',
+                    'lowongan.id_users',
+                    'lowongan.created_at',
+                    'lowongan.updated_at'
+                )
                 ->orderByDesc('has_skill_match')
                 ->orderByDesc('skill_match_count')
                 ->when($sort === 'terlama', fn($q) => $q->orderBy('lowongan.created_at'))

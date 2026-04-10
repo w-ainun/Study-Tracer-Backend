@@ -127,7 +127,26 @@ class LowonganRepository implements LowonganRepositoryInterface
                 ->selectRaw(
                     'COALESCE(SUM(CASE WHEN lowongan_skills.id_skills IN (' . implode(',', array_map('intval', $alumniSkillIds)) . ') THEN 1 ELSE 0 END), 0) as skill_match_count'
                 )
-                ->groupBy('lowongan.id_lowongan')
+                ->groupBy(
+                    'lowongan.id_lowongan',
+                    'lowongan.judul_lowongan',
+                    'lowongan.deskripsi',
+                    'lowongan.tipe_pekerjaan',
+                    'lowongan.lokasi',
+                    'lowongan.status',
+                    'lowongan.approval_status',
+                    'lowongan.approved_at',
+                    'lowongan.rejected_at',
+                    'lowongan.lowongan_selesai',
+                    'lowongan.jam_mulai',
+                    'lowongan.jam_berakhir',
+                    'lowongan.id_pekerjaan',
+                    'lowongan.foto_lowongan',
+                    'lowongan.id_perusahaan',
+                    'lowongan.id_users',
+                    'lowongan.created_at',
+                    'lowongan.updated_at'
+                )
                 ->orderByDesc('skill_match_count')
                 ->orderByRaw('RAND()');
         } else {
