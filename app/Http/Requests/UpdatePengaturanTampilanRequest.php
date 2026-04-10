@@ -24,29 +24,25 @@ class UpdatePengaturanTampilanRequest extends FormRequest
         $landingBgRules = ['nullable'];
 
         // If sent as file upload → validate as image
+        // If sent as base64 data URL or existing URL string → accept as string
+        // Do NOT force 'string' in else branch — the frontend may send
+        // the field in unexpected formats that aren't caught by hasFile()
         if ($this->hasFile('logo')) {
             $logoRules[] = 'image';
             $logoRules[] = 'mimes:png';
             $logoRules[] = 'max:2048'; // Max 2MB
-        } else {
-            // If sent as base64 data URL string → validate as string
-            $logoRules[] = 'string';
         }
 
         if ($this->hasFile('login_bg')) {
             $loginBgRules[] = 'image';
             $loginBgRules[] = 'mimes:jpg,jpeg,png';
             $loginBgRules[] = 'max:5120'; // Max 5MB
-        } else {
-            $loginBgRules[] = 'string';
         }
 
         if ($this->hasFile('landing_bg')) {
             $landingBgRules[] = 'image';
             $landingBgRules[] = 'mimes:jpg,jpeg,png';
             $landingBgRules[] = 'max:5120'; // Max 5MB
-        } else {
-            $landingBgRules[] = 'string';
         }
 
         return [
