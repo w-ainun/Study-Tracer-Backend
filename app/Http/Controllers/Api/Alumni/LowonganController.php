@@ -30,7 +30,7 @@ class LowonganController extends Controller
     public function index(Request $request)
     {
         try {
-            $filters = $request->only(['search', 'tipe_pekerjaan']);
+            $filters = $request->only(['search', 'tipe_pekerjaan', 'provinsi', 'kota', 'sort']);
             $perPage = $request->input('per_page', 15);
 
             $result = $this->lowonganService->getPublishedForAlumni(

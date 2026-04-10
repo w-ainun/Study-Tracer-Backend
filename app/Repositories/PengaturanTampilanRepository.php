@@ -20,15 +20,19 @@ class PengaturanTampilanRepository implements PengaturanTampilanRepositoryInterf
     public function get(): PengaturanTampilan
     {
         return Cache::remember(self::CACHE_KEY, self::CACHE_TTL, function () {
-            return PengaturanTampilan::firstOrCreate(
-                ['id' => 1],
-                [
-                    'nama_sekolah'    => 'SMK Negeri 1 Gondang',
-                    'primary_color'   => '#3C5759',
-                    'secondary_color' => '#F3F4F4',
-                    'third_color'     => '#9CA3AF',
-                ]
-            );
+            $settings = PengaturanTampilan::find(1);
+
+            if (!$settings) {
+                $settings = new PengaturanTampilan();
+                $settings->id             = 1;
+                $settings->nama_sekolah   = 'SMK Negeri 1 Gondang';
+                $settings->primary_color  = '#3C5759';
+                $settings->secondary_color = '#F3F4F4';
+                $settings->third_color    = '#9CA3AF';
+                $settings->save();
+            }
+
+            return $settings;
         });
     }
 
@@ -37,15 +41,22 @@ class PengaturanTampilanRepository implements PengaturanTampilanRepositoryInterf
      */
     public function update(array $data): PengaturanTampilan
     {
-        $settings = PengaturanTampilan::firstOrCreate(
-            ['id' => 1],
-            [
-                'nama_sekolah'    => 'SMK Negeri 1 Gondang',
-                'primary_color'   => '#3C5759',
-                'secondary_color' => '#F3F4F4',
-                'third_color'     => '#9CA3AF',
-            ]
-        );
+        // Cari record dengan find() untuk menghindari mass assignment pada 'id'
+        $settings = PengaturanTampilan::find(1);
+
+        if (!$settings) {
+            // Buat record baru tanpa mass assignment (set id langsung)
+            $settings = new PengaturanTampilan();
+            $settings->id             = 1;
+            $settings->nama_sekolah   = 'SMK Negeri 1 Gondang';
+            $settings->primary_color  = '#3C5759';
+            $settings->secondary_color = '#F3F4F4';
+            $settings->third_color    = '#9CA3AF';
+            $settings->save();
+        }
+
+        // Pastikan 'id' tidak ikut di-mass-assign
+        unset($data['id']);
 
         $settings->update($data);
 

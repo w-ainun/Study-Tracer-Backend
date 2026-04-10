@@ -31,12 +31,12 @@ return new class extends Migration
                 ->onDelete('cascade');
 
             $table->foreign('changed_by')
-                ->references('id')
+                ->references('id_users')
                 ->on('users')
                 ->onDelete('set null');
 
             // Index for quick latest-history lookup
-            $table->index(['pengaturan_tampilan_id', 'created_at']);
+            $table->index(['pengaturan_tampilan_id', 'created_at'], 'idx_history_pengaturan_created');
         });
     }
 
