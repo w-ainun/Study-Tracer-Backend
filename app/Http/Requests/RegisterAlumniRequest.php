@@ -18,13 +18,19 @@ class RegisterAlumniRequest extends FormRequest
 
     public function rules(): array
     {
+        $isGoogleAuth = !empty($this->input('google_id'));
+
         return [
             // CAPTCHA (optional — frontend may or may not include)
             'captcha_token' => ['nullable', 'string'],
 
+            // Google Auth fields
+            'google_id' => ['nullable', 'string'],
+            'auth_provider' => ['nullable', 'in:local,google'],
+
             // Step 1: Account
             'email' => ['required', 'email', new EmailNotBanned(), new UniqueEmailExceptRejected()],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => [$isGoogleAuth ? 'nullable' : 'required', 'string', 'min:8', $isGoogleAuth ? 'nullable' : 'confirmed'],
 
             // Step 2: Profile
             'nama_alumni' => ['required', 'string', 'max:255'],

@@ -9,10 +9,14 @@ use App\Models\Kuliah;
 use App\Models\Pekerjaan;
 use App\Models\Perusahaan;
 use App\Models\Wirausaha;
+use App\Rules\EmailNotBanned;
+use App\Rules\UniqueEmailExceptRejected;
 use App\Traits\GeneratesThumbnail;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -25,11 +29,131 @@ class AuthService
         $this->authRepository = $authRepository;
     }
 
+    /**
+     * Verify a Google ID token and return user info.
+     */
+    public function verifyGoogleToken(string $idToken): array
+    {
+        $response = Http::get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $idToken,
+        ]);
+
+        if ($response->failed()) {
+            throw ValidationException::withMessages([
+                'google_id_token' => ['Token Google tidak valid atau sudah kadaluarsa.'],
+            ]);
+        }
+
+        $payload = $response->json();
+
+        // Verify audience matches our client ID
+        $clientId = config('services.google.client_id');
+        if ($clientId && $payload['aud'] !== $clientId) {
+            throw ValidationException::withMessages([
+                'google_id_token' => ['Token Google tidak valid untuk aplikasi ini.'],
+            ]);
+        }
+
+        return [
+            'google_id' => $payload['sub'],
+            'email' => $payload['email'],
+            'name' => $payload['name'] ?? ($payload['given_name'] ?? 'Alumni'),
+            'picture' => $payload['picture'] ?? null,
+            'email_verified' => $payload['email_verified'] ?? false,
+        ];
+    }
+
+    /**
+     * Login with Google ID token.
+     * Skips captcha and password. Finds user by google_id.
+     */
+    public function loginWithGoogle(string $idToken): array
+    {
+        $googleUser = $this->verifyGoogleToken($idToken);
+
+        // Try to find user by google_id first
+        $user = $this->authRepository->findUserByGoogleId($googleUser['google_id']);
+
+        // If not found by google_id, try by email (might have registered manually)
+        if (!$user) {
+            $user = $this->authRepository->findUserByEmail($googleUser['email']);
+        }
+
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['Akun dengan email ini belum terdaftar. Silakan daftar terlebih dahulu.'],
+            ]);
+        }
+
+        // If user exists but doesn't have google_id, link it
+        if (!$user->google_id) {
+            $user->update([
+                'google_id' => $googleUser['google_id'],
+                'auth_provider' => 'google',
+            ]);
+        }
+
+        // Check alumni status
+        if ($user->alumni) {
+            if ($user->alumni->status_create === 'banned') {
+                throw ValidationException::withMessages([
+                    'email' => ['Akun Anda telah dibanned dan tidak dapat login.'],
+                ]);
+            }
+
+            if ($user->alumni->status_create === 'rejected') {
+                throw ValidationException::withMessages([
+                    'email' => ['Akun Anda telah ditolak. Silakan daftar ulang.'],
+                ]);
+            }
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Calculate can_access_all for alumni users
+        $canAccessAll = null;
+        if ($user->alumni) {
+            $canAccessAll = $this->calculateCanAccessAll($user->id_users);
+        }
+
+        return [
+            'user' => $user->load(['alumni.jurusan', 'admin']),
+            'token' => $token,
+            'can_access_all' => $canAccessAll,
+        ];
+    }
+
+    /**
+     * Verify Google token for registration (Step 1).
+     * Returns google user data for frontend auto-fill.
+     */
+    public function registerGoogle(string $idToken): array
+    {
+        $googleUser = $this->verifyGoogleToken($idToken);
+
+        // Check if email is already registered (non-rejected)
+        $validator = Validator::make(
+            ['email' => $googleUser['email']],
+            ['email' => ['required', 'email', new EmailNotBanned(), new UniqueEmailExceptRejected()]]
+        );
+
+        if ($validator->fails()) {
+            throw ValidationException::withMessages($validator->errors()->toArray());
+        }
+
+        return $googleUser;
+    }
+
     public function registerUserAndProfile(array $accountData, array $profileData)
     {
         $result = DB::transaction(function () use ($accountData, $profileData) {
             // Hapus akun lama jika status_create = 'rejected'
             $this->authRepository->deleteRejectedUserByEmail($accountData['email']);
+
+            // For Google auth: generate a random password (user won't use it)
+            if (!empty($accountData['google_id']) && empty($accountData['password'])) {
+                $accountData['password'] = Hash::make($accountData['google_id'] . '_' . uniqid());
+            }
             
             // Convert year-only values to proper date format for DB
             if (!empty($profileData['tahun_lulus']) && preg_match('/^\d{4}$/', $profileData['tahun_lulus'])) {

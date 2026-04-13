@@ -12,11 +12,18 @@ class AuthRepository implements AuthRepositoryInterface
 {
     public function createUser(array $data)
     {
-        return User::create([
+        $userData = [
             'email_users' => $data['email'],
             'password' => $data['password'],
             'role' => 'alumni',
-        ]);
+        ];
+
+        if (!empty($data['google_id'])) {
+            $userData['google_id'] = $data['google_id'];
+            $userData['auth_provider'] = 'google';
+        }
+
+        return User::create($userData);
     }
 
     public function createAlumniProfile(int $userId, array $data)
@@ -33,6 +40,11 @@ class AuthRepository implements AuthRepositoryInterface
     {
         return User::with(['alumni.jurusan', 'alumni.skills', 'alumni.socialMedia', 'admin'])
             ->find($id);
+    }
+
+    public function findUserByGoogleId(string $googleId)
+    {
+        return User::with('alumni')->where('google_id', $googleId)->first();
     }
 
     public function deleteRejectedUserByEmail(string $email): void
