@@ -31,6 +31,10 @@ Route::post('/validate-email', [AuthController::class, 'validateEmail']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
+// Google Auth routes
+Route::post('/auth/google/login', [AuthController::class, 'googleLogin']);
+Route::post('/auth/google/register', [AuthController::class, 'googleRegister']);
+
 // CAPTCHA routes
 Route::get('/captcha/generate', [CaptchaController::class, 'generate']);
 Route::post('/captcha/verify', [CaptchaController::class, 'verify']);

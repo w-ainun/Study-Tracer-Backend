@@ -8,6 +8,7 @@ interface AuthRepositoryInterface
     public function createAlumniProfile(int $userId, array $profileData);
     public function findUserByEmail(string $email);
     public function findUserById(int $id);
+    public function findUserByGoogleId(string $googleId);
     public function deleteRejectedUserByEmail(string $email): void;
     public function createPasswordResetToken(string $email, string $token): void;
     public function findPasswordResetToken(string $email, string $token);

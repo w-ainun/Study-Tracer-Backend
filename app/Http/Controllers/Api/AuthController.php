@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\RegisterAlumniRequest;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\GoogleAuthRequest;
 use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
@@ -27,8 +28,8 @@ class AuthController extends Controller
     public function register(RegisterAlumniRequest $request)
     {
         try {
-            $accountData = $request->only(['email', 'password']);
-            $profileData = $request->except(['email', 'password', 'password_confirmation', 'captcha_token', 'captcha_key']);
+            $accountData = $request->only(['email', 'password', 'google_id', 'auth_provider']);
+            $profileData = $request->except(['email', 'password', 'password_confirmation', 'captcha_token', 'captcha_key', 'google_id', 'auth_provider']);
 
             $token = $this->authService->registerUserAndProfile($accountData, $profileData);
 
@@ -138,6 +139,60 @@ class AuthController extends Controller
             return $this->successResponse(null, 'Email tersedia untuk registrasi.');
         } catch (ValidationException $e) {
             return $this->errorResponse('Email tidak valid', 422, $e->errors());
+        }
+    }
+
+    /**
+     * Login with Google ID token.
+     * Skips captcha and password verification.
+     */
+    public function googleLogin(GoogleAuthRequest $request)
+    {
+        try {
+            $result = $this->authService->loginWithGoogle($request->validated()['google_id_token']);
+
+            // Add can_access_all to user object if available
+            if (isset($result['can_access_all'])) {
+                $result['user']->can_access_all = $result['can_access_all'];
+            }
+
+            return $this->successResponse([
+                'user' => new UserResource($result['user']),
+                'token' => $result['token'],
+            ], 'Login berhasil');
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+
+            // If user not found, return special response with google data
+            if (isset($errors['email'])) {
+                return $this->errorResponse($errors['email'][0], 404, $errors);
+            }
+
+            return $this->errorResponse($e->getMessage(), 422, $errors);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal login dengan Google: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Verify Google token for registration (Step 1).
+     * Returns Google user data for frontend to auto-fill the registration form.
+     */
+    public function googleRegister(GoogleAuthRequest $request)
+    {
+        try {
+            $googleUser = $this->authService->registerGoogle($request->validated()['google_id_token']);
+
+            return $this->successResponse([
+                'google_email' => $googleUser['email'],
+                'google_name' => $googleUser['name'],
+                'google_id' => $googleUser['google_id'],
+                'google_picture' => $googleUser['picture'],
+            ], 'Verifikasi Google berhasil. Lanjutkan registrasi.');
+        } catch (ValidationException $e) {
+            return $this->errorResponse('Verifikasi Google gagal', 422, $e->errors());
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal verifikasi Google: ' . $e->getMessage());
         }
     }
 }
