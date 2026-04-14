@@ -16,11 +16,73 @@ use App\Models\Status;
 use App\Models\Universitas;
 use App\Models\Wirausaha;
 use App\Traits\GeneratesThumbnail;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
 {
+    /**
+     * Check whether an entity with optional city relation passes location filters.
+     */
+    private function passesLocationFilter($entity, array $filters): bool
+    {
+        if (!empty($filters['kota_id']) && (int) ($entity->id_kota ?? 0) !== (int) $filters['kota_id']) {
+            return false;
+        }
+
+        if (!empty($filters['provinsi_id']) && $entity->kota && (int) ($entity->kota->id_provinsi ?? 0) !== (int) $filters['provinsi_id']) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Resolve coordinates using entity coordinates with fallback to city coordinates.
+     */
+    private function resolveCoordinates($entity): array
+    {
+        $lat = $entity->latitude ?? $entity->kota->latitude ?? null;
+        $lng = $entity->longitude ?? $entity->kota->longitude ?? null;
+
+        return [
+            'latitude' => $lat ? (float) $lat : null,
+            'longitude' => $lng ? (float) $lng : null,
+        ];
+    }
+
+    /**
+     * Build small alumni preview payload for marker cards.
+     */
+    private function mapAlumniPreview($alumni): array
+    {
+        return [
+            'id' => $alumni->id_alumni,
+            'nama' => $alumni->nama_alumni,
+            'foto' => $alumni->foto ? $this->fotoUrl($alumni->foto) : null,
+            'foto_thumbnail' => $alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($alumni->foto)) : null,
+        ];
+    }
+
+    /**
+     * Build full alumni item payload for location popup.
+     */
+    private function mapPopupAlumni($riwayat, string $statusKarir, array $detail): array
+    {
+        return [
+            'id_alumni' => $riwayat->alumni->id_alumni,
+            'nama' => $riwayat->alumni->nama_alumni,
+            'foto' => $riwayat->alumni->foto ? $this->fotoUrl($riwayat->alumni->foto) : null,
+            'foto_thumbnail' => $riwayat->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($riwayat->alumni->foto)) : null,
+            'jurusan' => $riwayat->alumni->jurusan->nama_jurusan ?? null,
+            'tahun_masuk' => $riwayat->alumni->tahun_masuk,
+            'tahun_lulus' => $riwayat->alumni->tahun_lulus?->format('Y-m-d'),
+            'status_karir' => $statusKarir,
+            'detail' => $detail,
+        ];
+    }
+
     // ── Helper: apply common alumni filters to a riwayat_status query ──
 
     private function applyFilters($query, array $filters)
@@ -61,7 +123,11 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
     private function fotoUrl(?string $foto): ?string
     {
         if (!$foto) return null;
-        return Storage::disk('public')->url($foto);
+
+        /** @var FilesystemAdapter $publicDisk */
+        $publicDisk = Storage::disk('public');
+
+        return $publicDisk->url($foto);
     }
 
     // ══════════════════════════════════════════════════════
@@ -134,21 +200,18 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
             $key = $perusahaan->id_perusahaan;
 
             // Apply kota/provinsi filter
-            if (!empty($filters['kota_id']) && $perusahaan->id_kota != $filters['kota_id']) continue;
-            if (!empty($filters['provinsi_id']) && $perusahaan->kota && $perusahaan->kota->id_provinsi != $filters['provinsi_id']) continue;
+            if (!$this->passesLocationFilter($perusahaan, $filters)) continue;
 
             if (!isset($grouped[$key])) {
-                // Determine coordinates: use perusahaan coords, fallback to kota
-                $lat = $perusahaan->latitude ?? $perusahaan->kota->latitude ?? null;
-                $lng = $perusahaan->longitude ?? $perusahaan->kota->longitude ?? null;
+                $coords = $this->resolveCoordinates($perusahaan);
 
                 $grouped[$key] = [
                     'id' => "perusahaan_{$key}",
                     'type' => 'bekerja',
                     'entity_id' => $key,
                     'entity_name' => $perusahaan->nama_perusahaan,
-                    'latitude' => $lat ? (float)$lat : null,
-                    'longitude' => $lng ? (float)$lng : null,
+                    'latitude' => $coords['latitude'],
+                    'longitude' => $coords['longitude'],
                     'kota' => $perusahaan->kota->nama_kota ?? null,
                     'provinsi' => $perusahaan->kota->provinsi->nama_provinsi ?? null,
                     'alumni_count' => 0,
@@ -160,12 +223,7 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
 
             // Max 5 preview alumni
             if (count($grouped[$key]['alumni_preview']) < 5 && $riwayat->alumni) {
-                $grouped[$key]['alumni_preview'][] = [
-                    'id' => $riwayat->alumni->id_alumni,
-                    'nama' => $riwayat->alumni->nama_alumni,
-                    'foto' => $riwayat->alumni->foto ? $this->fotoUrl($riwayat->alumni->foto) : null,
-                    'foto_thumbnail' => $riwayat->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($riwayat->alumni->foto)) : null,
-                ];
+                $grouped[$key]['alumni_preview'][] = $this->mapAlumniPreview($riwayat->alumni);
             }
         }
 
@@ -189,7 +247,7 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
         $riwayats = $query->with([
             'alumni:id_alumni,nama_alumni,foto,id_jurusan,tahun_masuk,tahun_lulus',
             'alumni.jurusan:id_jurusan,nama_jurusan',
-            'kuliah.universitas',
+            'kuliah.universitas.kota.provinsi',
             'kuliah.jurusanKuliah',
         ])->get();
 
@@ -202,16 +260,21 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
             $universitas = $kuliah->universitas;
             $key = $universitas->id_universitas;
 
+            // Apply kota/provinsi filter
+            if (!$this->passesLocationFilter($universitas, $filters)) continue;
+
             if (!isset($grouped[$key])) {
+                $coords = $this->resolveCoordinates($universitas);
+
                 $grouped[$key] = [
                     'id' => "universitas_{$key}",
                     'type' => 'kuliah',
                     'entity_id' => $key,
                     'entity_name' => $universitas->nama_universitas,
-                    'latitude' => $universitas->latitude ? (float)$universitas->latitude : null,
-                    'longitude' => $universitas->longitude ? (float)$universitas->longitude : null,
-                    'kota' => null,
-                    'provinsi' => null,
+                    'latitude' => $coords['latitude'],
+                    'longitude' => $coords['longitude'],
+                    'kota' => $universitas->kota->nama_kota ?? null,
+                    'provinsi' => $universitas->kota->provinsi->nama_provinsi ?? null,
                     'alumni_count' => 0,
                     'alumni_preview' => [],
                 ];
@@ -220,12 +283,7 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
             $grouped[$key]['alumni_count']++;
 
             if (count($grouped[$key]['alumni_preview']) < 5 && $riwayat->alumni) {
-                $grouped[$key]['alumni_preview'][] = [
-                    'id' => $riwayat->alumni->id_alumni,
-                    'nama' => $riwayat->alumni->nama_alumni,
-                    'foto' => $riwayat->alumni->foto ? $this->fotoUrl($riwayat->alumni->foto) : null,
-                    'foto_thumbnail' => $riwayat->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($riwayat->alumni->foto)) : null,
-                ];
+                $grouped[$key]['alumni_preview'][] = $this->mapAlumniPreview($riwayat->alumni);
             }
         }
 
@@ -249,6 +307,7 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
         $riwayats = $query->with([
             'alumni:id_alumni,nama_alumni,foto,id_jurusan,tahun_masuk,tahun_lulus',
             'alumni.jurusan:id_jurusan,nama_jurusan',
+            'wirausaha.kota.provinsi',
             'wirausaha.bidangUsaha',
         ])->get();
 
@@ -261,16 +320,21 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
 
             $key = $wirausaha->id_wirausaha;
 
+            // Apply kota/provinsi filter
+            if (!$this->passesLocationFilter($wirausaha, $filters)) continue;
+
             if (!isset($grouped[$key])) {
+                $coords = $this->resolveCoordinates($wirausaha);
+
                 $grouped[$key] = [
                     'id' => "wirausaha_{$key}",
                     'type' => 'wirausaha',
                     'entity_id' => $key,
                     'entity_name' => $wirausaha->nama_usaha,
-                    'latitude' => $wirausaha->latitude ? (float)$wirausaha->latitude : null,
-                    'longitude' => $wirausaha->longitude ? (float)$wirausaha->longitude : null,
-                    'kota' => null,
-                    'provinsi' => null,
+                    'latitude' => $coords['latitude'],
+                    'longitude' => $coords['longitude'],
+                    'kota' => $wirausaha->kota->nama_kota ?? null,
+                    'provinsi' => $wirausaha->kota->provinsi->nama_provinsi ?? null,
                     'bidang_usaha' => $wirausaha->bidangUsaha->nama_bidang ?? null,
                     'alumni_count' => 0,
                     'alumni_preview' => [],
@@ -280,12 +344,7 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
             $grouped[$key]['alumni_count']++;
 
             if (count($grouped[$key]['alumni_preview']) < 5 && $riwayat->alumni) {
-                $grouped[$key]['alumni_preview'][] = [
-                    'id' => $riwayat->alumni->id_alumni,
-                    'nama' => $riwayat->alumni->nama_alumni,
-                    'foto' => $riwayat->alumni->foto ? $this->fotoUrl($riwayat->alumni->foto) : null,
-                    'foto_thumbnail' => $riwayat->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($riwayat->alumni->foto)) : null,
-                ];
+                $grouped[$key]['alumni_preview'][] = $this->mapAlumniPreview($riwayat->alumni);
             }
         }
 
@@ -350,22 +409,14 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
                 ])->get();
 
                 $alumni = $riwayats->map(function ($r) use ($entity) {
-                    return [
-                        'id_alumni' => $r->alumni->id_alumni,
-                        'nama' => $r->alumni->nama_alumni,
-                        'foto' => $r->alumni->foto ? $this->fotoUrl($r->alumni->foto) : null,
-                        'foto_thumbnail' => $r->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($r->alumni->foto)) : null,
-                        'jurusan' => $r->alumni->jurusan->nama_jurusan ?? null,
-                        'tahun_masuk' => $r->alumni->tahun_masuk,
-                        'tahun_lulus' => $r->alumni->tahun_lulus?->format('Y-m-d'),
-                        'status_karir' => 'Bekerja',
-                        'detail' => [
-                            'posisi' => $r->pekerjaan->posisi ?? null,
-                            'perusahaan' => $entity->nama_perusahaan,
-                            'tahun_mulai' => $r->tahun_mulai,
-                        ],
-                    ];
+                    return $this->mapPopupAlumni($r, 'Bekerja', [
+                        'posisi' => $r->pekerjaan->posisi ?? null,
+                        'perusahaan' => $entity->nama_perusahaan,
+                        'tahun_mulai' => $r->tahun_mulai,
+                    ]);
                 });
+
+                $coords = $this->resolveCoordinates($entity);
 
                 $entityData = [
                     'id' => $entity->id_perusahaan,
@@ -374,14 +425,14 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
                     'alamat' => $entity->jalan,
                     'kota' => $entity->kota->nama_kota ?? null,
                     'provinsi' => $entity->kota->provinsi->nama_provinsi ?? null,
-                    'latitude' => $entity->latitude ? (float)$entity->latitude : ($entity->kota->latitude ? (float)$entity->kota->latitude : null),
-                    'longitude' => $entity->longitude ? (float)$entity->longitude : ($entity->kota->longitude ? (float)$entity->kota->longitude : null),
+                    'latitude' => $coords['latitude'],
+                    'longitude' => $coords['longitude'],
                 ];
                 break;
 
             case 'kuliah':
             case 'universitas':
-                $entity = Universitas::find($entityId);
+                $entity = Universitas::with('kota.provinsi')->find($entityId);
                 if (!$entity) break;
 
                 $statusKuliah = Status::where('nama_status', 'Kuliah')->first();
@@ -404,39 +455,31 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
                 ])->get();
 
                 $alumni = $riwayats->map(function ($r) use ($entity) {
-                    return [
-                        'id_alumni' => $r->alumni->id_alumni,
-                        'nama' => $r->alumni->nama_alumni,
-                        'foto' => $r->alumni->foto ? $this->fotoUrl($r->alumni->foto) : null,
-                        'foto_thumbnail' => $r->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($r->alumni->foto)) : null,
-                        'jurusan' => $r->alumni->jurusan->nama_jurusan ?? null,
-                        'tahun_masuk' => $r->alumni->tahun_masuk,
-                        'tahun_lulus' => $r->alumni->tahun_lulus?->format('Y-m-d'),
-                        'status_karir' => 'Kuliah',
-                        'detail' => [
-                            'universitas' => $entity->nama_universitas,
-                            'jurusan_kuliah' => $r->kuliah->jurusanKuliah->nama_jurusan ?? null,
-                            'jenjang' => $r->kuliah->jenjang ?? null,
-                            'jalur_masuk' => $r->kuliah->jalur_masuk ?? null,
-                            'tahun_mulai' => $r->tahun_mulai,
-                        ],
-                    ];
+                    return $this->mapPopupAlumni($r, 'Kuliah', [
+                        'universitas' => $entity->nama_universitas,
+                        'jurusan_kuliah' => $r->kuliah->jurusanKuliah->nama_jurusan ?? null,
+                        'jenjang' => $r->kuliah->jenjang ?? null,
+                        'jalur_masuk' => $r->kuliah->jalur_masuk ?? null,
+                        'tahun_mulai' => $r->tahun_mulai,
+                    ]);
                 });
+
+                $coords = $this->resolveCoordinates($entity);
 
                 $entityData = [
                     'id' => $entity->id_universitas,
                     'name' => $entity->nama_universitas,
                     'type' => 'universitas',
-                    'alamat' => null,
-                    'kota' => null,
-                    'provinsi' => null,
-                    'latitude' => $entity->latitude ? (float)$entity->latitude : null,
-                    'longitude' => $entity->longitude ? (float)$entity->longitude : null,
+                    'alamat' => $entity->alamat,
+                    'kota' => $entity->kota->nama_kota ?? null,
+                    'provinsi' => $entity->kota->provinsi->nama_provinsi ?? null,
+                    'latitude' => $coords['latitude'],
+                    'longitude' => $coords['longitude'],
                 ];
                 break;
 
             case 'wirausaha':
-                $entity = Wirausaha::with('bidangUsaha')->find($entityId);
+                $entity = Wirausaha::with('bidangUsaha', 'kota.provinsi')->find($entityId);
                 if (!$entity) break;
 
                 $riwayat = RiwayatStatus::where('id_riwayat', $entity->id_riwayat)
@@ -450,33 +493,27 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
                     ->first();
 
                 if ($riwayat && $riwayat->alumni) {
-                    $alumni = collect([[
-                        'id_alumni' => $riwayat->alumni->id_alumni,
-                        'nama' => $riwayat->alumni->nama_alumni,
-                        'foto' => $riwayat->alumni->foto ? $this->fotoUrl($riwayat->alumni->foto) : null,
-                        'foto_thumbnail' => $riwayat->alumni->foto ? $this->fotoUrl(GeneratesThumbnail::thumbnailPath($riwayat->alumni->foto)) : null,
-                        'jurusan' => $riwayat->alumni->jurusan->nama_jurusan ?? null,
-                        'tahun_masuk' => $riwayat->alumni->tahun_masuk,
-                        'tahun_lulus' => $riwayat->alumni->tahun_lulus?->format('Y-m-d'),
-                        'status_karir' => 'Wirausaha',
-                        'detail' => [
+                    $alumni = collect([
+                        $this->mapPopupAlumni($riwayat, 'Wirausaha', [
                             'nama_usaha' => $entity->nama_usaha,
                             'bidang_usaha' => $entity->bidangUsaha->nama_bidang ?? null,
                             'tahun_mulai' => $riwayat->tahun_mulai,
-                        ],
-                    ]]);
+                        ])
+                    ]);
                 }
+
+                $coords = $this->resolveCoordinates($entity);
 
                 $entityData = [
                     'id' => $entity->id_wirausaha,
                     'name' => $entity->nama_usaha,
                     'type' => 'wirausaha',
-                    'alamat' => null,
-                    'kota' => null,
-                    'provinsi' => null,
+                    'alamat' => $entity->alamat,
+                    'kota' => $entity->kota->nama_kota ?? null,
+                    'provinsi' => $entity->kota->provinsi->nama_provinsi ?? null,
                     'bidang_usaha' => $entity->bidangUsaha->nama_bidang ?? null,
-                    'latitude' => $entity->latitude ? (float)$entity->latitude : null,
-                    'longitude' => $entity->longitude ? (float)$entity->longitude : null,
+                    'latitude' => $coords['latitude'],
+                    'longitude' => $coords['longitude'],
                 ];
                 break;
 
