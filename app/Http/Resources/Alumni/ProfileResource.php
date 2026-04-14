@@ -134,6 +134,10 @@ class ProfileResource extends JsonResource
             if ($latestRiwayat->kuliah) {
                 $currentCareer['kuliah'] = [
                     'universitas' => $latestRiwayat->kuliah->universitas?->nama_universitas,
+                    'alamat' => $latestRiwayat->kuliah->universitas?->alamat,
+                    'id_kota' => $latestRiwayat->kuliah->universitas?->id_kota,
+                    'kota' => $latestRiwayat->kuliah->universitas?->kota?->nama_kota ?? null,
+                    'provinsi' => $latestRiwayat->kuliah->universitas?->kota?->provinsi?->nama_provinsi ?? null,
                     'jurusan_kuliah' => $latestRiwayat->kuliah->jurusanKuliah ? [
                         'id' => $latestRiwayat->kuliah->jurusanKuliah->id_jurusanKuliah,
                         'nama' => $latestRiwayat->kuliah->jurusanKuliah->nama_jurusan ?? $latestRiwayat->kuliah->jurusanKuliah->nama ?? null,
@@ -146,6 +150,10 @@ class ProfileResource extends JsonResource
             if ($latestRiwayat->wirausaha) {
                 $currentCareer['wirausaha'] = [
                     'nama_usaha' => $latestRiwayat->wirausaha->nama_usaha,
+                    'alamat' => $latestRiwayat->wirausaha->alamat,
+                    'id_kota' => $latestRiwayat->wirausaha->id_kota,
+                    'kota' => $latestRiwayat->wirausaha->kota?->nama_kota ?? null,
+                    'provinsi' => $latestRiwayat->wirausaha->kota?->provinsi?->nama_provinsi ?? null,
                     'bidang_usaha' => $latestRiwayat->wirausaha->bidangUsaha?->nama_bidang ?? null,
                     'id_bidang' => $latestRiwayat->wirausaha->id_bidang,
                 ];

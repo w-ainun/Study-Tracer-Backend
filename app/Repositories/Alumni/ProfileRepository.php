@@ -21,8 +21,9 @@ class ProfileRepository implements ProfileRepositoryInterface
         'riwayatStatus' => null, // will be overridden with closure
         'riwayatStatus.status',
         'riwayatStatus.pekerjaan.perusahaan.kota.provinsi',
-        'riwayatStatus.kuliah.universitas',
+        'riwayatStatus.kuliah.universitas.kota.provinsi',
         'riwayatStatus.kuliah.jurusanKuliah',
+        'riwayatStatus.wirausaha.kota.provinsi',
         'riwayatStatus.wirausaha.bidangUsaha',
     ];
 
@@ -39,8 +40,9 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus' => fn($q) => $q->orderByDesc('id_riwayat'),
             'riwayatStatus.status',
             'riwayatStatus.pekerjaan.perusahaan.kota.provinsi',
-            'riwayatStatus.kuliah.universitas',
+            'riwayatStatus.kuliah.universitas.kota.provinsi',
             'riwayatStatus.kuliah.jurusanKuliah',
+            'riwayatStatus.wirausaha.kota.provinsi',
             'riwayatStatus.wirausaha.bidangUsaha',
             'riwayatStatus.deskripsiKarier', // ✓ Eager-loaded
             'portofolio', // ✓ Eager-loaded
@@ -113,8 +115,9 @@ class ProfileRepository implements ProfileRepositoryInterface
             'riwayatStatus' => fn($q) => $q->orderByDesc('id_riwayat'),
             'riwayatStatus.status',
             'riwayatStatus.pekerjaan.perusahaan.kota.provinsi',
-            'riwayatStatus.kuliah.universitas',
+            'riwayatStatus.kuliah.universitas.kota.provinsi',
             'riwayatStatus.kuliah.jurusanKuliah',
+            'riwayatStatus.wirausaha.kota.provinsi',
             'riwayatStatus.wirausaha.bidangUsaha',
             'riwayatStatus.deskripsiKarier',
             'portofolio',
@@ -138,8 +141,9 @@ class ProfileRepository implements ProfileRepositoryInterface
         return RiwayatStatus::with([
             'status',
             'pekerjaan.perusahaan.kota.provinsi',
-            'kuliah.universitas',
+            'kuliah.universitas.kota.provinsi',
             'kuliah.jurusanKuliah',
+            'wirausaha.kota.provinsi',
             'wirausaha.bidangUsaha',
         ])
             ->where('id_alumni', $alumniId)

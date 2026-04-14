@@ -4,6 +4,12 @@ namespace App\Providers;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Perusahaan;
+use App\Models\Universitas;
+use App\Models\Wirausaha;
+use App\Observers\PerusahaanObserver;
+use App\Observers\UniversitasObserver;
+use App\Observers\WirausahaObserver;
 
 use App\Interfaces\AuthRepositoryInterface;
 use App\Interfaces\AlumniRepositoryInterface;
@@ -15,6 +21,7 @@ use App\Interfaces\StatusKarierRepositoryInterface;
 use App\Interfaces\PengumumanRepositoryInterface;
 use App\Interfaces\PengaturanTampilanRepositoryInterface;
 use App\Interfaces\KemitraanRepositoryInterface;
+use App\Interfaces\SebaranAlumniRepositoryInterface;
 use App\Interfaces\Alumni\BerandaRepositoryInterface;
 use App\Interfaces\Alumni\LowonganAlumniRepositoryInterface;
 use App\Interfaces\Alumni\AlumniDirectoryRepositoryInterface;
@@ -30,6 +37,7 @@ use App\Repositories\StatusKarierRepository;
 use App\Repositories\PengumumanRepository;
 use App\Repositories\PengaturanTampilanRepository;
 use App\Repositories\KemitraanRepository;
+use App\Repositories\SebaranAlumniRepository;
 use App\Repositories\Alumni\BerandaRepository;
 use App\Repositories\Alumni\LowonganAlumniRepository;
 use App\Repositories\Alumni\AlumniDirectoryRepository;
@@ -56,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PengumumanRepositoryInterface::class, PengumumanRepository::class);
         $this->app->bind(PengaturanTampilanRepositoryInterface::class, PengaturanTampilanRepository::class);
         $this->app->bind(KemitraanRepositoryInterface::class, KemitraanRepository::class);
+        $this->app->bind(SebaranAlumniRepositoryInterface::class, SebaranAlumniRepository::class);
 
         // Register Laravel Telescope (DISABLED untuk performa)
         // if ($this->app->environment('local')) {
@@ -74,5 +83,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Prevent silently discarding attributes not in $fillable
         Model::preventSilentlyDiscardingAttributes(!app()->environment('production'));
+
+        // Auto-geocode saat entity baru dibuat/diupdate
+        Perusahaan::observe(PerusahaanObserver::class);
+        Universitas::observe(UniversitasObserver::class);
+        Wirausaha::observe(WirausahaObserver::class);
     }
 }

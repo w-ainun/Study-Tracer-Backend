@@ -44,6 +44,10 @@ class ProfileRiwayatResource extends JsonResource
                     'universitas' => $this->kuliah->universitas ? [
                         'id' => $this->kuliah->universitas->id_universitas,
                         'nama' => $this->kuliah->universitas->nama_universitas,
+                        'alamat' => $this->kuliah->universitas->alamat,
+                        'id_kota' => $this->kuliah->universitas->id_kota,
+                        'kota' => $this->kuliah->universitas->kota?->nama_kota ?? null,
+                        'provinsi' => $this->kuliah->universitas->kota?->provinsi?->nama_provinsi ?? null,
                     ] : null,
                     'jurusan_kuliah' => $this->kuliah->jurusanKuliah ? [
                         'id' => $this->kuliah->jurusanKuliah->id_jurusanKuliah,
@@ -58,6 +62,10 @@ class ProfileRiwayatResource extends JsonResource
                 return [
                     'id' => $this->wirausaha->id_wirausaha,
                     'nama_usaha' => $this->wirausaha->nama_usaha,
+                    'alamat' => $this->wirausaha->alamat,
+                    'id_kota' => $this->wirausaha->id_kota,
+                    'kota' => $this->wirausaha->kota?->nama_kota ?? null,
+                    'provinsi' => $this->wirausaha->kota?->provinsi?->nama_provinsi ?? null,
                     'bidang_usaha' => $this->wirausaha->bidangUsaha ? [
                         'id' => $this->wirausaha->bidangUsaha->id_bidang,
                         'nama' => $this->wirausaha->bidangUsaha->nama_bidang,

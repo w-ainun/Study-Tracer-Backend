@@ -15,7 +15,16 @@ class Wirausaha extends Model
     protected $fillable = [
         'id_bidang',
         'nama_usaha',
+        'alamat',
+        'id_kota',
         'id_riwayat',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function bidangUsaha()
@@ -26,5 +35,10 @@ class Wirausaha extends Model
     public function riwayatStatus()
     {
         return $this->belongsTo(RiwayatStatus::class, 'id_riwayat', 'id_riwayat');
+    }
+
+    public function kota()
+    {
+        return $this->belongsTo(Kota::class, 'id_kota', 'id_kota');
     }
 }
