@@ -16,6 +16,13 @@ class Wirausaha extends Model
         'id_bidang',
         'nama_usaha',
         'id_riwayat',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function bidangUsaha()

@@ -14,6 +14,13 @@ class Universitas extends Model
 
     protected $fillable = [
         'nama_universitas',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     /**

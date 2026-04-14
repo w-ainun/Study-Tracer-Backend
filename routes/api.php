@@ -22,6 +22,7 @@ use App\Http\Controllers\Api\PengumumanController;
 use App\Http\Controllers\Api\PengaturanTampilanController;
 use App\Http\Controllers\Api\KemitraanController;
 use App\Http\Controllers\Api\MetaDataController;
+use App\Http\Controllers\Api\SebaranAlumniController;
 
 // PUBLIC ROUTES
 
@@ -350,6 +351,16 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
 
             // Export
             Route::get('/export', [KemitraanController::class, 'export']);
+        });
+
+        // Sebaran Alumni (Mapping)
+        Route::prefix('sebaran')->group(function () {
+            Route::get('/markers', [SebaranAlumniController::class, 'markers']);
+            Route::get('/location/{type}/{id}', [SebaranAlumniController::class, 'alumniAtLocation']);
+            Route::get('/filters', [SebaranAlumniController::class, 'filters']);
+            Route::get('/stats', [SebaranAlumniController::class, 'stats']);
+            Route::get('/heatmap', [SebaranAlumniController::class, 'heatmap']);
+            Route::get('/search', [SebaranAlumniController::class, 'search']);
         });
 
         // Meta Data Management

@@ -15,6 +15,13 @@ class Provinsi extends Model
     protected $fillable = [
         'nama_provinsi',
         'code',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function kota()

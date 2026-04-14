@@ -16,6 +16,13 @@ class Perusahaan extends Model
         'nama_perusahaan',
         'id_kota',
         'jalan',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function kota()
