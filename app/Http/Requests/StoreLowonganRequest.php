@@ -45,6 +45,7 @@ class StoreLowonganRequest extends FormRequest
             // Either id_perusahaan OR nama_perusahaan can be provided
             'id_perusahaan' => ['nullable', 'exists:perusahaan,id_perusahaan'],
             'nama_perusahaan' => ['nullable', 'string', 'max:255', 'required_without:id_perusahaan'],
+            'alamat_perusahaan' => ['nullable', 'string', 'max:500'],
             // Skills (opsional, array of skill IDs)
             'skills' => ['nullable', 'array'],
             'skills.*' => ['integer', 'exists:skills,id_skills'],

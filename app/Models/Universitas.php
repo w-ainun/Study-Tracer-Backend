@@ -14,6 +14,7 @@ class Universitas extends Model
 
     protected $fillable = [
         'nama_universitas',
+        'alamat',
         'latitude',
         'longitude',
     ];

@@ -4,6 +4,12 @@ namespace App\Providers;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Perusahaan;
+use App\Models\Universitas;
+use App\Models\Wirausaha;
+use App\Observers\PerusahaanObserver;
+use App\Observers\UniversitasObserver;
+use App\Observers\WirausahaObserver;
 
 use App\Interfaces\AuthRepositoryInterface;
 use App\Interfaces\AlumniRepositoryInterface;
@@ -77,5 +83,10 @@ class AppServiceProvider extends ServiceProvider
 
         // Prevent silently discarding attributes not in $fillable
         Model::preventSilentlyDiscardingAttributes(!app()->environment('production'));
+
+        // Auto-geocode saat entity baru dibuat/diupdate
+        Perusahaan::observe(PerusahaanObserver::class);
+        Universitas::observe(UniversitasObserver::class);
+        Wirausaha::observe(WirausahaObserver::class);
     }
 }

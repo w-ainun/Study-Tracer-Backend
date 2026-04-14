@@ -91,13 +91,13 @@ class LowonganController extends Controller
                 $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                     ['nama_perusahaan' => $data['nama_perusahaan']],
                     [
-                        'jalan' => $data['lokasi'] ?? '-',
+                        'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
                         'id_kota' => $defaultCityId
                     ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
-            unset($data['nama_perusahaan']);
+            unset($data['nama_perusahaan'], $data['alamat_perusahaan']);
 
             // Attach current user as poster
             $data['id_users'] = $request->user()->id_users;
@@ -133,13 +133,13 @@ class LowonganController extends Controller
                 $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                     ['nama_perusahaan' => $data['nama_perusahaan']],
                     [
-                        'jalan' => $data['lokasi'] ?? '-',
+                        'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
                         'id_kota' => $defaultCityId
                     ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
-            unset($data['nama_perusahaan']);
+            unset($data['nama_perusahaan'], $data['alamat_perusahaan']);
 
             $lowongan = $this->lowonganService->update($id, $data);
             return $this->successResponse(new LowonganResource($lowongan), 'Lowongan berhasil diperbarui');

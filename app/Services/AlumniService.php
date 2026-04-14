@@ -116,6 +116,7 @@ class AlumniService
                 Wirausaha::create([
                     'id_bidang' => $data['wirausaha']['id_bidang'],
                     'nama_usaha' => $data['wirausaha']['nama_usaha'],
+                    'alamat' => $data['wirausaha']['alamat'] ?? null,
                     'id_riwayat' => $riwayat->id_riwayat,
                 ]);
             }

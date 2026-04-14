@@ -15,6 +15,7 @@ class Wirausaha extends Model
     protected $fillable = [
         'id_bidang',
         'nama_usaha',
+        'alamat',
         'id_riwayat',
         'latitude',
         'longitude',

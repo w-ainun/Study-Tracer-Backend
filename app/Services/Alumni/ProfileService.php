@@ -234,7 +234,8 @@ class ProfileService
                 $idUniversitas = $kuliahData['id_universitas'] ?? null;
                 if (!$idUniversitas && !empty($kuliahData['nama_universitas'])) {
                     $univ = Universitas::firstOrCreate(
-                        ['nama_universitas' => $kuliahData['nama_universitas']]
+                        ['nama_universitas' => $kuliahData['nama_universitas']],
+                        ['alamat' => $kuliahData['alamat'] ?? null]
                     );
                     $idUniversitas = $univ->id_universitas;
                 }
@@ -254,6 +255,7 @@ class ProfileService
                 Wirausaha::create([
                     'id_bidang' => $data['wirausaha']['id_bidang'],
                     'nama_usaha' => $data['wirausaha']['nama_usaha'],
+                    'alamat' => $data['wirausaha']['alamat'] ?? null,
                     'id_riwayat' => $riwayat->id_riwayat,
                 ]);
             }
@@ -326,7 +328,8 @@ class ProfileService
                 $idUniversitas = $kuliahData['id_universitas'] ?? null;
                 if (!$idUniversitas && !empty($kuliahData['nama_universitas'])) {
                     $univ = Universitas::firstOrCreate(
-                        ['nama_universitas' => $kuliahData['nama_universitas']]
+                        ['nama_universitas' => $kuliahData['nama_universitas']],
+                        ['alamat' => $kuliahData['alamat'] ?? null]
                     );
                     $idUniversitas = $univ->id_universitas;
                 }
@@ -350,6 +353,7 @@ class ProfileService
                     [
                         'id_bidang' => $data['wirausaha']['id_bidang'],
                         'nama_usaha' => $data['wirausaha']['nama_usaha'],
+                        'alamat' => $data['wirausaha']['alamat'] ?? null,
                     ]
                 );
             }
