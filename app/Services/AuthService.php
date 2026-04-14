@@ -246,7 +246,10 @@ class AuthService
                         // Jika teks (nama universitas baru), cari atau buat data universitas baru
                         $universitas = \App\Models\Universitas::firstOrCreate(
                             ['nama_universitas' => $namaAtauIdUniversitas],
-                            ['alamat' => $universitasData['alamat'] ?? null]
+                            [
+                                'alamat' => $universitasData['alamat'] ?? null,
+                                'id_kota' => $universitasData['id_kota'] ?? null,
+                            ]
                         );
                         $idUniversitas = $universitas->id_universitas;
                     }
@@ -266,6 +269,7 @@ class AuthService
                         'id_bidang' => $wirausahaData['id_bidang'],
                         'nama_usaha' => $wirausahaData['nama_usaha'],
                         'alamat' => $wirausahaData['alamat'] ?? null,
+                        'id_kota' => $wirausahaData['id_kota'] ?? null,
                         'id_riwayat' => $riwayat->id_riwayat,
                     ]);
                 }

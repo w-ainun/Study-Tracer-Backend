@@ -129,6 +129,12 @@ class GeocodingService
         if (!empty($universitas->alamat)) {
             $parts[] = $universitas->alamat;
         }
+        if ($universitas->kota) {
+            $parts[] = $universitas->kota->nama_kota;
+            if ($universitas->kota->provinsi) {
+                $parts[] = $universitas->kota->provinsi->nama_provinsi;
+            }
+        }
 
         $parts[] = 'Indonesia';
         return implode(', ', $parts);
@@ -143,6 +149,12 @@ class GeocodingService
 
         if (!empty($wirausaha->alamat)) {
             $parts[] = $wirausaha->alamat;
+        }
+        if ($wirausaha->kota) {
+            $parts[] = $wirausaha->kota->nama_kota;
+            if ($wirausaha->kota->provinsi) {
+                $parts[] = $wirausaha->kota->provinsi->nama_provinsi;
+            }
         }
 
         $parts[] = 'Indonesia';
@@ -229,8 +241,24 @@ class GeocodingService
      */
     public function geocodeUniversitas($universitas): bool
     {
+        if (!$universitas->relationLoaded('kota')) {
+            $universitas->load('kota.provinsi');
+        }
+
         $address = $this->buildUniversitasAddress($universitas);
         $result = $this->geocode($address);
+
+        // Fallback: kota coordinates
+        if (!$result && $universitas->kota) {
+            if ($universitas->kota->latitude && $universitas->kota->longitude) {
+                $result = [
+                    'latitude' => $universitas->kota->latitude,
+                    'longitude' => $universitas->kota->longitude,
+                ];
+            } else {
+                $result = $this->geocode($universitas->kota->nama_kota . ', Indonesia');
+            }
+        }
 
         if ($result) {
             $universitas->update([
@@ -248,8 +276,24 @@ class GeocodingService
      */
     public function geocodeWirausaha($wirausaha): bool
     {
+        if (!$wirausaha->relationLoaded('kota')) {
+            $wirausaha->load('kota.provinsi');
+        }
+
         $address = $this->buildWirausahaAddress($wirausaha);
         $result = $this->geocode($address);
+
+        // Fallback: kota coordinates
+        if (!$result && $wirausaha->kota) {
+            if ($wirausaha->kota->latitude && $wirausaha->kota->longitude) {
+                $result = [
+                    'latitude' => $wirausaha->kota->latitude,
+                    'longitude' => $wirausaha->kota->longitude,
+                ];
+            } else {
+                $result = $this->geocode($wirausaha->kota->nama_kota . ', Indonesia');
+            }
+        }
 
         if ($result) {
             $wirausaha->update([

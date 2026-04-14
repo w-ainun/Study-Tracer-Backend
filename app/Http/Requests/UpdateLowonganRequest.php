@@ -43,6 +43,7 @@ class UpdateLowonganRequest extends FormRequest
             'foto_lowongan' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             'id_perusahaan' => ['nullable', 'exists:perusahaan,id_perusahaan'],
             'nama_perusahaan' => ['nullable', 'string', 'max:255'],
+            'alamat_perusahaan' => ['nullable', 'string', 'max:500'],
             // Skills (opsional, array of skill IDs)
             'skills' => ['nullable', 'array'],
             'skills.*' => ['integer', 'exists:skills,id_skills'],

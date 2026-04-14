@@ -16,6 +16,7 @@ class Wirausaha extends Model
         'id_bidang',
         'nama_usaha',
         'alamat',
+        'id_kota',
         'id_riwayat',
         'latitude',
         'longitude',
@@ -34,5 +35,10 @@ class Wirausaha extends Model
     public function riwayatStatus()
     {
         return $this->belongsTo(RiwayatStatus::class, 'id_riwayat', 'id_riwayat');
+    }
+
+    public function kota()
+    {
+        return $this->belongsTo(Kota::class, 'id_kota', 'id_kota');
     }
 }

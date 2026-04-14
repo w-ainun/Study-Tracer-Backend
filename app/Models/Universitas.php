@@ -15,6 +15,7 @@ class Universitas extends Model
     protected $fillable = [
         'nama_universitas',
         'alamat',
+        'id_kota',
         'latitude',
         'longitude',
     ];
@@ -23,6 +24,11 @@ class Universitas extends Model
         'latitude' => 'float',
         'longitude' => 'float',
     ];
+
+    public function kota()
+    {
+        return $this->belongsTo(Kota::class, 'id_kota', 'id_kota');
+    }
 
     /**
      * Jurusan kuliah yang tersedia di universitas ini.
