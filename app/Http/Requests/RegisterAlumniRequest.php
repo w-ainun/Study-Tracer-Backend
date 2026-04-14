@@ -82,6 +82,8 @@ class RegisterAlumniRequest extends FormRequest
             // If Kuliah
             'universitas' => ['nullable', 'array'],
             'universitas.nama_universitas' => ['required_with:universitas', 'string'],
+            'universitas.alamat' => ['nullable', 'string', 'max:500'],
+            'universitas.id_kota' => ['nullable', 'exists:kota,id_kota'],
             'universitas.id_jurusanKuliah' => ['required_with:universitas', 'exists:jurusan_kuliah,id_jurusanKuliah'],
             'universitas.jalur_masuk' => ['required_with:universitas', 'in:SNBP,SNBT,Mandiri,Beasiswa,lainnya'],
             'universitas.jenjang' => ['required_with:universitas', 'in:D3,D4,S1,S2,S3'],
@@ -90,6 +92,8 @@ class RegisterAlumniRequest extends FormRequest
             'wirausaha' => ['nullable', 'array'],
             'wirausaha.id_bidang' => ['required_with:wirausaha', 'exists:bidang_usaha,id_bidang'],
             'wirausaha.nama_usaha' => ['required_with:wirausaha', 'string'],
+            'wirausaha.alamat' => ['nullable', 'string', 'max:500'],
+            'wirausaha.id_kota' => ['nullable', 'exists:kota,id_kota'],
         ];
     }
 

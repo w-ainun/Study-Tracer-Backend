@@ -31,6 +31,8 @@ class CareerStatusRequest extends FormRequest
             'universitas' => ['nullable', 'array'],
             'universitas.nama_universitas' => ['nullable', 'string'],
             'universitas.id_universitas' => ['nullable', 'exists:universitas,id_universitas'],
+            'universitas.alamat' => ['nullable', 'string', 'max:500'],
+            'universitas.id_kota' => ['nullable', 'exists:kota,id_kota'],
             'universitas.id_jurusanKuliah' => ['nullable', 'exists:jurusan_kuliah,id_jurusanKuliah'],
             'universitas.jalur_masuk' => ['nullable', 'string'],
             'universitas.jenjang' => ['nullable', 'string'],
@@ -38,6 +40,9 @@ class CareerStatusRequest extends FormRequest
             // Legacy kuliah key (backward compat)
             'kuliah' => ['nullable', 'array'],
             'kuliah.id_universitas' => ['nullable', 'exists:universitas,id_universitas'],
+            'kuliah.nama_universitas' => ['nullable', 'string'],
+            'kuliah.alamat' => ['nullable', 'string', 'max:500'],
+            'kuliah.id_kota' => ['nullable', 'exists:kota,id_kota'],
             'kuliah.id_jurusanKuliah' => ['nullable', 'exists:jurusan_kuliah,id_jurusanKuliah'],
             'kuliah.jalur_masuk' => ['nullable', 'string'],
             'kuliah.jenjang' => ['nullable', 'string'],
@@ -46,6 +51,8 @@ class CareerStatusRequest extends FormRequest
             'wirausaha' => ['nullable', 'array'],
             'wirausaha.id_bidang' => ['required_with:wirausaha', 'exists:bidang_usaha,id_bidang'],
             'wirausaha.nama_usaha' => ['required_with:wirausaha', 'string'],
+            'wirausaha.alamat' => ['nullable', 'string', 'max:500'],
+            'wirausaha.id_kota' => ['nullable', 'exists:kota,id_kota'],
         ];
     }
 

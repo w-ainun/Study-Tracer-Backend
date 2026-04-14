@@ -17,7 +17,7 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
 
     public function getAllUniversitas()
     {
-        return Universitas::with('jurusanKuliah')
+        return Universitas::with(['jurusanKuliah', 'kota.provinsi'])
             ->orderBy('nama_universitas')
             ->get();
     }
@@ -26,6 +26,8 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
     {
         return Universitas::create([
             'nama_universitas' => $data['nama'] ?? $data['nama_universitas'],
+            'alamat' => $data['alamat'] ?? null,
+            'id_kota' => $data['id_kota'] ?? null,
         ]);
     }
 
@@ -37,9 +39,15 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
         if (isset($data['nama']) || isset($data['nama_universitas'])) {
             $updateData['nama_universitas'] = $data['nama'] ?? $data['nama_universitas'];
         }
+        if (array_key_exists('alamat', $data)) {
+            $updateData['alamat'] = $data['alamat'];
+        }
+        if (array_key_exists('id_kota', $data)) {
+            $updateData['id_kota'] = $data['id_kota'];
+        }
 
         $univ->update($updateData);
-        return $univ->fresh();
+        return $univ->fresh(['jurusanKuliah', 'kota.provinsi']);
     }
 
     public function deleteUniversitas(int $id)

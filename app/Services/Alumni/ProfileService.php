@@ -270,8 +270,9 @@ class ProfileService
             return $riwayat->load([
                 'status',
                 'pekerjaan.perusahaan.kota.provinsi',
-                'kuliah.universitas',
+                'kuliah.universitas.kota.provinsi',
                 'kuliah.jurusanKuliah',
+                'wirausaha.kota.provinsi',
                 'wirausaha.bidangUsaha',
             ]);
         });
@@ -369,8 +370,9 @@ class ProfileService
             return $riwayat->load([
                 'status',
                 'pekerjaan.perusahaan.kota.provinsi',
-                'kuliah.universitas',
+                'kuliah.universitas.kota.provinsi',
                 'kuliah.jurusanKuliah',
+                'wirausaha.kota.provinsi',
                 'wirausaha.bidangUsaha',
             ]);
         });
