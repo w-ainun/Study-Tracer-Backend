@@ -118,6 +118,8 @@ class AlumniService
                     'nama_usaha' => $data['wirausaha']['nama_usaha'],
                     'alamat' => $data['wirausaha']['alamat'] ?? null,
                     'id_kota' => $data['wirausaha']['id_kota'] ?? null,
+                    'latitude' => $data['wirausaha']['latitude'] ?? null,
+                    'longitude' => $data['wirausaha']['longitude'] ?? null,
                     'id_riwayat' => $riwayat->id_riwayat,
                 ]);
             }

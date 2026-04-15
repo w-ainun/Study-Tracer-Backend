@@ -17,7 +17,7 @@ return [
 
     'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
-        'localhost:5173,localhost:3000, tracer.primaesemkrada.com,  api-tracer.primaesemkrada.com, 127.0.0.1,127.0.0.1:8000,::1, 8178-139-228-40-7.ngrok-free.app ',
+        'localhost:5173,localhost:3000, tracer.primaesemkrada.com,  api-tracer.primaesemkrada.com, 127.0.0.1,127.0.0.1:8000,::1, 6ad2-139-228-40-37.ngrok-free.app ',
         Sanctum::currentApplicationUrlWithPort(),
         // Sanctum::currentRequestHost(),
     ))),

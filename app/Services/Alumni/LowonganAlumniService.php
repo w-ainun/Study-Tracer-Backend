@@ -101,13 +101,15 @@ class LowonganAlumniService
                 [
                     'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
                     'id_kota' => $defaultCityId,
+                    'latitude' => $data['latitude_perusahaan'] ?? null,
+                    'longitude' => $data['longitude_perusahaan'] ?? null,
                 ]
             );
             $data['id_perusahaan'] = $perusahaan->id_perusahaan;
         }
         
         // Remove non-lowongan fields before mass assignment
-        unset($data['nama_perusahaan'], $data['id_kota'], $data['alamat_perusahaan']);
+        unset($data['nama_perusahaan'], $data['id_kota'], $data['alamat_perusahaan'], $data['latitude_perusahaan'], $data['longitude_perusahaan']);
 
         // Extract & remove skills before creating lowongan
         $skillIds = $data['skills'] ?? [];
