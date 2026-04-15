@@ -217,6 +217,8 @@ class ProfileService
                     [
                         'id_kota' => $data['pekerjaan']['id_kota'] ?? null,
                         'jalan' => $data['pekerjaan']['jalan'] ?? '',
+                        'latitude' => $data['pekerjaan']['latitude'] ?? null,
+                        'longitude' => $data['pekerjaan']['longitude'] ?? null,
                     ]
                 );
 
@@ -319,6 +321,8 @@ class ProfileService
                     [
                         'id_kota' => $data['pekerjaan']['id_kota'] ?? null,
                         'jalan' => $data['pekerjaan']['jalan'] ?? '',
+                        'latitude' => $data['pekerjaan']['latitude'] ?? null,
+                        'longitude' => $data['pekerjaan']['longitude'] ?? null,
                     ]
                 );
 
