@@ -183,6 +183,9 @@ class ProfileResource extends JsonResource
 
             // Career data
             'current_career' => $currentCareer,
+            'has_pending_career' => $this->whenLoaded('riwayatStatus', function () {
+                return $this->riwayatStatus->where('approval_status', 'pending')->isNotEmpty();
+            }, false),
             'riwayat_status' => ProfileRiwayatResource::collection(
                 $this->whenLoaded('riwayatStatus', function () {
                     // Only show approved riwayat in the list; pending ones are hidden until admin approves
