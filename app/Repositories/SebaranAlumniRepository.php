@@ -43,13 +43,50 @@ class SebaranAlumniRepository implements SebaranAlumniRepositoryInterface
      */
     private function resolveCoordinates($entity): array
     {
-        $lat = $entity->latitude ?? $entity->kota->latitude ?? null;
-        $lng = $entity->longitude ?? $entity->kota->longitude ?? null;
+        // If entity already has explicit coordinates, always use them.
+        if (!is_null($entity->latitude) && !is_null($entity->longitude)) {
+            return [
+                'latitude' => (float) $entity->latitude,
+                'longitude' => (float) $entity->longitude,
+            ];
+        }
+
+        // Prevent inaccurate center-of-city pin when detailed address exists but geocode failed.
+        if ($this->hasDetailedAddress($entity)) {
+            return [
+                'latitude' => null,
+                'longitude' => null,
+            ];
+        }
+
+        $lat = $entity->kota->latitude ?? null;
+        $lng = $entity->kota->longitude ?? null;
 
         return [
             'latitude' => $lat ? (float) $lat : null,
             'longitude' => $lng ? (float) $lng : null,
         ];
+    }
+
+    /**
+     * Check whether an entity has meaningful address detail.
+     */
+    private function hasDetailedAddress($entity): bool
+    {
+        $address = null;
+
+        if (property_exists($entity, 'jalan')) {
+            $address = $entity->jalan;
+        } elseif (property_exists($entity, 'alamat')) {
+            $address = $entity->alamat;
+        }
+
+        if (!$address) {
+            return false;
+        }
+
+        $normalized = trim(mb_strtolower((string) $address));
+        return $normalized !== '' && $normalized !== '-' && $normalized !== 'n/a';
     }
 
     /**

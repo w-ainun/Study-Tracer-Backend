@@ -249,6 +249,8 @@ class AuthService
                             [
                                 'alamat' => $universitasData['alamat'] ?? null,
                                 'id_kota' => $universitasData['id_kota'] ?? null,
+                                'latitude' => $universitasData['latitude'] ?? null,
+                                'longitude' => $universitasData['longitude'] ?? null,
                             ]
                         );
                         $idUniversitas = $universitas->id_universitas;
@@ -270,6 +272,8 @@ class AuthService
                         'nama_usaha' => $wirausahaData['nama_usaha'],
                         'alamat' => $wirausahaData['alamat'] ?? null,
                         'id_kota' => $wirausahaData['id_kota'] ?? null,
+                        'latitude' => $wirausahaData['latitude'] ?? null,
+                        'longitude' => $wirausahaData['longitude'] ?? null,
                         'id_riwayat' => $riwayat->id_riwayat,
                     ]);
                 }
