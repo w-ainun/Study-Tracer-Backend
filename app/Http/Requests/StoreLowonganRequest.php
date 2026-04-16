@@ -47,6 +47,9 @@ class StoreLowonganRequest extends FormRequest
             'nama_perusahaan' => ['nullable', 'string', 'max:255', 'required_without:id_perusahaan'],
             'alamat_perusahaan' => ['nullable', 'string', 'max:500'],
             'id_kota' => ['nullable', 'exists:kota,id_kota'],
+            // Map picker: user-selected coordinates (skip auto-geocoding)
+            'latitude_perusahaan' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude_perusahaan' => ['nullable', 'numeric', 'between:-180,180'],
             // Skills (opsional, array of skill IDs)
             'skills' => ['nullable', 'array'],
             'skills.*' => ['integer', 'exists:skills,id_skills'],

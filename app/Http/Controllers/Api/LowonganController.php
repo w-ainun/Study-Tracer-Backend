@@ -96,12 +96,15 @@ class LowonganController extends Controller
                     ['nama_perusahaan' => $data['nama_perusahaan']],
                     [
                         'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
-                        'id_kota' => $defaultCityId
+                        'id_kota' => $defaultCityId,
+                        // Map picker coordinates (if provided, observer skips geocoding)
+                        'latitude' => $data['latitude_perusahaan'] ?? null,
+                        'longitude' => $data['longitude_perusahaan'] ?? null,
                     ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
-            unset($data['nama_perusahaan'], $data['alamat_perusahaan'], $data['id_kota']);
+            unset($data['nama_perusahaan'], $data['alamat_perusahaan'], $data['id_kota'], $data['latitude_perusahaan'], $data['longitude_perusahaan']);
 
             // Attach current user as poster
             $data['id_users'] = $request->user()->id_users;
@@ -142,12 +145,14 @@ class LowonganController extends Controller
                     ['nama_perusahaan' => $data['nama_perusahaan']],
                     [
                         'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
-                        'id_kota' => $defaultCityId
+                        'id_kota' => $defaultCityId,
+                        'latitude' => $data['latitude_perusahaan'] ?? null,
+                        'longitude' => $data['longitude_perusahaan'] ?? null,
                     ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
-            unset($data['nama_perusahaan'], $data['alamat_perusahaan'], $data['id_kota']);
+            unset($data['nama_perusahaan'], $data['alamat_perusahaan'], $data['id_kota'], $data['latitude_perusahaan'], $data['longitude_perusahaan']);
 
             $lowongan = $this->lowonganService->update($id, $data);
             return $this->successResponse(new LowonganResource($lowongan), 'Lowongan berhasil diperbarui');

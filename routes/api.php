@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\PengaturanTampilanController;
 use App\Http\Controllers\Api\KemitraanController;
 use App\Http\Controllers\Api\MetaDataController;
 use App\Http\Controllers\Api\SebaranAlumniController;
+use App\Http\Controllers\Api\GeocodeController;
 
 // PUBLIC ROUTES
 
@@ -40,6 +41,12 @@ Route::post('/auth/google/register', [AuthController::class, 'googleRegister']);
 Route::get('/captcha/generate', [CaptchaController::class, 'generate']);
 Route::post('/captcha/verify', [CaptchaController::class, 'verify']);
 Route::get('/captcha/refresh', [CaptchaController::class, 'refresh']);
+
+// Geocode API (for map picker - public so registration can use it)
+Route::prefix('geocode')->group(function () {
+    Route::get('/reverse', [GeocodeController::class, 'reverse']);
+    Route::get('/search', [GeocodeController::class, 'search']);
+});
 
 // Public master data (for registration form dropdowns)
 Route::prefix('master')->group(function () {

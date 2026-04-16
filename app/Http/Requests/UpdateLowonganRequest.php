@@ -45,6 +45,9 @@ class UpdateLowonganRequest extends FormRequest
             'nama_perusahaan' => ['nullable', 'string', 'max:255'],
             'alamat_perusahaan' => ['nullable', 'string', 'max:500'],
             'id_kota' => ['nullable', 'exists:kota,id_kota'],
+            // Map picker: user-selected coordinates
+            'latitude_perusahaan' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude_perusahaan' => ['nullable', 'numeric', 'between:-180,180'],
             // Skills (opsional, array of skill IDs)
             'skills' => ['nullable', 'array'],
             'skills.*' => ['integer', 'exists:skills,id_skills'],

@@ -43,7 +43,8 @@ class GeocodingService
         }
 
         // Check cache first
-        $cacheKey = 'geocode:' . md5(strtolower($address));
+        // v2 key to invalidate older low-accuracy cache entries
+        $cacheKey = 'geocode:v2:' . md5(strtolower($address));
         $cached = Cache::get($cacheKey);
         if ($cached !== null) {
             return $cached ?: null; // false means "not found" cached
@@ -61,7 +62,7 @@ class GeocodingService
             ->get(self::API_URL, [
                 'q' => $address,
                 'format' => 'jsonv2',
-                'limit' => 1,
+                'limit' => 3,
                 'countrycodes' => 'id', // Bias ke Indonesia
                 'addressdetails' => 0,
             ]);
@@ -105,9 +106,12 @@ class GeocodingService
         if (!empty($perusahaan->nama_perusahaan)) {
             $parts[] = $perusahaan->nama_perusahaan;
         }
-        if (!empty($perusahaan->jalan)) {
-            $parts[] = $perusahaan->jalan;
-        }
+        if (!empty($perusahaan->jalan)) {                                    
+            $normalized = $this->normalizeAddressSegment($perusahaan->jalan);
+            if ($normalized) {
+                $parts[] = $normalized;
+            }
+        }                       
         if ($perusahaan->kota) {
             $parts[] = $perusahaan->kota->nama_kota;
             if ($perusahaan->kota->provinsi) {
@@ -127,7 +131,10 @@ class GeocodingService
         $parts = [$universitas->nama_universitas];
 
         if (!empty($universitas->alamat)) {
-            $parts[] = $universitas->alamat;
+            $normalized = $this->normalizeAddressSegment($universitas->alamat);
+            if ($normalized) {
+                $parts[] = $normalized;
+            }
         }
         if ($universitas->kota) {
             $parts[] = $universitas->kota->nama_kota;
@@ -148,7 +155,10 @@ class GeocodingService
         $parts = [$wirausaha->nama_usaha];
 
         if (!empty($wirausaha->alamat)) {
-            $parts[] = $wirausaha->alamat;
+            $normalized = $this->normalizeAddressSegment($wirausaha->alamat);
+            if ($normalized) {
+                $parts[] = $normalized;
+            }
         }
         if ($wirausaha->kota) {
             $parts[] = $wirausaha->kota->nama_kota;
@@ -194,26 +204,40 @@ class GeocodingService
         }
 
         $result = null;
+        $hasDetailedAddress = $this->hasMeaningfulAddress($perusahaan->jalan ?? null);
 
-        // Attempt 1: Alamat jalan lengkap (tanpa nama perusahaan, biar fokus lokasi)
+        // Attempt 1: Alamat jalan lengkap (paling akurat)
         if (!empty($perusahaan->jalan) && $perusahaan->kota) {
-            $streetAddress = $perusahaan->jalan . ', ' . $perusahaan->kota->nama_kota;
-            if ($perusahaan->kota->provinsi) {
-                $streetAddress .= ', ' . $perusahaan->kota->provinsi->nama_provinsi;
+            $streetAddress = $this->buildContextAddress(
+                $perusahaan->jalan,
+                $perusahaan->kota->nama_kota ?? null,
+                $perusahaan->kota->provinsi->nama_provinsi ?? null
+            );
+
+            if ($streetAddress) {
+                $result = $this->geocode($streetAddress);
             }
-            $streetAddress .= ', Indonesia';
-            $result = $this->geocode($streetAddress);
         }
 
-        // Attempt 2: Nama perusahaan + kota
+        // Attempt 2: Nama + alamat + kota
+        if (!$result && $hasDetailedAddress && $perusahaan->kota) {
+            $nameAndStreet = $perusahaan->nama_perusahaan . ', ' . $perusahaan->jalan . ', ' . $perusahaan->kota->nama_kota;
+            if ($perusahaan->kota->provinsi) {
+                $nameAndStreet .= ', ' . $perusahaan->kota->provinsi->nama_provinsi;
+            }
+            $nameAndStreet .= ', Indonesia';
+            $result = $this->geocode($nameAndStreet);
+        }
+
+        // Attempt 3: Nama perusahaan + kota
         if (!$result && $perusahaan->kota) {
             $result = $this->geocode(
                 $perusahaan->nama_perusahaan . ', ' . $perusahaan->kota->nama_kota . ', Indonesia'
             );
         }
 
-        // Attempt 3: Fallback ke koordinat kota
-        if (!$result && $perusahaan->kota) {
+        // Attempt 4: Fallback ke koordinat kota hanya jika alamat detail tidak tersedia.
+        if (!$result && !$hasDetailedAddress && $perusahaan->kota) {
             // Kalau kota sudah punya koordinat, pakai langsung
             if ($perusahaan->kota->latitude && $perusahaan->kota->longitude) {
                 $result = [
@@ -238,6 +262,9 @@ class GeocodingService
 
     /**
      * Geocode a Universitas and update its coordinates.
+     *
+     * Strategi: Universitas biasanya POI terkenal di OpenStreetMap,
+     * jadi cari by nama dulu (lebih akurat), baru fallback ke alamat.
      */
     public function geocodeUniversitas($universitas): bool
     {
@@ -245,18 +272,43 @@ class GeocodingService
             $universitas->load('kota.provinsi');
         }
 
-        $address = $this->buildUniversitasAddress($universitas);
-        $result = $this->geocode($address);
+        $result = null;
+        $nama = $universitas->nama_universitas;
 
-        // Fallback: kota coordinates
+        // Attempt 1: Nama universitas + kota (paling akurat untuk POI)
+        if ($universitas->kota) {
+            $query = $nama . ', ' . $universitas->kota->nama_kota;
+            if ($universitas->kota->provinsi) {
+                $query .= ', ' . $universitas->kota->provinsi->nama_provinsi;
+            }
+            $query .= ', Indonesia';
+            $result = $this->geocode($query);
+        }
+
+        // Attempt 2: Nama universitas + Indonesia saja
+        if (!$result) {
+            $result = $this->geocode($nama . ', Indonesia');
+        }
+
+        // Attempt 3: Alamat detail (jika ada) + kota
+        if (!$result && $this->hasMeaningfulAddress($universitas->alamat ?? null) && $universitas->kota) {
+            $addressQuery = $this->buildContextAddress(
+                $universitas->alamat,
+                $universitas->kota->nama_kota ?? null,
+                $universitas->kota->provinsi->nama_provinsi ?? null
+            );
+            if ($addressQuery) {
+                $result = $this->geocode($addressQuery);
+            }
+        }
+
+        // Attempt 4: Fallback ke koordinat kota
         if (!$result && $universitas->kota) {
             if ($universitas->kota->latitude && $universitas->kota->longitude) {
                 $result = [
                     'latitude' => $universitas->kota->latitude,
                     'longitude' => $universitas->kota->longitude,
                 ];
-            } else {
-                $result = $this->geocode($universitas->kota->nama_kota . ', Indonesia');
             }
         }
 
@@ -280,11 +332,30 @@ class GeocodingService
             $wirausaha->load('kota.provinsi');
         }
 
-        $address = $this->buildWirausahaAddress($wirausaha);
-        $result = $this->geocode($address);
+        $result = null;
+        $hasDetailedAddress = $this->hasMeaningfulAddress($wirausaha->alamat ?? null);
 
-        // Fallback: kota coordinates
-        if (!$result && $wirausaha->kota) {
+        // Attempt 1: alamat + kota + provinsi
+        if ($hasDetailedAddress && $wirausaha->kota) {
+            $addressOnly = $this->buildContextAddress(
+                $wirausaha->alamat,
+                $wirausaha->kota->nama_kota ?? null,
+                $wirausaha->kota->provinsi->nama_provinsi ?? null
+            );
+
+            if ($addressOnly) {
+                $result = $this->geocode($addressOnly);
+            }
+        }
+
+        // Attempt 2: nama usaha + alamat + kota + provinsi
+        if (!$result) {
+            $address = $this->buildWirausahaAddress($wirausaha);
+            $result = $this->geocode($address);
+        }
+
+        // Fallback: kota coordinates hanya jika alamat detail tidak tersedia.
+        if (!$result && !$hasDetailedAddress && $wirausaha->kota) {
             if ($wirausaha->kota->latitude && $wirausaha->kota->longitude) {
                 $result = [
                     'latitude' => $wirausaha->kota->latitude,
@@ -345,5 +416,205 @@ class GeocodingService
         }
 
         Cache::put($lastRequestKey, microtime(true) * 1000, 60);
+    }
+
+    /**
+     * Detect whether an address contains meaningful detail beyond placeholder values.
+     */
+    private function hasMeaningfulAddress(?string $address): bool
+    {
+        if (!$address) {
+            return false;
+        }
+
+        $normalized = trim(mb_strtolower($address));
+        if ($normalized === '' || $normalized === '-' || $normalized === 'n/a') {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Simplify noisy Indonesian address strings to improve geocoding hit-rate.
+     */
+    private function normalizeAddressSegment(?string $address): ?string
+    {
+        if (!$this->hasMeaningfulAddress($address)) {
+            return null;
+        }
+
+        $parts = array_values(array_filter(array_map('trim', explode(',', (string) $address))));
+
+        $filtered = [];
+        foreach ($parts as $part) {
+            // Drop very broad administrative hints (will be appended from city/province context)
+            if (preg_match('/^(kec\.?|kecamatan|kel\.?|kelurahan|kota|kabupaten|provinsi)\b/i', $part)) {
+                continue;
+            }
+
+            // Remove postal codes to reduce ambiguity/noise
+            $part = preg_replace('/\b\d{5}\b/', '', $part);
+            $part = trim((string) $part);
+
+            if ($part !== '') {
+                $filtered[] = $part;
+            }
+        }
+
+        if (empty($filtered)) {
+            return null;
+        }
+
+        // Keep at most first 2 chunks (street + local area)
+        $filtered = array_slice($filtered, 0, 2);
+
+        return implode(', ', $filtered);
+    }
+
+    /**
+     * Build address query and avoid duplicate city/province text.
+     */
+    private function buildContextAddress(?string $address, ?string $city, ?string $province): ?string
+    {
+        $normalizedAddress = $this->normalizeAddressSegment($address);
+        $parts = [];
+
+        if ($normalizedAddress) {
+            $parts[] = $normalizedAddress;
+        }
+
+        if (!empty($city)) {
+            $parts[] = $city;
+        }
+
+        if (!empty($province)) {
+            $parts[] = $province;
+        }
+
+        $parts[] = 'Indonesia';
+
+        // Deduplicate while preserving order
+        $unique = [];
+        foreach ($parts as $part) {
+            $key = mb_strtolower(trim((string) $part));
+            if ($key === '' || isset($unique[$key])) {
+                continue;
+            }
+            $unique[$key] = trim((string) $part);
+        }
+
+        if (count($unique) <= 1) {
+            return null;
+        }
+
+        return implode(', ', array_values($unique));
+    }
+
+    // ──────────────────────────────────────────────────
+    // Map Picker API helpers
+    // ──────────────────────────────────────────────────
+
+    /**
+     * Reverse geocode: convert lat/lng → address string.
+     * Used by the frontend map picker to show address when user drops a pin.
+     *
+     * @return array|null ['display_name' => string, 'address' => array]
+     */
+    public function reverseGeocode(float $lat, float $lng): ?array
+    {
+        $cacheKey = 'geocode:reverse:' . md5("{$lat},{$lng}");
+        $cached = Cache::get($cacheKey);
+        if ($cached !== null) {
+            return $cached ?: null;
+        }
+
+        $this->respectRateLimit();
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'StudyTracerApp/1.0 (study-tracer geocoding)',
+                'Accept-Language' => 'id,en',
+            ])
+            ->timeout(10)
+            ->get('https://nominatim.openstreetmap.org/reverse', [
+                'lat' => $lat,
+                'lon' => $lng,
+                'format' => 'jsonv2',
+                'addressdetails' => 1,
+                'zoom' => 18,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+
+                if (!empty($data['display_name'])) {
+                    $result = [
+                        'display_name' => $data['display_name'],
+                        'address' => $data['address'] ?? [],
+                        'latitude' => (float) $data['lat'],
+                        'longitude' => (float) $data['lon'],
+                    ];
+
+                    Cache::put($cacheKey, $result, self::CACHE_TTL);
+                    return $result;
+                }
+            }
+
+            Cache::put($cacheKey, false, self::CACHE_TTL);
+            return null;
+
+        } catch (\Exception $e) {
+            Log::error("Reverse geocode error for [{$lat}, {$lng}]: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Forward geocode search: return multiple results for a text query.
+     * Used by the frontend map picker search box.
+     *
+     * @return array of ['latitude', 'longitude', 'display_name']
+     */
+    public function searchAddress(string $query, int $limit = 5): array
+    {
+        $query = trim($query);
+        if (empty($query)) {
+            return [];
+        }
+
+        $this->respectRateLimit();
+
+        try {
+            $response = Http::withHeaders([
+                'User-Agent' => 'StudyTracerApp/1.0 (study-tracer geocoding)',
+                'Accept-Language' => 'id,en',
+            ])
+            ->timeout(10)
+            ->get(self::API_URL, [
+                'q' => $query,
+                'format' => 'jsonv2',
+                'limit' => min($limit, 10),
+                'countrycodes' => 'id',
+                'addressdetails' => 1,
+            ]);
+
+            if ($response->successful()) {
+                $results = $response->json();
+
+                return collect($results)->map(fn($r) => [
+                    'latitude' => (float) $r['lat'],
+                    'longitude' => (float) $r['lon'],
+                    'display_name' => $r['display_name'] ?? '',
+                    'address' => $r['address'] ?? [],
+                ])->toArray();
+            }
+
+            return [];
+
+        } catch (\Exception $e) {
+            Log::error("Address search error for '{$query}': " . $e->getMessage());
+            return [];
+        }
     }
 }
