@@ -16,6 +16,13 @@ class Kota extends Model
         'nama_kota',
         'code',
         'id_provinsi',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function provinsi()

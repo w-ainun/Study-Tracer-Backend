@@ -98,13 +98,16 @@ class LowonganAlumniService
 
             $perusahaan = Perusahaan::firstOrCreate(
                 ['nama_perusahaan' => $data['nama_perusahaan']],
-                ['jalan' => $data['lokasi'] ?? '-', 'id_kota' => $defaultCityId]
+                [
+                    'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
+                    'id_kota' => $defaultCityId,
+                ]
             );
             $data['id_perusahaan'] = $perusahaan->id_perusahaan;
         }
         
         // Remove non-lowongan fields before mass assignment
-        unset($data['nama_perusahaan'], $data['id_kota']);
+        unset($data['nama_perusahaan'], $data['id_kota'], $data['alamat_perusahaan']);
 
         // Extract & remove skills before creating lowongan
         $skillIds = $data['skills'] ?? [];

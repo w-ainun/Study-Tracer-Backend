@@ -40,11 +40,14 @@ class StatusKarierController extends Controller
     public function storeUniversitas(Request $request)
     {
         $request->validate([
-            'nama' => 'required|string|max:255',
+            'nama' => 'required_without:nama_universitas|string|max:255',
+            'nama_universitas' => 'required_without:nama|string|max:255',
+            'alamat' => 'nullable|string|max:500',
+            'id_kota' => 'nullable|exists:kota,id_kota',
         ]);
 
         try {
-            $data = $this->service->createUniversitas($request->only('nama'));
+            $data = $this->service->createUniversitas($request->only('nama', 'nama_universitas', 'alamat', 'id_kota'));
             return $this->createdResponse(
                 new UniversitasResource($data),
                 'Universitas berhasil ditambahkan'
@@ -58,10 +61,13 @@ class StatusKarierController extends Controller
     {
         $request->validate([
             'nama' => 'sometimes|string|max:255',
+            'nama_universitas' => 'sometimes|string|max:255',
+            'alamat' => 'nullable|string|max:500',
+            'id_kota' => 'nullable|exists:kota,id_kota',
         ]);
 
         try {
-            $data = $this->service->updateUniversitas($id, $request->only('nama'));
+            $data = $this->service->updateUniversitas($id, $request->only('nama', 'nama_universitas', 'alamat', 'id_kota'));
             return $this->successResponse(
                 new UniversitasResource($data),
                 'Universitas berhasil diperbarui'

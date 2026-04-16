@@ -80,8 +80,12 @@ class LowonganController extends Controller
             if (!empty($data['nama_perusahaan']) && empty($data['id_perusahaan'])) {
                 // Determine id_kota: try to match 'lokasi' with city name, or fallback to first city in DB
                 $defaultCityId = \App\Models\Kota::value('id_kota') ?? 1; // Fallback to 1 if empty
+
+                if (!empty($data['id_kota'])) {
+                    $defaultCityId = $data['id_kota'];
+                }
                 
-                if (!empty($data['lokasi'])) {
+                elseif (!empty($data['lokasi'])) {
                     $city = \App\Models\Kota::where('nama_kota', 'like', '%' . $data['lokasi'] . '%')->first();
                     if ($city) {
                         $defaultCityId = $city->id_kota;
@@ -91,13 +95,13 @@ class LowonganController extends Controller
                 $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                     ['nama_perusahaan' => $data['nama_perusahaan']],
                     [
-                        'jalan' => $data['lokasi'] ?? '-',
+                        'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
                         'id_kota' => $defaultCityId
                     ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
-            unset($data['nama_perusahaan']);
+            unset($data['nama_perusahaan'], $data['alamat_perusahaan'], $data['id_kota']);
 
             // Attach current user as poster
             $data['id_users'] = $request->user()->id_users;
@@ -122,8 +126,12 @@ class LowonganController extends Controller
             // If nama_perusahaan provided, auto-create
             if (!empty($data['nama_perusahaan'])) {
                 $defaultCityId = \App\Models\Kota::value('id_kota') ?? 1;
+
+                if (!empty($data['id_kota'])) {
+                    $defaultCityId = $data['id_kota'];
+                }
                 
-                if (!empty($data['lokasi'])) {
+                elseif (!empty($data['lokasi'])) {
                     $city = \App\Models\Kota::where('nama_kota', 'like', '%' . $data['lokasi'] . '%')->first();
                     if ($city) {
                         $defaultCityId = $city->id_kota;
@@ -133,13 +141,13 @@ class LowonganController extends Controller
                 $perusahaan = \App\Models\Perusahaan::firstOrCreate(
                     ['nama_perusahaan' => $data['nama_perusahaan']],
                     [
-                        'jalan' => $data['lokasi'] ?? '-',
+                        'jalan' => $data['alamat_perusahaan'] ?? $data['lokasi'] ?? '-',
                         'id_kota' => $defaultCityId
                     ]
                 );
                 $data['id_perusahaan'] = $perusahaan->id_perusahaan;
             }
-            unset($data['nama_perusahaan']);
+            unset($data['nama_perusahaan'], $data['alamat_perusahaan'], $data['id_kota']);
 
             $lowongan = $this->lowonganService->update($id, $data);
             return $this->successResponse(new LowonganResource($lowongan), 'Lowongan berhasil diperbarui');
