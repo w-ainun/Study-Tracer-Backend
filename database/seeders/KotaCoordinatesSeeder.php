@@ -408,8 +408,7 @@ class KotaCoordinatesSeeder extends Seeder
             'Fakfak' => [-2.9267, 132.2958],
 
             // Papua Barat
-            'Manokwari' => [-0.8614, 134.0620],
-            'Sorong' => [-0.8762, 131.2550],
+            // (Manokwari and Sorong exist in Papua section already)
 
             // Aceh
             'Banda Aceh' => [5.5483, 95.3238],
@@ -451,7 +450,7 @@ class KotaCoordinatesSeeder extends Seeder
                 ]);
         }
 
-        $this->command->info('✅ Koordinat kota & provinsi berhasil di-seed.');
+        $this->command->info(' Koordinat kota & provinsi berhasil di-seed.');
         $this->command->info('   Provinsi: ' . count($provinsiCoords) . ' entries');
         $this->command->info('   Kota: ' . count($kotaCoords) . ' entries');
     }
