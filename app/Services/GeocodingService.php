@@ -54,7 +54,7 @@ class GeocodingService
         $this->respectRateLimit();
 
         try {
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'User-Agent' => 'StudyTracerApp/1.0 (study-tracer geocoding)',
                 'Accept-Language' => 'id,en',
             ])
@@ -532,7 +532,7 @@ class GeocodingService
         $this->respectRateLimit();
 
         try {
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'User-Agent' => 'StudyTracerApp/1.0 (study-tracer geocoding)',
                 'Accept-Language' => 'id,en',
             ])
@@ -586,7 +586,7 @@ class GeocodingService
         $this->respectRateLimit();
 
         try {
-            $response = Http::withHeaders([
+            $response = Http::withoutVerifying()->withHeaders([
                 'User-Agent' => 'StudyTracerApp/1.0 (study-tracer geocoding)',
                 'Accept-Language' => 'id,en',
             ])

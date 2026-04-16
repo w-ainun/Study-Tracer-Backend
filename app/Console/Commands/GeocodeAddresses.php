@@ -41,12 +41,57 @@ class GeocodeAddresses extends Command
 
     public function handle(): int
     {
+        // Prevent timeout during long-running geocoding process
+        set_time_limit(0);
+        ini_set('memory_limit', '1G');
+
         $type = $this->option('type');
         $force = $this->option('force');
         $limit = (int) $this->option('limit');
 
         $this->info('🌍 Geocoding Alamat → Koordinat (via Nominatim/OpenStreetMap)');
         $this->info('   Rate limit: ~1 request/detik (Nominatim policy)');
+        $this->newLine();
+
+        // 1. Diagnostic: Check Internet
+        $this->comment('🔍 Melakukan diagnosa sistem...');
+        try {
+            $response = \Illuminate\Support\Facades\Http::withoutVerifying()->get('https://nominatim.openstreetmap.org/status.php');
+            if (!$response->successful()) {
+                $this->error('❌ Server Nominatim sedang bermasalah atau internet Anda terganggu.');
+                return Command::FAILURE;
+            }
+            $this->info('  ✅ Koneksi internet & Nominatim: Oke');
+        } catch (\Exception $e) {
+            $this->error('❌ Gagal terhubung ke internet: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+
+        // 2. Diagnostic: Check Cache/Redis
+        try {
+            \Illuminate\Support\Facades\Cache::put('geocode_check', true, 10);
+            $this->info('  ✅ Koneksi Cache (' . config('cache.default') . '): Oke');
+        } catch (\Exception $e) {
+            $this->error('❌ Gagal terhubung ke Cache (' . config('cache.default') . ').');
+            $this->comment('   Saran: Jika pakai Redis, pastikan Redis jalan. Atau ubah CACHE_STORE=file di .env');
+            $this->error('   Error: ' . $e->getMessage());
+            return Command::FAILURE;
+        }
+
+        // 3. Diagnostic: Check Database Data
+        $counts = [
+            'kota' => \App\Models\Kota::count(),
+            'perusahaan' => \App\Models\Perusahaan::count(),
+            'universitas' => \App\Models\Universitas::count(),
+            'wirausaha' => \App\Models\Wirausaha::count(),
+        ];
+
+        if (array_sum($counts) === 0) {
+            $this->warning('❌ Database Anda masih KOSONG.');
+            $this->info('   Saran: Jalankan "php artisan db:seed" terlebih dahulu agar ada data yang bisa di-geocode.');
+            return Command::FAILURE;
+        }
+        $this->info('  ✅ Data ditemukan: ' . implode(', ', array_map(fn($k, $v) => "$v $k", array_keys($counts), array_values($counts))));
         $this->newLine();
 
         $stats = ['success' => 0, 'failed' => 0, 'skipped' => 0];
