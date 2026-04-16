@@ -236,8 +236,8 @@ class GeocodingService
             );
         }
 
-        // Attempt 4: Fallback ke koordinat kota hanya jika alamat detail tidak tersedia.
-        if (!$result && !$hasDetailedAddress && $perusahaan->kota) {
+        // Attempt 4: Fallback ke koordinat kota jika tidak ditemukan sama sekali
+        if (!$result && $perusahaan->kota) {
             // Kalau kota sudah punya koordinat, pakai langsung
             if ($perusahaan->kota->latitude && $perusahaan->kota->longitude) {
                 $result = [
@@ -354,8 +354,8 @@ class GeocodingService
             $result = $this->geocode($address);
         }
 
-        // Fallback: kota coordinates hanya jika alamat detail tidak tersedia.
-        if (!$result && !$hasDetailedAddress && $wirausaha->kota) {
+        // Fallback: koordinat kota jika address detail tidak ditemukan
+        if (!$result && $wirausaha->kota) {
             if ($wirausaha->kota->latitude && $wirausaha->kota->longitude) {
                 $result = [
                     'latitude' => $wirausaha->kota->latitude,
