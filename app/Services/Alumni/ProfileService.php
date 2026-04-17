@@ -222,6 +222,14 @@ class ProfileService
                     ]
                 );
 
+                // Jika perusahaan sudah ada, update koordinat dari map picker user
+                if (!$perusahaan->wasRecentlyCreated && !empty($data['pekerjaan']['latitude']) && !empty($data['pekerjaan']['longitude'])) {
+                    $perusahaan->update([
+                        'latitude' => $data['pekerjaan']['latitude'],
+                        'longitude' => $data['pekerjaan']['longitude'],
+                    ]);
+                }
+
                 Pekerjaan::create([
                     'posisi' => $data['pekerjaan']['posisi'],
                     'id_perusahaan' => $perusahaan->id_perusahaan,
@@ -325,6 +333,14 @@ class ProfileService
                         'longitude' => $data['pekerjaan']['longitude'] ?? null,
                     ]
                 );
+
+                // Jika perusahaan sudah ada, update koordinat dari map picker user
+                if (!$perusahaan->wasRecentlyCreated && !empty($data['pekerjaan']['latitude']) && !empty($data['pekerjaan']['longitude'])) {
+                    $perusahaan->update([
+                        'latitude' => $data['pekerjaan']['latitude'],
+                        'longitude' => $data['pekerjaan']['longitude'],
+                    ]);
+                }
 
                 Pekerjaan::updateOrCreate(
                     ['id_riwayat' => $riwayat->id_riwayat],

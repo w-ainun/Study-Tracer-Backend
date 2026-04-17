@@ -8,7 +8,7 @@ use App\Services\GeocodingService;
 /**
  * Auto-geocode perusahaan saat dibuat/diupdate.
  *
- * Hanya geocode jika belum punya koordinat, atau jika alamat berubah.
+ * SKIP geocoding jika user sudah set koordinat manual via map picker.
  */
 class PerusahaanObserver
 {
@@ -19,26 +19,38 @@ class PerusahaanObserver
      */
     public function created(Perusahaan $perusahaan): void
     {
-        if (!$perusahaan->latitude || !$perusahaan->longitude) {
-            // Dispatch ke queue agar tidak blocking request
-            dispatch(function () use ($perusahaan) {
-                $this->geocoding->geocodePerusahaan($perusahaan->fresh());
-            })->afterResponse();
+        // Skip jika user sudah set koordinat manual (via map picker)
+        if ($perusahaan->latitude && $perusahaan->longitude) {
+            return;
         }
+
+        dispatch(function () use ($perusahaan) {
+            $this->geocoding->geocodePerusahaan($perusahaan->fresh());
+        })->afterResponse();
     }
 
     /**
      * Handle the Perusahaan "updated" event.
      *
-     * Re-geocode hanya jika nama/alamat/kota berubah.
+     * Re-geocode HANYA jika alamat berubah DAN user TIDAK set koordinat manual.
      */
     public function updated(Perusahaan $perusahaan): void
     {
+        // Jika user baru saja set lat/lng manual (via map picker), jangan re-geocode
+        if ($perusahaan->wasChanged(['latitude', 'longitude'])) {
+            return;
+        }
+
         $addressChanged = $perusahaan->wasChanged(['nama_perusahaan', 'jalan', 'id_kota']);
 
         if ($addressChanged) {
             dispatch(function () use ($perusahaan) {
-                $this->geocoding->geocodePerusahaan($perusahaan->fresh());
+                $fresh = $perusahaan->fresh();
+                // Double-check: jika sudah punya koordinat yang valid, skip
+                if ($fresh->latitude && $fresh->longitude) {
+                    return;
+                }
+                $this->geocoding->geocodePerusahaan($fresh);
             })->afterResponse();
         }
     }
