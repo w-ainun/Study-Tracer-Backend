@@ -76,7 +76,7 @@ class RegisterAlumniRequest extends FormRequest
             'pekerjaan' => ['nullable', 'array'],
             'pekerjaan.posisi' => ['required_with:pekerjaan', 'string'],
             'pekerjaan.nama_perusahaan' => ['required_with:pekerjaan', 'string'],
-            'pekerjaan.id_kota' => ['required_with:pekerjaan', 'exists:kota,id_kota'],
+            'pekerjaan.id_kota' => ['nullable', 'exists:kota,id_kota'],
             'pekerjaan.jalan' => ['nullable', 'string'],
 
             // If Kuliah
