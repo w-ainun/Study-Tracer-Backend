@@ -258,6 +258,12 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
             Route::put('/bidang-usaha/{id}', [StatusKarierController::class, 'updateBidangUsaha']);
             Route::delete('/bidang-usaha/{id}', [StatusKarierController::class, 'destroyBidangUsaha']);
 
+            // Data Wirausaha
+            Route::get('/wirausaha', [StatusKarierController::class, 'wirausaha']);
+            Route::post('/wirausaha', [StatusKarierController::class, 'storeWirausaha']);
+            Route::put('/wirausaha/{id}', [StatusKarierController::class, 'updateWirausaha']);
+            Route::delete('/wirausaha/{id}', [StatusKarierController::class, 'destroyWirausaha']);
+
             // Report & Export
             Route::get('/report', [StatusKarierController::class, 'statusDistribution']);
             Route::get('/export', [StatusKarierController::class, 'exportReport']);

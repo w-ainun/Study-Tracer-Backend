@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreWirausahaRequest;
 use App\Http\Resources\BidangUsahaResource;
 use App\Http\Resources\JurusanKuliahResource;
 use App\Http\Resources\UniversitasResource;
+use App\Http\Resources\WirausahaResource;
 use App\Services\StatusKarierService;
 use App\Traits\ApiResponse;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -205,6 +207,57 @@ public function destroyBidangUsaha(int $id)
     }
 }
 
+    // ═══════════════════════════════════════════════
+    //  DATA WIRAUSAHA
+    // ═══════════════════════════════════════════════
+
+    public function wirausaha(Request $request)
+    {
+        try {
+            $search = $request->query('search');
+            $data = $this->service->getAllWirausaha($search);
+            return $this->successResponse(WirausahaResource::collection($data));
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil data wirausaha: ' . $e->getMessage());
+        }
+    }
+
+    public function storeWirausaha(StoreWirausahaRequest $request)
+    {
+        try {
+            $data = $this->service->createWirausaha($request->validated());
+            return $this->createdResponse(
+                new WirausahaResource($data),
+                'Data wirausaha berhasil ditambahkan'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menambahkan data wirausaha: ' . $e->getMessage());
+        }
+    }
+
+    public function updateWirausaha(StoreWirausahaRequest $request, int $id)
+    {
+        try {
+            $data = $this->service->updateWirausaha($id, $request->validated());
+            return $this->successResponse(
+                new WirausahaResource($data),
+                'Data wirausaha berhasil diperbarui'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui data wirausaha: ' . $e->getMessage());
+        }
+    }
+
+    public function destroyWirausaha(int $id)
+    {
+        try {
+            $this->service->deleteWirausaha($id);
+            return $this->successResponse(null, 'Data wirausaha berhasil dihapus');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menghapus data wirausaha: ' . $e->getMessage());
+        }
+    }
+
 // ═══════════════════════════════════════════════
     //  REPORT / EXPORT
     // ═══════════════════════════════════════════════
@@ -236,12 +289,15 @@ public function destroyBidangUsaha(int $id)
             $typeLabels = [
                 'universitas' => 'Universitas',
                 'prodi' => 'Program Studi',
-                'wirausaha' => 'Bidang Wirausaha',
+                'wirausaha' => 'Data Wirausaha',
             ];
 
-            $columns = $type === 'universitas'
-                ? ['ID', 'Nama Universitas', 'Jurusan']
-                : ['ID', 'Nama'];
+            $columnsMap = [
+                'universitas' => ['ID', 'Nama Universitas', 'Jurusan'],
+                'prodi'       => ['ID', 'Nama'],
+                'wirausaha'   => ['No', 'Nama Alumni', 'NIS', 'Nama Usaha', 'Bidang Usaha', 'Alamat', 'Kota', 'Provinsi'],
+            ];
+            $columns = $columnsMap[$type] ?? ['ID', 'Nama'];
 
             $pdf = Pdf::loadView('exports.status-karier', [
                 'title' => 'Laporan Status Karier — ' . ($typeLabels[$type] ?? $type),
@@ -264,11 +320,12 @@ public function destroyBidangUsaha(int $id)
             $handle = fopen('php://output', 'w');
             fputs($handle, "\xEF\xBB\xBF"); // UTF-8 BOM
 
-            if ($type === 'universitas') {
-                fputcsv($handle, ['ID', 'Nama Universitas', 'Jurusan']);
-            } else {
-                fputcsv($handle, ['ID', 'Nama']);
-            }
+            $csvColumnsMap = [
+                'universitas' => ['ID', 'Nama Universitas', 'Jurusan'],
+                'prodi'       => ['ID', 'Nama'],
+                'wirausaha'   => ['No', 'Nama Alumni', 'NIS', 'Nama Usaha', 'Bidang Usaha', 'Alamat', 'Kota', 'Provinsi'],
+            ];
+            fputcsv($handle, $csvColumnsMap[$type] ?? ['ID', 'Nama']);
 
             foreach ($data as $row) {
                 fputcsv($handle, array_values($row));
