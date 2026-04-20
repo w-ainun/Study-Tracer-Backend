@@ -8,7 +8,7 @@ return [
         'http://localhost:5174',          // Alternative local port
         'https://api-tracer.primaesemkrada.com', // Production API
         'https://tracer.primaesemkrada.com', // Production frontend
-        'https://4e2a-139-228-40-24.ngrok-free.app' // ngrok
+        'https://c4c3-139-228-40-5.ngrok-free.app' // ngrok
     ],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],

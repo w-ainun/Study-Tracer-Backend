@@ -76,6 +76,27 @@ class StatusKarierService
         return $this->repository->deleteBidangUsaha($id);
     }
 
+    // Data Wirausaha
+    public function getAllWirausaha(?string $search = null)
+    {
+        return $this->repository->getAllWirausaha($search);
+    }
+
+    public function createWirausaha(array $data)
+    {
+        return $this->repository->createWirausaha($data);
+    }
+
+    public function updateWirausaha(int $id, array $data)
+    {
+        return $this->repository->updateWirausaha($id, $data);
+    }
+
+    public function deleteWirausaha(int $id)
+    {
+        return $this->repository->deleteWirausaha($id);
+    }
+
     // Report / Stats
     public function getStatusDistribution(): array
     {

@@ -22,6 +22,12 @@ interface StatusKarierRepositoryInterface
     public function updateBidangUsaha(int $id, array $data);
     public function deleteBidangUsaha(int $id);
 
+    // Data Wirausaha
+    public function getAllWirausaha(?string $search = null);
+    public function createWirausaha(array $data);
+    public function updateWirausaha(int $id, array $data);
+    public function deleteWirausaha(int $id);
+
     // Report / Stats
     public function getStatusDistribution(): array;
     public function exportStatusReport(string $type): array;

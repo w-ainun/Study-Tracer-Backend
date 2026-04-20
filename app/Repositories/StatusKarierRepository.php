@@ -8,6 +8,7 @@ use App\Models\JurusanKuliah;
 use App\Models\Pekerjaan;
 use App\Models\RiwayatStatus;
 use App\Models\Universitas;
+use App\Models\Wirausaha;
 
 class StatusKarierRepository implements StatusKarierRepositoryInterface
 {
@@ -125,6 +126,96 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
         return true;
     }
 
+    // ═══════════════════════════════════════════════
+    //  DATA WIRAUSAHA
+    // ═══════════════════════════════════════════════
+
+    public function getAllWirausaha(?string $search = null)
+    {
+        $query = Wirausaha::with([
+            'bidangUsaha',
+            'kota.provinsi',
+            'riwayatStatus.alumni.jurusan',
+        ]);
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_usaha', 'like', "%{$search}%")
+                  ->orWhere('alamat', 'like', "%{$search}%")
+                  ->orWhereHas('bidangUsaha', function ($q2) use ($search) {
+                      $q2->where('nama_bidang', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('riwayatStatus.alumni', function ($q2) use ($search) {
+                      $q2->where('nama_alumni', 'like', "%{$search}%")
+                         ->orWhere('nis', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('kota', function ($q2) use ($search) {
+                      $q2->where('nama_kota', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        return $query->orderByDesc('created_at')->get();
+    }
+
+    public function createWirausaha(array $data)
+    {
+        $wirausaha = Wirausaha::create([
+            'nama_usaha' => $data['nama_usaha'],
+            'id_bidang'  => $data['id_bidang'],
+            'alamat'     => $data['alamat'] ?? null,
+            'id_kota'    => $data['id_kota'] ?? null,
+            'id_riwayat' => $data['id_riwayat'],
+            'latitude'   => $data['latitude'] ?? null,
+            'longitude'  => $data['longitude'] ?? null,
+        ]);
+
+        return $wirausaha->fresh([
+            'bidangUsaha',
+            'kota.provinsi',
+            'riwayatStatus.alumni.jurusan',
+        ]);
+    }
+
+    public function updateWirausaha(int $id, array $data)
+    {
+        $wirausaha = Wirausaha::findOrFail($id);
+
+        $updateData = [];
+        if (isset($data['nama_usaha'])) {
+            $updateData['nama_usaha'] = $data['nama_usaha'];
+        }
+        if (isset($data['id_bidang'])) {
+            $updateData['id_bidang'] = $data['id_bidang'];
+        }
+        if (array_key_exists('alamat', $data)) {
+            $updateData['alamat'] = $data['alamat'];
+        }
+        if (array_key_exists('id_kota', $data)) {
+            $updateData['id_kota'] = $data['id_kota'];
+        }
+        if (array_key_exists('latitude', $data)) {
+            $updateData['latitude'] = $data['latitude'];
+        }
+        if (array_key_exists('longitude', $data)) {
+            $updateData['longitude'] = $data['longitude'];
+        }
+
+        $wirausaha->update($updateData);
+
+        return $wirausaha->fresh([
+            'bidangUsaha',
+            'kota.provinsi',
+            'riwayatStatus.alumni.jurusan',
+        ]);
+    }
+
+    public function deleteWirausaha(int $id)
+    {
+        Wirausaha::findOrFail($id)->delete();
+        return true;
+    }
+
 
 
     // ═══════════════════════════════════════════════
@@ -170,11 +261,22 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
                     ->toArray();
 
             case 'wirausaha':
-                return BidangUsaha::orderBy('nama_bidang')
+                return Wirausaha::with([
+                        'bidangUsaha',
+                        'kota.provinsi',
+                        'riwayatStatus.alumni.jurusan',
+                    ])
+                    ->orderByDesc('created_at')
                     ->get()
-                    ->map(fn($b) => [
-                        'id' => $b->id_bidang,
-                        'nama' => $b->nama_bidang,
+                    ->map(fn($w, $i) => [
+                        'no'           => $i + 1,
+                        'nama_alumni'  => $w->riwayatStatus?->alumni?->nama_alumni ?? '-',
+                        'nis'          => $w->riwayatStatus?->alumni?->nis ?? '-',
+                        'nama_usaha'   => $w->nama_usaha,
+                        'bidang_usaha' => $w->bidangUsaha?->nama_bidang ?? '-',
+                        'alamat'       => $w->alamat ?? '-',
+                        'kota'         => $w->kota?->nama_kota ?? '-',
+                        'provinsi'     => $w->kota?->provinsi?->nama_provinsi ?? '-',
                     ])
                     ->toArray();
 
@@ -183,3 +285,4 @@ class StatusKarierRepository implements StatusKarierRepositoryInterface
         }
     }
 }
+
