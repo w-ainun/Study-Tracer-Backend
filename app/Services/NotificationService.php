@@ -315,4 +315,36 @@ class NotificationService
             ['pengumuman_id' => $pengumumanId, 'pengumuman_judul' => $judul]
         );
     }
+
+    // ========================================
+    // NOTIFIKASI KONEKSI ALUMNI
+    // ========================================
+
+    /**
+     * Notifikasi saat ada permintaan koneksi baru.
+     */
+    public function notifyConnectionRequest(int $userId, int $requesterAlumniId, string $requesterName)
+    {
+        return $this->create(
+            $userId,
+            'connection',
+            'Permintaan Koneksi Baru',
+            "{$requesterName} ingin terhubung dengan Anda. Lihat profil dan terima atau tolak permintaan koneksi.",
+            ['alumni_id' => $requesterAlumniId, 'alumni_name' => $requesterName]
+        );
+    }
+
+    /**
+     * Notifikasi saat permintaan koneksi diterima.
+     */
+    public function notifyConnectionAccepted(int $userId, int $accepterAlumniId, string $accepterName)
+    {
+        return $this->create(
+            $userId,
+            'connection',
+            'Koneksi Diterima',
+            "{$accepterName} menerima permintaan koneksi Anda. Sekarang Anda saling terhubung!",
+            ['alumni_id' => $accepterAlumniId, 'alumni_name' => $accepterName]
+        );
+    }
 }

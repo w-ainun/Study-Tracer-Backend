@@ -74,4 +74,66 @@ class Alumni extends Model
     {
         return $this->hasMany(PendingProfileUpdate::class, 'id_alumni', 'id_alumni');
     }
+
+    // =====================
+    // CONNECTION RELATIONSHIPS
+    // =====================
+
+    /**
+     * Permintaan koneksi yang dikirim oleh alumni ini.
+     */
+    public function sentConnectionRequests()
+    {
+        return $this->hasMany(AlumniConnection::class, 'id_alumni_requester', 'id_alumni');
+    }
+
+    /**
+     * Permintaan koneksi yang diterima oleh alumni ini.
+     */
+    public function receivedConnectionRequests()
+    {
+        return $this->hasMany(AlumniConnection::class, 'id_alumni_addressee', 'id_alumni');
+    }
+
+    /**
+     * Alumni yang terkoneksi (sudah accepted) — melalui request yang dikirim.
+     */
+    public function connectionsAsRequester()
+    {
+        return $this->belongsToMany(Alumni::class, 'alumni_connections', 'id_alumni_requester', 'id_alumni_addressee')
+            ->wherePivot('status', 'accepted')
+            ->withPivot('status', 'accepted_at', 'created_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Alumni yang terkoneksi (sudah accepted) — melalui request yang diterima.
+     */
+    public function connectionsAsAddressee()
+    {
+        return $this->belongsToMany(Alumni::class, 'alumni_connections', 'id_alumni_addressee', 'id_alumni_requester')
+            ->wherePivot('status', 'accepted')
+            ->withPivot('status', 'accepted_at', 'created_at')
+            ->withTimestamps();
+    }
+
+    // =====================
+    // BLOCK RELATIONSHIPS
+    // =====================
+
+    /**
+     * Alumni yang di-block oleh alumni ini.
+     */
+    public function blockedAlumni()
+    {
+        return $this->hasMany(AlumniBlock::class, 'id_alumni_blocker', 'id_alumni');
+    }
+
+    /**
+     * Alumni yang mem-block alumni ini.
+     */
+    public function blockedByAlumni()
+    {
+        return $this->hasMany(AlumniBlock::class, 'id_alumni_blocked', 'id_alumni');
+    }
 }
