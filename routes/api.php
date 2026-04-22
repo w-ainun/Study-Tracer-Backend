@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\KemitraanController;
 use App\Http\Controllers\Api\MetaDataController;
 use App\Http\Controllers\Api\SebaranAlumniController;
 use App\Http\Controllers\Api\GeocodeController;
+use App\Http\Controllers\Api\Alumni\ConnectionController;
 
 // PUBLIC ROUTES
 
@@ -169,6 +170,31 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
             Route::get('/directory', [AlumniDirectoryController::class, 'index']);
             Route::get('/directory/filters', [AlumniDirectoryController::class, 'filterOptions']);
             Route::get('/directory/{id}', [AlumniDirectoryController::class, 'show']);
+
+            // Alumni Connections (LinkedIn-style mutual connection + block)
+            Route::prefix('connections')->group(function () {
+                // List endpoints (harus di atas {id} routes agar tidak konflik)
+                Route::get('/', [ConnectionController::class, 'myConnections']);
+                Route::get('/pending', [ConnectionController::class, 'pendingRequests']);
+                Route::get('/sent', [ConnectionController::class, 'sentRequests']);
+                Route::get('/stats', [ConnectionController::class, 'myStats']);
+                Route::get('/suggestions', [ConnectionController::class, 'suggestions']);
+                Route::get('/blocked', [ConnectionController::class, 'blockedList']);
+                Route::get('/mutual/{id}', [ConnectionController::class, 'mutualConnections']);
+
+                // Action endpoints (per target alumni ID)
+                Route::post('/{id}/request', [ConnectionController::class, 'sendRequest']);
+                Route::post('/{id}/accept', [ConnectionController::class, 'acceptRequest']);
+                Route::post('/{id}/reject', [ConnectionController::class, 'rejectRequest']);
+                Route::delete('/{id}', [ConnectionController::class, 'removeConnection']);
+                Route::post('/{id}/block', [ConnectionController::class, 'blockAlumni']);
+                Route::delete('/{id}/block', [ConnectionController::class, 'unblockAlumni']);
+
+                // View endpoints (per target alumni ID)
+                Route::get('/{id}/connections', [ConnectionController::class, 'alumniConnections']);
+                Route::get('/{id}/stats', [ConnectionController::class, 'alumniStats']);
+                Route::get('/{id}/status', [ConnectionController::class, 'connectionStatus']);
+            });
         });
     });
 
