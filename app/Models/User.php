@@ -65,4 +65,22 @@ class User extends Authenticatable
     {
         return $this->email_users;
     }
+
+    /**
+     * Conversations this user participates in.
+     */
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class, 'conversation_participants', 'id_users', 'id_conversation')
+            ->withPivot('role', 'is_pinned', 'is_archived', 'is_muted', 'last_read_at', 'joined_at', 'left_at')
+            ->withTimestamps();
+    }
+
+    /**
+     * Messages sent by this user.
+     */
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'id_sender', 'id_users');
+    }
 }

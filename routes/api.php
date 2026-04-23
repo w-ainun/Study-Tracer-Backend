@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\MetaDataController;
 use App\Http\Controllers\Api\SebaranAlumniController;
 use App\Http\Controllers\Api\GeocodeController;
 use App\Http\Controllers\Api\Alumni\ConnectionController;
+use App\Http\Controllers\Api\Alumni\MessageController;
 
 // PUBLIC ROUTES
 
@@ -194,6 +195,41 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
                 Route::get('/{id}/connections', [ConnectionController::class, 'alumniConnections']);
                 Route::get('/{id}/stats', [ConnectionController::class, 'alumniStats']);
                 Route::get('/{id}/status', [ConnectionController::class, 'connectionStatus']);
+            });
+
+            // =====================
+            // MESSAGING (Real-time Chat via Reverb)
+            // =====================
+            Route::prefix('messages')->group(function () {
+                // Conversation list & stats
+                Route::get('/conversations', [MessageController::class, 'conversations']);
+                Route::get('/unread-count', [MessageController::class, 'unreadCount']);
+                Route::get('/contacts', [MessageController::class, 'contacts']);
+
+                // Create conversations
+                Route::post('/conversations/private', [MessageController::class, 'getOrCreatePrivate']);
+                Route::post('/conversations/group', [MessageController::class, 'createGroup']);
+
+                // Single conversation
+                Route::get('/conversations/{id}', [MessageController::class, 'showConversation']);
+                Route::delete('/conversations/{id}', [MessageController::class, 'deleteConversation']);
+                Route::match(['put', 'post'], '/conversations/{id}/group', [MessageController::class, 'updateGroup']);
+                Route::post('/conversations/{id}/leave', [MessageController::class, 'leaveConversation']);
+
+                // Conversation settings
+                Route::post('/conversations/{id}/pin', [MessageController::class, 'togglePin']);
+                Route::post('/conversations/{id}/mute', [MessageController::class, 'toggleMute']);
+
+                // Messages within a conversation
+                Route::get('/conversations/{id}/messages', [MessageController::class, 'messages']);
+                Route::post('/conversations/{id}/messages', [MessageController::class, 'sendMessage']);
+
+                // Read receipts & typing
+                Route::post('/conversations/{id}/read', [MessageController::class, 'markAsRead']);
+                Route::post('/conversations/{id}/typing', [MessageController::class, 'typing']);
+
+                // Delete individual message
+                Route::delete('/{id}', [MessageController::class, 'deleteMessage']);
             });
         });
     });
