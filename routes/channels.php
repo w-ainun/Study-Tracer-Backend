@@ -27,3 +27,8 @@ Broadcast::channel('admin', function ($user) {
 Broadcast::channel('alumni', function ($user) {
     return $user->role === 'alumni';
 });
+
+// Per-user chat channel — real-time messaging (Pesan)
+Broadcast::channel('chat.{userId}', function ($user, $userId) {
+    return (int) $user->id_users === (int) $userId;
+});
