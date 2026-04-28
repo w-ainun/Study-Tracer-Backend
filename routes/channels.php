@@ -32,3 +32,8 @@ Broadcast::channel('alumni', function ($user) {
 Broadcast::channel('chat.{userId}', function ($user, $userId) {
     return (int) $user->id_users === (int) $userId;
 });
+
+// Per-user feed channel — real-time social feed updates (Mini Medsos)
+Broadcast::channel('feed.{userId}', function ($user, $userId) {
+    return (int) $user->id_users === (int) $userId;
+});
