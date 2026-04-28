@@ -21,6 +21,7 @@ class MessageRepository implements MessageRepositoryInterface
     public function getConversationsForUser(int $userId, ?string $search = null, int $perPage = 20)
     {
         $query = Conversation::forUser($userId)
+            ->select('conversations.*')
             ->with([
                 'latestMessage.sender.alumni',
                 'activeParticipants.user.alumni',
@@ -69,7 +70,6 @@ class MessageRepository implements MessageRepositoryInterface
                 $join->on('conversations.id_conversation', '=', 'messages.id_conversation')
                      ->whereRaw('messages.id_message = (SELECT MAX(m2.id_message) FROM messages m2 WHERE m2.id_conversation = conversations.id_conversation AND m2.is_deleted = 0)');
             })
-            ->select('conversations.*')
             ->orderByRaw('
                 (SELECT cp.is_pinned FROM conversation_participants cp
                  WHERE cp.id_conversation = conversations.id_conversation

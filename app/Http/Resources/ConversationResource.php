@@ -55,6 +55,7 @@ class ConversationResource extends JsonResource
                     'foto'         => $alumni?->foto,
                     'jurusan'      => $alumni?->jurusan?->nama_jurusan ?? null,
                     'tahun_lulus'  => $alumni?->tahun_lulus ? $alumni->tahun_lulus->format('Y') : null,
+                    'last_read_at' => $otherParticipant->last_read_at?->toISOString(),
                 ];
             }
         }
@@ -69,6 +70,7 @@ class ConversationResource extends JsonResource
                     'nama_alumni'  => $alumni?->nama_alumni ?? 'User',
                     'foto'         => $alumni?->foto,
                     'role'         => $p->role,
+                    'last_read_at' => $p->last_read_at?->toISOString(),
                 ];
             }) ?? [];
         }
