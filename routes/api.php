@@ -26,6 +26,7 @@ use App\Http\Controllers\Api\SebaranAlumniController;
 use App\Http\Controllers\Api\GeocodeController;
 use App\Http\Controllers\Api\Alumni\ConnectionController;
 use App\Http\Controllers\Api\Alumni\MessageController;
+use App\Http\Controllers\Api\Alumni\PostController;
 
 // PUBLIC ROUTES
 
@@ -195,6 +196,36 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
                 Route::get('/{id}/connections', [ConnectionController::class, 'alumniConnections']);
                 Route::get('/{id}/stats', [ConnectionController::class, 'alumniStats']);
                 Route::get('/{id}/status', [ConnectionController::class, 'connectionStatus']);
+            });
+
+            // =====================
+            // MINI MEDSOS (Social Feed)
+            // =====================
+            Route::prefix('posts')->group(function () {
+                // Feed & list endpoints
+                Route::get('/feed', [PostController::class, 'feed']);
+                Route::get('/my', [PostController::class, 'myPosts']);
+                Route::get('/alumni/{id}', [PostController::class, 'alumniPosts']);
+
+                // CRUD
+                Route::post('/', [PostController::class, 'store']);
+                Route::get('/{id}', [PostController::class, 'show']);
+                Route::match(['put', 'post'], '/{id}', [PostController::class, 'update']);
+                Route::delete('/{id}', [PostController::class, 'destroy']);
+
+                // Like
+                Route::post('/{id}/like', [PostController::class, 'toggleLike']);
+                Route::get('/{id}/likers', [PostController::class, 'likers']);
+
+                // Comments
+                Route::get('/{id}/comments', [PostController::class, 'comments']);
+                Route::post('/{id}/comments', [PostController::class, 'addComment']);
+                Route::get('/comments/{id}/replies', [PostController::class, 'replies']);
+                Route::put('/comments/{id}', [PostController::class, 'updateComment']);
+                Route::delete('/comments/{id}', [PostController::class, 'deleteComment']);
+
+                // Report
+                Route::post('/{id}/report', [PostController::class, 'report']);
             });
 
             // =====================

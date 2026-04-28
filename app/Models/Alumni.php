@@ -76,6 +76,18 @@ class Alumni extends Model
     }
 
     // =====================
+    // POST RELATIONSHIPS (Mini Medsos)
+    // =====================
+
+    /**
+     * Postingan alumni.
+     */
+    public function posts()
+    {
+        return $this->hasMany(Post::class, 'id_alumni', 'id_alumni');
+    }
+
+    // =====================
     // CONNECTION RELATIONSHIPS
     // =====================
 
