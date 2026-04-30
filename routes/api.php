@@ -27,6 +27,7 @@ use App\Http\Controllers\Api\GeocodeController;
 use App\Http\Controllers\Api\Alumni\ConnectionController;
 use App\Http\Controllers\Api\Alumni\MessageController;
 use App\Http\Controllers\Api\Alumni\PostController;
+use App\Http\Controllers\Api\KelulusanController;
 
 // PUBLIC ROUTES
 
@@ -467,6 +468,31 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
             Route::get('/stats', [SebaranAlumniController::class, 'stats']);
             Route::get('/heatmap', [SebaranAlumniController::class, 'heatmap']);
             Route::get('/search', [SebaranAlumniController::class, 'search']);
+        });
+
+        // Kelulusan (Graduation Management)
+        Route::prefix('kelulusan')->group(function () {
+            // Calon Lulusan (Staging)
+            Route::get('/calon', [KelulusanController::class, 'indexCalon']);
+            Route::post('/calon', [KelulusanController::class, 'storeCalon']);
+            Route::delete('/calon/{id}', [KelulusanController::class, 'destroyCalon']);
+            Route::delete('/calon', [KelulusanController::class, 'clearCalon']);
+
+            // Import Excel
+            Route::post('/import', [KelulusanController::class, 'import']);
+
+            // Simpan Kelulusan (Confirm Graduation)
+            Route::post('/simpan', [KelulusanController::class, 'simpanKelulusan']);
+
+            // Riwayat Kelulusan (Confirmed Graduates)
+            Route::get('/riwayat', [KelulusanController::class, 'indexRiwayat']);
+
+            // Statistics & Filters
+            Route::get('/stats', [KelulusanController::class, 'stats']);
+            Route::get('/filters', [KelulusanController::class, 'filters']);
+
+            // Export CSV
+            Route::get('/export', [KelulusanController::class, 'export']);
         });
 
         // Meta Data Management
