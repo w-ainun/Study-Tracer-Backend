@@ -16,9 +16,9 @@ class ConnectionResource extends JsonResource
     public function toArray(Request $request): array
     {
         // Determine the latest career status
-        $latestRiwayat = $this->whenLoaded('riwayatStatus', function () {
-            return $this->riwayatStatus->first();
-        });
+        $latestRiwayat = $this->relationLoaded('riwayatStatus')
+            ? $this->riwayatStatus->first()
+            : null;
 
         $careerInfo = null;
         if ($latestRiwayat) {
