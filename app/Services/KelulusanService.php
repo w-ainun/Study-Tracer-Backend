@@ -169,12 +169,13 @@ class KelulusanService
             // Prepare riwayat kelulusan data
             $riwayatData = $calonList->map(function ($calon) use ($tahunLulus, $adminUserId, $batchId) {
                 return [
-                    'nisn'         => $calon->nisn,
-                    'nama'         => $calon->nama,
-                    'id_jurusan'   => $calon->id_jurusan,
-                    'tahun_lulus'  => $tahunLulus,
-                    'confirmed_by' => $adminUserId,
-                    'batch_id'     => $batchId,
+                    'nisn'              => $calon->nisn,
+                    'nama'              => $calon->nama,
+                    'id_jurusan'        => $calon->id_jurusan,
+                    'status_kelulusan'  => $calon->status_kelulusan ?? 'lulus',
+                    'tahun_lulus'       => $tahunLulus,
+                    'confirmed_by'      => $adminUserId,
+                    'batch_id'          => $batchId,
                 ];
             })->toArray();
 

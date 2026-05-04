@@ -16,6 +16,7 @@ class CalonLulusan extends Model
         'nisn',
         'nama',
         'id_jurusan',
+        'status_kelulusan',
         'imported_by',
         'batch_id',
     ];

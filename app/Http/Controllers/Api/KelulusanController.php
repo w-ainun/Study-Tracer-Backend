@@ -55,7 +55,7 @@ class KelulusanController extends Controller
     public function storeCalon(StoreCalonLulusanRequest $request)
     {
         try {
-            $data = $request->only(['nisn', 'nama', 'id_jurusan']);
+            $data = $request->only(['nisn', 'nama', 'id_jurusan', 'status_kelulusan']);
             $data['imported_by'] = $request->user()->id_users;
 
             $calon = $this->kelulusanService->createCalonLulusan($data);
@@ -66,6 +66,42 @@ class KelulusanController extends Controller
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menambahkan calon lulusan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * GET /admin/kelulusan/lookup-nisn?nisn=xxx
+     * Look up an alumni by NISN for auto-fill.
+     */
+    public function lookupByNisn(Request $request)
+    {
+        try {
+            $nisn = $request->input('nisn');
+
+            if (!$nisn || strlen($nisn) < 10) {
+                return $this->errorResponse('NISN harus 10 digit', 422);
+            }
+
+            $alumni = \App\Models\Alumni::with('jurusan:id_jurusan,nama_jurusan')
+                ->where('nisn', $nisn)
+                ->first();
+
+            if (!$alumni) {
+                return $this->successResponse([
+                    'found' => false,
+                    'message' => 'Alumni dengan NISN tersebut tidak ditemukan dalam sistem.',
+                ], 'Alumni tidak ditemukan');
+            }
+
+            return $this->successResponse([
+                'found'      => true,
+                'nama'       => $alumni->nama_alumni,
+                'nisn'       => $alumni->nisn,
+                'id_jurusan' => $alumni->id_jurusan,
+                'jurusan'    => $alumni->jurusan?->nama_jurusan ?? '-',
+            ], 'Alumni ditemukan');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mencari alumni: ' . $e->getMessage());
         }
     }
 
@@ -82,6 +118,31 @@ class KelulusanController extends Controller
             return $this->notFoundResponse('Calon lulusan tidak ditemukan');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal menghapus calon lulusan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * PATCH /admin/kelulusan/calon/{id}/status
+     * Update status kelulusan of a single calon lulusan.
+     */
+    public function updateCalonStatus(Request $request, int $id)
+    {
+        try {
+            $request->validate([
+                'status_kelulusan' => ['required', 'in:lulus,tidak_lulus'],
+            ]);
+
+            $calon = \App\Models\CalonLulusan::findOrFail($id);
+            $calon->update(['status_kelulusan' => $request->input('status_kelulusan')]);
+
+            return $this->successResponse(
+                new CalonLulusanResource($calon->load('jurusan')),
+                'Status kelulusan berhasil diperbarui'
+            );
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Calon lulusan tidak ditemukan');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status: ' . $e->getMessage());
         }
     }
 
@@ -301,18 +362,22 @@ class KelulusanController extends Controller
 
             if (!$riwayat) {
                 return $this->successResponse([
+                    'status'   => 'belum_tersedia',
                     'is_lulus' => false,
                     'message'  => 'Data kelulusan Anda belum tersedia. Silakan hubungi pihak sekolah untuk informasi lebih lanjut.',
                 ], 'Data kelulusan belum ditemukan');
             }
 
+            $isLulus = ($riwayat->status_kelulusan ?? 'lulus') === 'lulus';
+
             return $this->successResponse([
-                'is_lulus'    => true,
-                'data'        => new RiwayatKelulusanResource($riwayat),
-                'alumni_nama' => $alumni->nama_alumni,
-                'alumni_nisn' => $alumni->nisn,
+                'status'         => $riwayat->status_kelulusan ?? 'lulus',
+                'is_lulus'       => $isLulus,
+                'data'           => new RiwayatKelulusanResource($riwayat),
+                'alumni_nama'    => $alumni->nama_alumni,
+                'alumni_nisn'    => $alumni->nisn,
                 'alumni_jurusan' => $alumni->jurusan?->nama_jurusan ?? '-',
-            ], 'Data kelulusan ditemukan');
+            ], $isLulus ? 'Selamat, Anda dinyatakan LULUS' : 'Anda dinyatakan TIDAK LULUS');
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengecek kelulusan: ' . $e->getMessage());
         }

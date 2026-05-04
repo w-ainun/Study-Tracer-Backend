@@ -16,6 +16,7 @@ class RiwayatKelulusan extends Model
         'nisn',
         'nama',
         'id_jurusan',
+        'status_kelulusan',
         'tahun_lulus',
         'confirmed_by',
         'batch_id',

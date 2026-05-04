@@ -479,7 +479,11 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
             Route::get('/calon', [KelulusanController::class, 'indexCalon']);
             Route::post('/calon', [KelulusanController::class, 'storeCalon']);
             Route::delete('/calon/{id}', [KelulusanController::class, 'destroyCalon']);
+            Route::patch('/calon/{id}/status', [KelulusanController::class, 'updateCalonStatus']);
             Route::delete('/calon', [KelulusanController::class, 'clearCalon']);
+
+            // Lookup Alumni by NISN (auto-fill)
+            Route::get('/lookup-nisn', [KelulusanController::class, 'lookupByNisn']);
 
             // Import Excel
             Route::post('/import', [KelulusanController::class, 'import']);

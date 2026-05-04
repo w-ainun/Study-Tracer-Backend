@@ -14,21 +14,23 @@ class StoreCalonLulusanRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nisn'       => ['required', 'string', 'max:20'],
-            'nama'       => ['required', 'string', 'max:150'],
-            'id_jurusan' => ['required', 'integer', 'exists:jurusan,id_jurusan'],
+            'nisn'              => ['required', 'string', 'max:20'],
+            'nama'              => ['required', 'string', 'max:150'],
+            'id_jurusan'        => ['required', 'integer', 'exists:jurusan,id_jurusan'],
+            'status_kelulusan'  => ['sometimes', 'in:lulus,tidak_lulus'],
         ];
     }
 
     public function messages(): array
     {
         return [
-            'nisn.required'       => 'NISN wajib diisi',
-            'nisn.max'            => 'NISN maksimal 20 karakter',
-            'nama.required'       => 'Nama siswa wajib diisi',
-            'nama.max'            => 'Nama siswa maksimal 150 karakter',
-            'id_jurusan.required' => 'Jurusan wajib dipilih',
-            'id_jurusan.exists'   => 'Jurusan yang dipilih tidak valid',
+            'nisn.required'            => 'NISN wajib diisi',
+            'nisn.max'                 => 'NISN maksimal 20 karakter',
+            'nama.required'            => 'Nama siswa wajib diisi',
+            'nama.max'                 => 'Nama siswa maksimal 150 karakter',
+            'id_jurusan.required'      => 'Jurusan wajib dipilih',
+            'id_jurusan.exists'        => 'Jurusan yang dipilih tidak valid',
+            'status_kelulusan.in'      => 'Status kelulusan harus lulus atau tidak_lulus',
         ];
     }
 }

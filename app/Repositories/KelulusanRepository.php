@@ -96,7 +96,7 @@ class KelulusanRepository implements KelulusanRepositoryInterface
     public function clearCalonLulusan(): int
     {
         $count = CalonLulusan::count();
-        CalonLulusan::truncate();
+        CalonLulusan::query()->delete();
         $this->clearKelulusanCache();
         return $count;
     }
