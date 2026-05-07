@@ -266,6 +266,27 @@ class ConnectionController extends Controller
     }
 
     /**
+     * POST /alumni/connections/status-batch
+     * Cek status koneksi secara batch.
+     */
+    public function batchConnectionStatus(Request $request)
+    {
+        try {
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer'
+            ]);
+
+            $userId = auth()->user()->id_users;
+            $statuses = $this->connectionService->getBatchConnectionStatus($userId, $request->ids);
+
+            return $this->successResponse($statuses);
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengecek status koneksi batch: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * GET /alumni/connections/mutual/{id}
      * Mutual connections antara saya dan alumni lain.
      */

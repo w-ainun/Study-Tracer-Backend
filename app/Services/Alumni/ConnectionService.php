@@ -260,6 +260,45 @@ class ConnectionService
     }
 
     /**
+     * Dapatkan status koneksi secara bulk.
+     */
+    public function getBatchConnectionStatus(int $userId, array $targetAlumniIds): array
+    {
+        $alumni = $this->getAlumniByUserId($userId);
+
+        $batchData = $this->connectionRepository->getBatchConnectionStatus($alumni->id_alumni, $targetAlumniIds);
+        
+        $results = [];
+        
+        foreach ($batchData as $targetId => $data) {
+            $connection = $data['connection'];
+            $block = $data['block'];
+            
+            if (!$connection) {
+                $isBlocked = $block !== null;
+                $results[$targetId] = [
+                    'status' => $isBlocked ? 'blocked' : 'none',
+                    'connection_id' => null,
+                    'direction' => null,
+                ];
+                continue;
+            }
+            
+            $direction = $connection->id_alumni_requester === $alumni->id_alumni ? 'sent' : 'received';
+            
+            $results[$targetId] = [
+                'status' => $connection->status,
+                'connection_id' => $connection->id_connection,
+                'direction' => $direction,
+                'created_at' => $connection->created_at,
+                'accepted_at' => $connection->accepted_at,
+            ];
+        }
+        
+        return $results;
+    }
+
+    /**
      * Get mutual connections antara saya dan alumni lain.
      */
     public function getMutualConnections(int $userId, int $targetAlumniId, int $perPage = 15)

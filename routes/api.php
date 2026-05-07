@@ -187,6 +187,7 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
                 Route::get('/suggestions', [ConnectionController::class, 'suggestions']);
                 Route::get('/blocked', [ConnectionController::class, 'blockedList']);
                 Route::get('/mutual/{id}', [ConnectionController::class, 'mutualConnections']);
+                Route::post('/status-batch', [ConnectionController::class, 'batchConnectionStatus']);
 
                 // Action endpoints (per target alumni ID)
                 Route::post('/{id}/request', [ConnectionController::class, 'sendRequest']);

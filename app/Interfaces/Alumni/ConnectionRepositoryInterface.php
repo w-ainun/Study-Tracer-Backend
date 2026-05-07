@@ -39,6 +39,11 @@ interface ConnectionRepositoryInterface
     public function findConnectionBetween(int $alumniIdA, int $alumniIdB): ?AlumniConnection;
 
     /**
+     * Dapatkan status koneksi dan block secara bulk untuk sekelompok alumni.
+     */
+    public function getBatchConnectionStatus(int $alumniId, array $targetAlumniIds): array;
+
+    /**
      * Cari record koneksi berdasarkan ID.
      */
     public function findConnectionById(int $connectionId): ?AlumniConnection;

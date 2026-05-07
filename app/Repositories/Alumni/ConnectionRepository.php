@@ -73,6 +73,55 @@ class ConnectionRepository implements ConnectionRepositoryInterface
     }
 
     /**
+     * Dapatkan status koneksi dan block secara bulk untuk sekelompok alumni.
+     */
+    public function getBatchConnectionStatus(int $alumniId, array $targetAlumniIds): array
+    {
+        if (empty($targetAlumniIds)) return [];
+
+        // 1. Dapatkan semua koneksi yang melibatkan alumniId & targetAlumniIds
+        $connections = AlumniConnection::where(function ($q) use ($alumniId, $targetAlumniIds) {
+            $q->where('id_alumni_requester', $alumniId)
+              ->whereIn('id_alumni_addressee', $targetAlumniIds);
+        })->orWhere(function ($q) use ($alumniId, $targetAlumniIds) {
+            $q->where('id_alumni_addressee', $alumniId)
+              ->whereIn('id_alumni_requester', $targetAlumniIds);
+        })->get();
+
+        // 2. Dapatkan semua blocks yang melibatkan alumniId & targetAlumniIds
+        $blocks = AlumniBlock::where(function ($q) use ($alumniId, $targetAlumniIds) {
+            $q->where('id_alumni_blocker', $alumniId)
+              ->whereIn('id_alumni_blocked', $targetAlumniIds);
+        })->orWhere(function ($q) use ($alumniId, $targetAlumniIds) {
+            $q->where('id_alumni_blocked', $alumniId)
+              ->whereIn('id_alumni_blocker', $targetAlumniIds);
+        })->get();
+
+        $result = [];
+
+        foreach ($targetAlumniIds as $targetId) {
+            // Find connection
+            $conn = $connections->first(function ($c) use ($alumniId, $targetId) {
+                return ($c->id_alumni_requester === $alumniId && $c->id_alumni_addressee === $targetId) ||
+                       ($c->id_alumni_addressee === $alumniId && $c->id_alumni_requester === $targetId);
+            });
+
+            // Find block
+            $block = $blocks->first(function ($b) use ($alumniId, $targetId) {
+                return ($b->id_alumni_blocker === $alumniId && $b->id_alumni_blocked === $targetId) ||
+                       ($b->id_alumni_blocked === $alumniId && $b->id_alumni_blocker === $targetId);
+            });
+
+            $result[$targetId] = [
+                'connection' => $conn,
+                'block' => $block
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
      * Cari record koneksi berdasarkan ID.
      */
     public function findConnectionById(int $connectionId): ?AlumniConnection
