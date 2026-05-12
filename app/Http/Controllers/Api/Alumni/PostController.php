@@ -31,14 +31,27 @@ class PostController extends Controller
 
     /**
      * GET /alumni/posts/feed
-     * Get feed postingan dari koneksi + public.
+     * Get feed postingan.
+     *
+     * Query params:
+     *   - filter: 'connections' | 'all' (default: tanpa filter, semua post terbaru)
+     *     - connections: Hanya postingan dari koneksi (+ milik sendiri), urut terbaru.
+     *     - all: Semua postingan dari semua user, diurutkan berdasarkan engagement
+     *            (likes + komentar terbanyak muncul di atas beranda).
+     *   - per_page: jumlah post per halaman (default: 10)
      */
     public function feed(Request $request)
     {
         try {
             $userId = auth()->user()->id_users;
             $perPage = $request->input('per_page', 10);
-            $paginated = $this->postService->getFeed($userId, $perPage);
+            $filter = $request->input('filter');
+
+            $paginated = match ($filter) {
+                'connections' => $this->postService->getConnectionFeed($userId, $perPage),
+                'all'         => $this->postService->getTrendingFeed($userId, $perPage),
+                default       => $this->postService->getFeed($userId, $perPage),
+            };
 
             return $this->successResponse(
                 PostResource::collection($paginated)->response()->getData(true)

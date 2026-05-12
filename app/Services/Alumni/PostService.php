@@ -3,6 +3,7 @@
 namespace App\Services\Alumni;
 
 use App\Interfaces\Alumni\PostRepositoryInterface;
+use App\Interfaces\Alumni\ConnectionRepositoryInterface;
 use App\Models\Alumni;
 use App\Models\Post;
 use App\Services\NotificationService;
@@ -12,13 +13,16 @@ use Illuminate\Support\Facades\Storage;
 class PostService
 {
     private PostRepositoryInterface $postRepository;
+    private ConnectionRepositoryInterface $connectionRepository;
     private NotificationService $notificationService;
 
     public function __construct(
         PostRepositoryInterface $postRepository,
+        ConnectionRepositoryInterface $connectionRepository,
         NotificationService $notificationService
     ) {
         $this->postRepository = $postRepository;
+        $this->connectionRepository = $connectionRepository;
         $this->notificationService = $notificationService;
     }
 
@@ -34,6 +38,30 @@ class PostService
         $alumni = $this->getAlumniByUserId($userId);
 
         return $this->postRepository->getFeed($alumni->id_alumni, $perPage);
+    }
+
+    /**
+     * Get feed postingan hanya dari koneksi alumni.
+     * Menampilkan postingan dari alumni yang sudah terhubung (accepted connection)
+     * beserta postingan milik sendiri. Urutan: terbaru terlebih dahulu.
+     */
+    public function getConnectionFeed(int $userId, int $perPage = 10)
+    {
+        $alumni = $this->getAlumniByUserId($userId);
+        $connectionIds = $this->connectionRepository->getConnectedAlumniIds($alumni->id_alumni);
+
+        return $this->postRepository->getConnectionFeed($alumni->id_alumni, $connectionIds, $perPage);
+    }
+
+    /**
+     * Get feed postingan dari semua user, diurutkan berdasarkan engagement (trending).
+     * Post yang banyak di-like dan di-komentari muncul di atas beranda.
+     */
+    public function getTrendingFeed(int $userId, int $perPage = 10)
+    {
+        $alumni = $this->getAlumniByUserId($userId);
+
+        return $this->postRepository->getTrendingFeed($alumni->id_alumni, $perPage);
     }
 
     /**

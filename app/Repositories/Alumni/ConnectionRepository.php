@@ -350,7 +350,7 @@ class ConnectionRepository implements ConnectionRepositoryInterface
     /**
      * Get array of alumni IDs yang terkoneksi (accepted).
      */
-    private function getConnectedAlumniIds(int $alumniId): array
+    public function getConnectedAlumniIds(int $alumniId): array
     {
         $asRequester = AlumniConnection::accepted()
             ->where('id_alumni_requester', $alumniId)
