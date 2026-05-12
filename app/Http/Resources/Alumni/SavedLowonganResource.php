@@ -24,6 +24,8 @@ class SavedLowonganResource extends JsonResource
                     'id' => $this->lowongan->id_lowongan,
                     'judul' => $this->lowongan->judul_lowongan,
                     'deskripsi' => $this->lowongan->deskripsi,
+                    'nomor_kontak' => $this->lowongan->nomor_kontak,
+                    'kebutuhan_lainnya' => $this->lowongan->kebutuhan_lainnya,
                     'tipe_pekerjaan' => $this->lowongan->tipe_pekerjaan,
                     'lokasi' => $this->lowongan->lokasi,
                     'status' => $this->lowongan->status,
