@@ -2,7 +2,6 @@
 
 namespace App\Services\Alumni;
 
-use App\Interfaces\Alumni\ConnectionRepositoryInterface;
 use App\Interfaces\Alumni\PostRepositoryInterface;
 use App\Models\Alumni;
 use App\Models\Post;
@@ -13,16 +12,13 @@ use Illuminate\Support\Facades\Storage;
 class PostService
 {
     private PostRepositoryInterface $postRepository;
-    private ConnectionRepositoryInterface $connectionRepository;
     private NotificationService $notificationService;
 
     public function __construct(
         PostRepositoryInterface $postRepository,
-        ConnectionRepositoryInterface $connectionRepository,
         NotificationService $notificationService
     ) {
         $this->postRepository = $postRepository;
-        $this->connectionRepository = $connectionRepository;
         $this->notificationService = $notificationService;
     }
 
@@ -31,16 +27,13 @@ class PostService
     // =====================
 
     /**
-     * Get feed postingan (dari koneksi + diri sendiri + public).
+     * Get feed postingan (semua postingan aktif, untuk semua alumni).
      */
     public function getFeed(int $userId, int $perPage = 10)
     {
         $alumni = $this->getAlumniByUserId($userId);
 
-        // Ambil IDs semua koneksi (accepted) alumni ini
-        $connectionAlumniIds = $this->getConnectionAlumniIds($alumni->id_alumni);
-
-        return $this->postRepository->getFeed($alumni->id_alumni, $connectionAlumniIds, $perPage);
+        return $this->postRepository->getFeed($alumni->id_alumni, $perPage);
     }
 
     /**
@@ -87,7 +80,7 @@ class PostService
             $post = $this->postRepository->createPost([
                 'id_alumni'  => $alumni->id_alumni,
                 'content'    => $data['content'],
-                'visibility' => $data['visibility'] ?? 'connections',
+                'visibility' => 'public',
             ]);
 
             // Upload & simpan gambar
@@ -422,27 +415,7 @@ class PostService
         return $alumni;
     }
 
-    /**
-     * Get IDs semua koneksi (accepted) dari alumni.
-     */
-    private function getConnectionAlumniIds(int $alumniId): array
-    {
-        return DB::table('alumni_connections')
-            ->where('status', 'accepted')
-            ->where(function ($q) use ($alumniId) {
-                $q->where('id_alumni_requester', $alumniId)
-                  ->orWhere('id_alumni_addressee', $alumniId);
-            })
-            ->get()
-            ->map(function ($conn) use ($alumniId) {
-                return $conn->id_alumni_requester === $alumniId
-                    ? $conn->id_alumni_addressee
-                    : $conn->id_alumni_requester;
-            })
-            ->unique()
-            ->values()
-            ->toArray();
-    }
+
 
     /**
      * Upload multiple images ke storage.

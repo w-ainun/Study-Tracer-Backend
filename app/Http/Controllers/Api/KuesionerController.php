@@ -293,4 +293,22 @@ class KuesionerController extends Controller
             return $this->errorResponse('Gagal mengambil statistik kuesioner: ' . $e->getMessage(), 404);
         }
     }
+    // ═══════════════════════════════════════════════
+    //  RIWAYAT KUESIONER (Alumni)
+    // ═══════════════════════════════════════════════
+
+    /**
+     * GET /alumni/kuesioner/riwayat
+     * Get riwayat kuesioner yang sudah dijawab oleh alumni.
+     */
+    public function riwayatKuesioner(Request $request)
+    {
+        try {
+            $userId = $request->user()->id_users;
+            $data = $this->kuesionerService->getRiwayatKuesioner($userId);
+            return $this->successResponse($data, 'Riwayat kuesioner berhasil diambil');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal mengambil riwayat kuesioner: ' . $e->getMessage());
+        }
+    }
 }

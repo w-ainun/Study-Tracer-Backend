@@ -18,24 +18,13 @@ class PostRepository implements PostRepositoryInterface
     // =====================
 
     /**
-     * Get feed postingan untuk alumni (dari koneksi + sendiri).
+     * Get feed postingan untuk semua alumni.
+     * Semua postingan aktif bisa dilihat oleh siapa saja.
      * Urutan: terbaru terlebih dahulu.
      */
-    public function getFeed(int $alumniId, array $connectionAlumniIds, int $perPage = 10): LengthAwarePaginator
+    public function getFeed(int $alumniId, int $perPage = 10): LengthAwarePaginator
     {
-        // Gabungkan ID alumni sendiri + koneksi
-        $visibleAlumniIds = array_merge([$alumniId], $connectionAlumniIds);
-
         return Post::active()
-            ->where(function ($query) use ($alumniId, $visibleAlumniIds) {
-                // Postingan dari koneksi/sendiri dengan visibility 'connections'
-                $query->where(function ($q) use ($visibleAlumniIds) {
-                    $q->whereIn('id_alumni', $visibleAlumniIds)
-                      ->where('visibility', 'connections');
-                })
-                // ATAU postingan publik dari siapapun
-                ->orWhere('visibility', 'public');
-            })
             ->with([
                 'alumni:id_alumni,nama_alumni,foto,id_jurusan',
                 'alumni.jurusan:id_jurusan,nama_jurusan',
