@@ -20,6 +20,8 @@ class MyLowonganResource extends JsonResource
             'id' => $this->id_lowongan,
             'judul' => $this->judul_lowongan,
             'deskripsi' => $this->deskripsi,
+            'nomor_kontak' => $this->nomor_kontak,
+            'kebutuhan_lainnya' => $this->kebutuhan_lainnya,
             'tipe_pekerjaan' => $this->tipe_pekerjaan,
             'lokasi' => $this->lokasi,
             'status' => $this->status,

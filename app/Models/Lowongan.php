@@ -28,6 +28,8 @@ class Lowongan extends Model
         'foto_lowongan',
         'id_perusahaan',
         'id_users',
+        'nomor_kontak',
+        'kebutuhan_lainnya',
     ];
 
     protected $casts = [

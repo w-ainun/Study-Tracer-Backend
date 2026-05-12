@@ -53,6 +53,8 @@ class StoreLowonganRequest extends FormRequest
             // Skills (opsional, array of skill IDs)
             'skills' => ['nullable', 'array'],
             'skills.*' => ['integer', 'exists:skills,id_skills'],
+            'nomor_kontak' => ['nullable', 'string', 'max:50'],
+            'kebutuhan_lainnya' => ['nullable', 'string'],
         ];
     }
 
