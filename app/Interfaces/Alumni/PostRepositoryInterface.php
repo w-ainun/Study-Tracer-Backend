@@ -16,9 +16,20 @@ interface PostRepositoryInterface
     // =====================
 
     /**
-     * Get feed postingan untuk alumni (dari koneksi + sendiri).
+     * Get feed postingan untuk semua alumni.
      */
-    public function getFeed(int $alumniId, array $connectionAlumniIds, int $perPage = 10): LengthAwarePaginator;
+    public function getFeed(int $alumniId, int $perPage = 10): LengthAwarePaginator;
+
+    /**
+     * Get feed postingan hanya dari koneksi alumni.
+     */
+    public function getConnectionFeed(int $alumniId, array $connectionIds, int $perPage = 10): LengthAwarePaginator;
+
+    /**
+     * Get feed postingan dari semua user, diurutkan berdasarkan engagement (trending).
+     * Engagement = jumlah likes + jumlah komentar.
+     */
+    public function getTrendingFeed(int $alumniId, int $perPage = 10): LengthAwarePaginator;
 
     /**
      * Get postingan milik alumni tertentu.

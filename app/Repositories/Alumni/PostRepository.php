@@ -18,24 +18,13 @@ class PostRepository implements PostRepositoryInterface
     // =====================
 
     /**
-     * Get feed postingan untuk alumni (dari koneksi + sendiri).
+     * Get feed postingan untuk semua alumni.
+     * Semua postingan aktif bisa dilihat oleh siapa saja.
      * Urutan: terbaru terlebih dahulu.
      */
-    public function getFeed(int $alumniId, array $connectionAlumniIds, int $perPage = 10): LengthAwarePaginator
+    public function getFeed(int $alumniId, int $perPage = 10): LengthAwarePaginator
     {
-        // Gabungkan ID alumni sendiri + koneksi
-        $visibleAlumniIds = array_merge([$alumniId], $connectionAlumniIds);
-
         return Post::active()
-            ->where(function ($query) use ($alumniId, $visibleAlumniIds) {
-                // Postingan dari koneksi/sendiri dengan visibility 'connections'
-                $query->where(function ($q) use ($visibleAlumniIds) {
-                    $q->whereIn('id_alumni', $visibleAlumniIds)
-                      ->where('visibility', 'connections');
-                })
-                // ATAU postingan publik dari siapapun
-                ->orWhere('visibility', 'public');
-            })
             ->with([
                 'alumni:id_alumni,nama_alumni,foto,id_jurusan',
                 'alumni.jurusan:id_jurusan,nama_jurusan',
@@ -45,6 +34,57 @@ class PostRepository implements PostRepositoryInterface
             ->withExists(['likes as is_liked' => function ($q) use ($alumniId) {
                 $q->where('id_alumni', $alumniId);
             }])
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Get feed postingan hanya dari koneksi alumni.
+     * Hanya menampilkan postingan dari alumni yang sudah terkoneksi (accepted).
+     * Termasuk postingan milik sendiri.
+     * Urutan: terbaru terlebih dahulu.
+     */
+    public function getConnectionFeed(int $alumniId, array $connectionIds, int $perPage = 10): LengthAwarePaginator
+    {
+        // Sertakan postingan sendiri + postingan dari koneksi
+        $allowedIds = array_merge([$alumniId], $connectionIds);
+
+        return Post::active()
+            ->whereIn('id_alumni', $allowedIds)
+            ->with([
+                'alumni:id_alumni,nama_alumni,foto,id_jurusan',
+                'alumni.jurusan:id_jurusan,nama_jurusan',
+                'images',
+            ])
+            ->withCount(['likes', 'allComments as comments_count'])
+            ->withExists(['likes as is_liked' => function ($q) use ($alumniId) {
+                $q->where('id_alumni', $alumniId);
+            }])
+            ->orderByDesc('created_at')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Get feed postingan dari semua user, diurutkan berdasarkan engagement (trending).
+     * Engagement score = jumlah likes + jumlah komentar aktif.
+     * Post dengan interaksi terbanyak muncul di atas.
+     */
+    public function getTrendingFeed(int $alumniId, int $perPage = 10): LengthAwarePaginator
+    {
+        return Post::active()
+            ->with([
+                'alumni:id_alumni,nama_alumni,foto,id_jurusan',
+                'alumni.jurusan:id_jurusan,nama_jurusan',
+                'images',
+            ])
+            ->withCount(['likes', 'allComments as comments_count'])
+            ->withExists(['likes as is_liked' => function ($q) use ($alumniId) {
+                $q->where('id_alumni', $alumniId);
+            }])
+            ->orderByRaw('(
+                (SELECT COUNT(*) FROM post_likes WHERE post_likes.id_post = posts.id_post) +
+                (SELECT COUNT(*) FROM post_comments WHERE post_comments.id_post = posts.id_post AND post_comments.is_active = true)
+            ) DESC')
             ->orderByDesc('created_at')
             ->paginate($perPage);
     }

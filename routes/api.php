@@ -125,6 +125,7 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
 
         // Kuesioner (accessible even if not verified)
         Route::get('/kuesioner', [KuesionerController::class, 'indexForAlumni']);
+        Route::get('/kuesioner/riwayat', [KuesionerController::class, 'riwayatKuesioner']);
         Route::get('/kuesioner/{id}', [KuesionerController::class, 'showWithPertanyaan']);
         Route::get('/kuesioner/status/{statusId}', [KuesionerController::class, 'publishedByStatus']);
         Route::post('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'submitAnswers']);
