@@ -22,20 +22,10 @@ return new class extends Migration
         Schema::table('alumni_blocks', function (Blueprint $table) {
             $table->index(['id_alumni_blocker', 'created_at'], 'idx_blocks_blocker_created');
         });
-
-        Schema::table('kemitraan', function (Blueprint $table) {
-            $table->index(['tipe', 'id_kemitraan'], 'idx_kemitraan_tipe_id');
-            $table->index('updated_at', 'idx_kemitraan_updated_at');
-        });
     }
 
     public function down(): void
     {
-        Schema::table('kemitraan', function (Blueprint $table) {
-            $table->dropIndex('idx_kemitraan_tipe_id');
-            $table->dropIndex('idx_kemitraan_updated_at');
-        });
-
         Schema::table('alumni_blocks', function (Blueprint $table) {
             $table->dropIndex('idx_blocks_blocker_created');
         });
