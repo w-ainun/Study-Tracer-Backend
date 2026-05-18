@@ -161,6 +161,29 @@ class KelulusanRepository implements KelulusanRepositoryInterface
     }
 
     /**
+     * Update status_kelulusan of a confirmed graduate.
+     */
+    public function updateRiwayatStatus(int $id, string $status): bool
+    {
+        $riwayat = RiwayatKelulusan::findOrFail($id);
+        $riwayat->status_kelulusan = $status;
+        $riwayat->save();
+        $this->clearKelulusanCache();
+        return true;
+    }
+
+    /**
+     * Delete a confirmed graduate record.
+     */
+    public function deleteRiwayatKelulusan(int $id): bool
+    {
+        $riwayat = RiwayatKelulusan::findOrFail($id);
+        $riwayat->delete();
+        $this->clearKelulusanCache();
+        return true;
+    }
+
+    /**
      * Bulk insert confirmed graduates (from staging).
      */
     public function bulkCreateRiwayatKelulusan(array $rows): int

@@ -11,7 +11,7 @@ interface AlumniDirectoryRepositoryInterface
      * @param int   $perPage
      * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
      */
-    public function getVerifiedAlumni(array $filters = [], int $perPage = 12);
+    public function getVerifiedAlumni(array $filters = [], int $perPage = 12, ?int $excludeUserId = null);
 
     /**
      * Get a single verified alumni with full relations for public profile view.

@@ -2,8 +2,8 @@
 
 namespace App\Services\Alumni;
 
-use App\Interfaces\Alumni\ConnectionRepositoryInterface;
 use App\Interfaces\Alumni\PostRepositoryInterface;
+use App\Interfaces\Alumni\ConnectionRepositoryInterface;
 use App\Models\Alumni;
 use App\Models\Post;
 use App\Services\NotificationService;
@@ -31,16 +31,37 @@ class PostService
     // =====================
 
     /**
-     * Get feed postingan (dari koneksi + diri sendiri + public).
+     * Get feed postingan (semua postingan aktif, untuk semua alumni).
      */
     public function getFeed(int $userId, int $perPage = 10)
     {
         $alumni = $this->getAlumniByUserId($userId);
 
-        // Ambil IDs semua koneksi (accepted) alumni ini
-        $connectionAlumniIds = $this->getConnectionAlumniIds($alumni->id_alumni);
+        return $this->postRepository->getFeed($alumni->id_alumni, $perPage);
+    }
 
-        return $this->postRepository->getFeed($alumni->id_alumni, $connectionAlumniIds, $perPage);
+    /**
+     * Get feed postingan hanya dari koneksi alumni.
+     * Menampilkan postingan dari alumni yang sudah terhubung (accepted connection)
+     * beserta postingan milik sendiri. Urutan: terbaru terlebih dahulu.
+     */
+    public function getConnectionFeed(int $userId, int $perPage = 10)
+    {
+        $alumni = $this->getAlumniByUserId($userId);
+        $connectionIds = $this->connectionRepository->getConnectedAlumniIds($alumni->id_alumni);
+
+        return $this->postRepository->getConnectionFeed($alumni->id_alumni, $connectionIds, $perPage);
+    }
+
+    /**
+     * Get feed postingan dari semua user, diurutkan berdasarkan engagement (trending).
+     * Post yang banyak di-like dan di-komentari muncul di atas beranda.
+     */
+    public function getTrendingFeed(int $userId, int $perPage = 10)
+    {
+        $alumni = $this->getAlumniByUserId($userId);
+
+        return $this->postRepository->getTrendingFeed($alumni->id_alumni, $perPage);
     }
 
     /**
@@ -87,7 +108,7 @@ class PostService
             $post = $this->postRepository->createPost([
                 'id_alumni'  => $alumni->id_alumni,
                 'content'    => $data['content'],
-                'visibility' => $data['visibility'] ?? 'connections',
+                'visibility' => 'public',
             ]);
 
             // Upload & simpan gambar
@@ -422,27 +443,7 @@ class PostService
         return $alumni;
     }
 
-    /**
-     * Get IDs semua koneksi (accepted) dari alumni.
-     */
-    private function getConnectionAlumniIds(int $alumniId): array
-    {
-        return DB::table('alumni_connections')
-            ->where('status', 'accepted')
-            ->where(function ($q) use ($alumniId) {
-                $q->where('id_alumni_requester', $alumniId)
-                  ->orWhere('id_alumni_addressee', $alumniId);
-            })
-            ->get()
-            ->map(function ($conn) use ($alumniId) {
-                return $conn->id_alumni_requester === $alumniId
-                    ? $conn->id_alumni_addressee
-                    : $conn->id_alumni_requester;
-            })
-            ->unique()
-            ->values()
-            ->toArray();
-    }
+
 
     /**
      * Upload multiple images ke storage.

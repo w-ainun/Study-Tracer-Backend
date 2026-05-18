@@ -20,7 +20,7 @@ use App\Http\Controllers\Api\Alumni\PortofolioController;
 use App\Http\Controllers\Api\LandingController;
 use App\Http\Controllers\Api\PengumumanController;
 use App\Http\Controllers\Api\PengaturanTampilanController;
-use App\Http\Controllers\Api\KemitraanController;
+
 use App\Http\Controllers\Api\MetaDataController;
 use App\Http\Controllers\Api\SebaranAlumniController;
 use App\Http\Controllers\Api\GeocodeController;
@@ -125,6 +125,7 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
 
         // Kuesioner (accessible even if not verified)
         Route::get('/kuesioner', [KuesionerController::class, 'indexForAlumni']);
+        Route::get('/kuesioner/riwayat', [KuesionerController::class, 'riwayatKuesioner']);
         Route::get('/kuesioner/{id}', [KuesionerController::class, 'showWithPertanyaan']);
         Route::get('/kuesioner/status/{statusId}', [KuesionerController::class, 'publishedByStatus']);
         Route::post('/kuesioner/{kuesionerId}/jawaban', [KuesionerController::class, 'submitAnswers']);
@@ -445,24 +446,7 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
         Route::post('/pengaturan-tampilan/reset', [PengaturanTampilanController::class, 'resetToDefault']);
         Route::get('/pengaturan-tampilan', [PengaturanTampilanController::class, 'show']);
         Route::post('/pengaturan-tampilan', [PengaturanTampilanController::class, 'update']);
-        
-        // Kemitraan (Partnership) Management
-        Route::prefix('kemitraan')->group(function () {
-            // Mitra Universitas
-            Route::get('/universitas', [KemitraanController::class, 'indexUniversitas']);
-            Route::post('/universitas', [KemitraanController::class, 'storeUniversitas']);
-            Route::match(['put', 'post'], '/universitas/{id}', [KemitraanController::class, 'updateUniversitas']);
-            Route::delete('/universitas/{id}', [KemitraanController::class, 'destroyUniversitas']);
 
-            // Mitra Perusahaan
-            Route::get('/perusahaan', [KemitraanController::class, 'indexPerusahaan']);
-            Route::post('/perusahaan', [KemitraanController::class, 'storePerusahaan']);
-            Route::match(['put', 'post'], '/perusahaan/{id}', [KemitraanController::class, 'updatePerusahaan']);
-            Route::delete('/perusahaan/{id}', [KemitraanController::class, 'destroyPerusahaan']);
-
-            // Export
-            Route::get('/export', [KemitraanController::class, 'export']);
-        });
 
         // Sebaran Alumni (Mapping)
         Route::prefix('sebaran')->group(function () {
@@ -494,6 +478,8 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
 
             // Riwayat Kelulusan (Confirmed Graduates)
             Route::get('/riwayat', [KelulusanController::class, 'indexRiwayat']);
+            Route::patch('/riwayat/{id}/status', [KelulusanController::class, 'updateRiwayatStatus']);
+            Route::delete('/riwayat/{id}', [KelulusanController::class, 'destroyRiwayat']);
 
             // Statistics & Filters
             Route::get('/stats', [KelulusanController::class, 'stats']);

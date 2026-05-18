@@ -4,7 +4,7 @@ namespace App\Repositories\Alumni;
 
 use App\Interfaces\Alumni\BerandaRepositoryInterface;
 use App\Models\Alumni;
-use App\Models\Kemitraan;
+
 use App\Models\Kuesioner;
 use App\Models\Lowongan;
 use App\Models\Perusahaan;
@@ -83,19 +83,7 @@ class BerandaRepository implements BerandaRepositoryInterface
             ->get();
     }
 
-    /**
-     * Get latest partnership logos for beranda partner section.
-     */
-    public function getMitraLogos(int $limit = 20)
-    {
-        return Kemitraan::query()
-            ->select(['id_kemitraan', 'nama', 'logo', 'tipe'])
-            ->whereNotNull('logo')
-            ->where('logo', '!=', '')
-            ->orderByDesc('updated_at')
-            ->limit($limit)
-            ->get();
-    }
+
 
     /**
      * Get pending kuesioner for alumni filtered by current career status.

@@ -17,9 +17,9 @@ class AlumniDirectoryService
     /**
      * Get paginated alumni directory with search + filter.
      */
-    public function getAlumniDirectory(array $filters = [], int $perPage = 12)
+    public function getAlumniDirectory(array $filters = [], int $perPage = 12, ?int $excludeUserId = null)
     {
-        return $this->directoryRepository->getVerifiedAlumni($filters, $perPage);
+        return $this->directoryRepository->getVerifiedAlumni($filters, $perPage, $excludeUserId);
     }
 
     /**

@@ -83,6 +83,11 @@ interface ConnectionRepositoryInterface
      */
     public function getSuggestedAlumni(int $alumniId, int $limit = 10): Collection;
 
+    /**
+     * Get array of alumni IDs yang terkoneksi (accepted).
+     */
+    public function getConnectedAlumniIds(int $alumniId): array;
+
     // =====================
     // BLOCK METHODS
     // =====================

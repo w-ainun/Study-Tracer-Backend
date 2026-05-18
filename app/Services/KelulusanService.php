@@ -38,6 +38,28 @@ class KelulusanService
      */
     public function createCalonLulusan(array $data)
     {
+        $nisn = $data['nisn'] ?? '';
+        
+        $alumni = \App\Models\Alumni::where('nisn', $nisn)
+            ->with(['riwayatStatus' => function ($q) {
+                $q->latest('id_riwayat');
+            }, 'riwayatStatus.status'])
+            ->first();
+
+        if (!$alumni) {
+            throw ValidationException::withMessages([
+                'nisn' => ["Siswa dengan NISN {$nisn} belum terdaftar di sistem."]
+            ]);
+        }
+
+        $latestStatus = $alumni->riwayatStatus->first()?->status?->nama_status ?? 'Tidak Diketahui';
+
+        if ($latestStatus !== 'Siswa Aktif') {
+            throw ValidationException::withMessages([
+                'nisn' => ["Siswa dengan NISN {$nisn} terdaftar, namun berstatus '{$latestStatus}' (bukan 'Siswa Aktif')."]
+            ]);
+        }
+
         return $this->kelulusanRepository->createCalonLulusan($data);
     }
 
@@ -71,6 +93,15 @@ class KelulusanService
             ->mapWithKeys(fn ($id, $name) => [strtolower($name) => $id])
             ->toArray();
 
+        // Get all NISNs from rows to pre-validate Siswa Aktif status
+        $nisnList = array_filter(array_map(fn($r) => trim($r['nisn'] ?? ''), $rows));
+        $alumniData = \App\Models\Alumni::whereIn('nisn', $nisnList)
+            ->with(['riwayatStatus' => function ($q) {
+                $q->latest('id_riwayat');
+            }, 'riwayatStatus.status'])
+            ->get()
+            ->keyBy('nisn');
+
         $batchId = Str::uuid()->toString();
         $prepared = [];
         $errors = [];
@@ -86,6 +117,21 @@ class KelulusanService
             // Validate required fields
             if (empty($nisn) || empty($nama) || empty($jurusanName)) {
                 $errors[] = "Baris {$rowNum}: Data tidak lengkap (NISN, Nama, atau Jurusan kosong)";
+                $skipped++;
+                continue;
+            }
+
+            // Validate Siswa Aktif
+            $alumni = $alumniData->get($nisn);
+            if (!$alumni) {
+                $errors[] = "Baris {$rowNum}: Siswa (NISN: {$nisn}) belum terdaftar.";
+                $skipped++;
+                continue;
+            }
+
+            $latestStatus = $alumni->riwayatStatus->first()?->status?->nama_status ?? 'Tidak Diketahui';
+            if ($latestStatus !== 'Siswa Aktif') {
+                $errors[] = "Baris {$rowNum}: Siswa (NISN: {$nisn}) terdaftar berstatus '{$latestStatus}' (bukan 'Siswa Aktif').";
                 $skipped++;
                 continue;
             }
@@ -210,6 +256,22 @@ class KelulusanService
     public function getRiwayatKelulusan(array $filters = [], int $perPage = 15)
     {
         return $this->kelulusanRepository->getRiwayatKelulusan($filters, $perPage);
+    }
+
+    /**
+     * Update status kelulusan pada riwayat.
+     */
+    public function updateRiwayatStatus(int $id, string $status): bool
+    {
+        return $this->kelulusanRepository->updateRiwayatStatus($id, $status);
+    }
+
+    /**
+     * Delete riwayat kelulusan.
+     */
+    public function deleteRiwayatKelulusan(int $id): bool
+    {
+        return $this->kelulusanRepository->deleteRiwayatKelulusan($id);
     }
 
     /**

@@ -236,4 +236,12 @@ class KuesionerService
         return $this->kuesionerRepository->getStatistics($kuesionerId);
     }
 
+    /**
+     * Get riwayat kuesioner yang sudah dijawab oleh user (alumni).
+     */
+    public function getRiwayatKuesioner(int $userId)
+    {
+        return $this->kuesionerRepository->getRiwayatKuesioner($userId);
+    }
+
 }

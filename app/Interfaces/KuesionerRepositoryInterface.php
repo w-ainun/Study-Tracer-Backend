@@ -36,4 +36,7 @@ interface KuesionerRepositoryInterface
 
     // Statistics
     public function getStatistics(int $kuesionerId);
+
+    // Riwayat Kuesioner (Alumni)
+    public function getRiwayatKuesioner(int $userId);
 }

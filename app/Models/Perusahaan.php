@@ -39,12 +39,4 @@ class Perusahaan extends Model
     {
         return $this->hasMany(Lowongan::class, 'id_perusahaan', 'id_perusahaan');
     }
-
-    /**
-     * Kemitraan (partnerships) yang terkait dengan perusahaan ini.
-     */
-    public function kemitraan()
-    {
-        return $this->hasMany(Kemitraan::class, 'id_perusahaan', 'id_perusahaan');
-    }
 }

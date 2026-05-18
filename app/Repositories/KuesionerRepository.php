@@ -690,4 +690,88 @@ class KuesionerRepository implements KuesionerRepositoryInterface
             'statistics' => $statistics,
         ];
     }
+    /**
+     * Get riwayat kuesioner yang sudah dijawab oleh user (alumni).
+     * Returns daftar kuesioner beserta ringkasan jawaban user.
+     */
+    public function getRiwayatKuesioner(int $userId)
+    {
+        // Get semua jawaban user, grouped by kuesioner
+        $jawabanByPertanyaan = Jawaban::where('id_user', $userId)
+            ->with(['pertanyaan.kuesioner.statusKarir', 'opsiJawaban'])
+            ->get();
+
+        // Group jawaban by kuesioner
+        $grouped = $jawabanByPertanyaan->groupBy(function ($jawaban) {
+            return $jawaban->pertanyaan?->id_kuesioner;
+        })->filter(fn ($group, $key) => $key !== null);
+
+        $result = [];
+
+        foreach ($grouped as $kuesionerId => $jawabanGroup) {
+            $kuesioner = $jawabanGroup->first()->pertanyaan->kuesioner;
+
+            if (!$kuesioner) {
+                continue;
+            }
+
+            // Total pertanyaan di kuesioner ini
+            $totalPertanyaan = $kuesioner->pertanyaan()->count();
+
+            // Total yang sudah dijawab
+            $totalDijawab = $jawabanGroup->count();
+
+            // Tanggal submit terakhir
+            $tanggalSubmit = $jawabanGroup->max('created_at');
+
+            // Status dari jawaban
+            $status = $jawabanGroup->pluck('status')->contains('Selesai') ? 'Selesai' : 'Belum Selesai';
+
+            // Detail jawaban per pertanyaan
+            $detailJawaban = $jawabanGroup->map(function ($jawaban) {
+                return [
+                    'id_jawaban'     => $jawaban->id_jawaban,
+                    'id_pertanyaan'  => $jawaban->id_pertanyaan,
+                    'pertanyaan'     => $jawaban->pertanyaan?->isi_pertanyaan,
+                    'jawaban_text'   => $jawaban->jawaban,
+                    'opsi_dipilih'   => $jawaban->opsiJawaban ? [
+                        'id_opsi' => $jawaban->opsiJawaban->id_opsi,
+                        'opsi'    => $jawaban->opsiJawaban->opsi,
+                    ] : null,
+                    'status'         => $jawaban->status,
+                    'created_at'     => $jawaban->created_at?->toISOString(),
+                ];
+            })->values();
+
+            $result[] = [
+                'kuesioner' => [
+                    'id_kuesioner'      => $kuesioner->id_kuesioner,
+                    'title'             => $kuesioner->title,
+                    'deskripsi'         => $kuesioner->deskripsi,
+                    'status_karir'      => $kuesioner->statusKarir?->nama_status ?? null,
+                    'tanggal_publikasi' => $kuesioner->tanggal_publikasi,
+                ],
+                'ringkasan' => [
+                    'total_pertanyaan'    => $totalPertanyaan,
+                    'total_dijawab'       => $totalDijawab,
+                    'persentase_selesai'  => $totalPertanyaan > 0
+                        ? round(($totalDijawab / $totalPertanyaan) * 100, 2)
+                        : 0,
+                    'status'              => $status,
+                    'tanggal_submit'      => $tanggalSubmit?->toISOString(),
+                ],
+                'jawaban' => $detailJawaban,
+            ];
+        }
+
+        // Sort by tanggal_submit desc (terbaru dulu)
+        usort($result, function ($a, $b) {
+            return strcmp($b['ringkasan']['tanggal_submit'] ?? '', $a['ringkasan']['tanggal_submit'] ?? '');
+        });
+
+        return [
+            'total_kuesioner_dijawab' => count($result),
+            'data' => $result,
+        ];
+    }
 }

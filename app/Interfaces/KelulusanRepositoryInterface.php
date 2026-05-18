@@ -45,6 +45,16 @@ interface KelulusanRepositoryInterface
     public function getRiwayatKelulusan(array $filters = [], int $perPage = 15);
 
     /**
+     * Update status_kelulusan of a confirmed graduate.
+     */
+    public function updateRiwayatStatus(int $id, string $status): bool;
+
+    /**
+     * Delete a confirmed graduate record.
+     */
+    public function deleteRiwayatKelulusan(int $id): bool;
+
+    /**
      * Bulk insert riwayat kelulusan from confirmed calon lulusan.
      * Returns the count of inserted rows.
      */

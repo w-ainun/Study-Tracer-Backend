@@ -82,15 +82,26 @@ class KelulusanController extends Controller
                 return $this->errorResponse('NISN harus 10 digit', 422);
             }
 
-            $alumni = \App\Models\Alumni::with('jurusan:id_jurusan,nama_jurusan')
+            $alumni = \App\Models\Alumni::with(['jurusan:id_jurusan,nama_jurusan', 'riwayatStatus' => function ($q) {
+                $q->latest('id_riwayat');
+            }, 'riwayatStatus.status'])
                 ->where('nisn', $nisn)
                 ->first();
 
             if (!$alumni) {
                 return $this->successResponse([
                     'found' => false,
-                    'message' => 'Alumni dengan NISN tersebut tidak ditemukan dalam sistem.',
-                ], 'Alumni tidak ditemukan');
+                    'message' => 'Siswa dengan NISN tersebut belum terdaftar dalam sistem.',
+                ]);
+            }
+
+            $latestStatus = $alumni->riwayatStatus->first()?->status?->nama_status ?? 'Tidak Diketahui';
+
+            if ($latestStatus !== 'Siswa Aktif') {
+                return $this->successResponse([
+                    'found' => false,
+                    'message' => "Siswa terdaftar, namun berstatus '{$latestStatus}' (bukan 'Siswa Aktif').",
+                ]);
             }
 
             return $this->successResponse([
@@ -242,6 +253,43 @@ class KelulusanController extends Controller
             );
         } catch (\Exception $e) {
             return $this->errorResponse('Gagal mengambil riwayat kelulusan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * PATCH /admin/kelulusan/riwayat/{id}/status
+     * Update status kelulusan pada riwayat kelulusan.
+     */
+    public function updateRiwayatStatus(Request $request, int $id)
+    {
+        try {
+            $request->validate([
+                'status_kelulusan' => 'required|in:lulus,tidak_lulus',
+            ]);
+
+            $this->kelulusanService->updateRiwayatStatus($id, $request->input('status_kelulusan'));
+
+            return $this->successResponse(null, 'Status kelulusan berhasil diperbarui');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Data riwayat kelulusan tidak ditemukan');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal memperbarui status kelulusan: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * DELETE /admin/kelulusan/riwayat/{id}
+     * Delete riwayat kelulusan.
+     */
+    public function destroyRiwayat(int $id)
+    {
+        try {
+            $this->kelulusanService->deleteRiwayatKelulusan($id);
+            return $this->successResponse(null, 'Data riwayat kelulusan berhasil dihapus');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return $this->notFoundResponse('Data riwayat kelulusan tidak ditemukan');
+        } catch (\Exception $e) {
+            return $this->errorResponse('Gagal menghapus riwayat kelulusan: ' . $e->getMessage());
         }
     }
 

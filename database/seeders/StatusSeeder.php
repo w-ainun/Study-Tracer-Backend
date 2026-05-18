@@ -14,6 +14,7 @@ class StatusSeeder extends Seeder
             'Kuliah',
             'Wirausaha',
             'Belum Bekerja',
+            'Siswa Aktif',
         ];
 
         foreach ($statusList as $status) {

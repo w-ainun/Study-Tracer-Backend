@@ -30,7 +30,8 @@ class AlumniDirectoryController extends Controller
             $filters = $request->only(['search', 'tahun', 'status', 'universitas']);
             $perPage = $request->input('per_page', 12);
 
-            $paginated = $this->directoryService->getAlumniDirectory($filters, $perPage);
+            $userId = $request->user() ? $request->user()->id_users : null;
+            $paginated = $this->directoryService->getAlumniDirectory($filters, $perPage, $userId);
 
             // Build flat response matching frontend expectations
             $items = AlumniDirectoryResource::collection($paginated);

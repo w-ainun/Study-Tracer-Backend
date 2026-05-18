@@ -13,7 +13,7 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
     /**
      * Get paginated verified alumni with search + filters.
      */
-    public function getVerifiedAlumni(array $filters = [], int $perPage = 12)
+    public function getVerifiedAlumni(array $filters = [], int $perPage = 12, ?int $excludeUserId = null)
     {
         $query = Alumni::with([
             'jurusan',
@@ -25,6 +25,20 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
             'riwayatStatus.wirausaha',
         ])
             ->whereNotIn('status_create', ['banned', 'rejected', 'pending']);
+
+        if ($excludeUserId) {
+            $query->where('id_users', '!=', $excludeUserId);
+        }
+
+        // Exclude Siswa Aktif
+        $query->whereDoesntHave('riwayatStatus', function ($rq) {
+            $rq->whereHas('status', fn($sq) => $sq->where('nama_status', 'Siswa Aktif'))
+                ->whereRaw('id_riwayat = (
+                    SELECT MAX(rs2.id_riwayat)
+                    FROM riwayat_status rs2
+                    WHERE rs2.id_alumni = riwayat_status.id_alumni
+                )');
+        });
 
         // Search by nama, perusahaan, or role/posisi
         if (!empty($filters['search'])) {
@@ -120,6 +134,7 @@ class AlumniDirectoryRepository implements AlumniDirectoryRepositoryInterface
         return Status::whereHas('riwayatStatus.alumni', function ($q) {
             $q->whereNotIn('status_create', ['banned', 'rejected', 'pending']);
         })
+            ->where('nama_status', '!=', 'Siswa Aktif')
             ->distinct()
             ->pluck('nama_status')
             ->toArray();
