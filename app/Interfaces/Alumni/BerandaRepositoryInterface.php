@@ -25,11 +25,6 @@ interface BerandaRepositoryInterface
     public function getTopPerusahaan(int $limit = 5);
 
     /**
-     * Get latest kemitraan logos for beranda partner section.
-     */
-    public function getMitraLogos(int $limit = 20);
-
-    /**
      * Get pending kuesioner for alumni filtered by current career status.
      */
     public function getPendingKuesioner(int $userId, ?int $statusId = null);

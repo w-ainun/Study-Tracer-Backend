@@ -20,7 +20,7 @@ use App\Interfaces\MasterDataRepositoryInterface;
 use App\Interfaces\StatusKarierRepositoryInterface;
 use App\Interfaces\PengumumanRepositoryInterface;
 use App\Interfaces\PengaturanTampilanRepositoryInterface;
-use App\Interfaces\KemitraanRepositoryInterface;
+
 use App\Interfaces\SebaranAlumniRepositoryInterface;
 use App\Interfaces\Alumni\BerandaRepositoryInterface;
 use App\Interfaces\Alumni\LowonganAlumniRepositoryInterface;
@@ -40,7 +40,7 @@ use App\Repositories\MasterDataRepository;
 use App\Repositories\StatusKarierRepository;
 use App\Repositories\PengumumanRepository;
 use App\Repositories\PengaturanTampilanRepository;
-use App\Repositories\KemitraanRepository;
+
 use App\Repositories\SebaranAlumniRepository;
 use App\Repositories\Alumni\BerandaRepository;
 use App\Repositories\Alumni\LowonganAlumniRepository;
@@ -71,7 +71,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ProfileRepositoryInterface::class, ProfileRepository::class);
         $this->app->bind(PengumumanRepositoryInterface::class, PengumumanRepository::class);
         $this->app->bind(PengaturanTampilanRepositoryInterface::class, PengaturanTampilanRepository::class);
-        $this->app->bind(KemitraanRepositoryInterface::class, KemitraanRepository::class);
+
         $this->app->bind(SebaranAlumniRepositoryInterface::class, SebaranAlumniRepository::class);
         $this->app->bind(ConnectionRepositoryInterface::class, ConnectionRepository::class);
         $this->app->bind(PostRepositoryInterface::class, PostRepository::class);
