@@ -257,6 +257,14 @@ class ConnectionRepository implements ConnectionRepositoryInterface
                 'riwayatStatus.wirausaha',
             ])
             ->where('status_create', 'ok')
+            ->whereDoesntHave('riwayatStatus', function ($rq) {
+                $rq->whereHas('status', fn($sq) => $sq->where('nama_status', 'Siswa Aktif'))
+                    ->whereRaw('id_riwayat = (
+                        SELECT MAX(rs2.id_riwayat)
+                        FROM riwayat_status rs2
+                        WHERE rs2.id_alumni = riwayat_status.id_alumni
+                    )');
+            })
             ->whereNotIn('id_alumni', $excludeIds);
 
         // Scoring: jurusan sama, tahun lulus dekat, skills overlap

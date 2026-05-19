@@ -507,6 +507,17 @@ class AdminController extends Controller
                             'type' => 'image',
                         ];
                     }
+
+                    // Add foto_sampul change for personal_info section
+                    if ($item->section === 'personal_info' && $item->gambar_path) {
+                        $oldSampul = $oldData['foto_sampul'] ?? null;
+                        $changes[] = [
+                            'label' => 'Foto Sampul',
+                            'old' => $oldSampul ? asset('storage/' . $oldSampul) : '-',
+                            'new' => asset('storage/' . $item->gambar_path),
+                            'type' => 'image',
+                        ];
+                    }
                 }
 
                 return [

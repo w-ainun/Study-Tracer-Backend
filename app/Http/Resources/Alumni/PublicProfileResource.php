@@ -84,6 +84,7 @@ class PublicProfileResource extends JsonResource
             'tahun_masuk' => $this->tahun_masuk,
             'tahun_lulus' => $this->tahun_lulus?->format('Y-m-d'),
             'foto' => $this->foto ?: null,
+            'foto_sampul' => $this->foto_sampul ?: null,
             'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'tempat_lahir' => $this->tempat_lahir,
 

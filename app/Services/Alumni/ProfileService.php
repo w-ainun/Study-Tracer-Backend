@@ -35,7 +35,7 @@ class ProfileService
     /**
      * Update personal profile data — saves as pending for admin approval.
      */
-    public function updateProfile(int $userId, array $data, $foto = null)
+    public function updateProfile(int $userId, array $data, $foto = null, $fotoSampul = null)
     {
         $alumni = $this->profileRepository->getProfileByUserId($userId);
 
@@ -43,7 +43,7 @@ class ProfileService
             throw new \Exception('Profil alumni tidak ditemukan.');
         }
 
-        return DB::transaction(function () use ($alumni, $data, $foto) {
+        return DB::transaction(function () use ($alumni, $data, $foto, $fotoSampul) {
             // Check for existing pending personal_info update
             $existingPending = PendingProfileUpdate::where('id_alumni', $alumni->id_alumni)
                 ->where('section', 'personal_info')
@@ -61,10 +61,15 @@ class ProfileService
                 }
             }
 
+            $fotoSampulPath = null;
+            if ($fotoSampul) {
+                $fotoSampulPath = $fotoSampul->store('alumni/sampul/pending', 'public');
+            }
+
             // Extract skills and social media, remove non-serializable fields
             $skills = $data['skills'] ?? null;
             $socialMedia = $data['social_media'] ?? null;
-            unset($data['skills'], $data['social_media'], $data['foto'], $data['_method']);
+            unset($data['skills'], $data['social_media'], $data['foto'], $data['foto_sampul'], $data['_method']);
 
             // Build old data snapshot
             $oldData = [
@@ -80,6 +85,7 @@ class ProfileService
                 'id_jurusan' => $alumni->id_jurusan,
                 'tahun_lulus' => $alumni->tahun_lulus?->format('Y-m-d'),
                 'foto' => $alumni->foto,
+                'foto_sampul' => $alumni->foto_sampul,
             ];
 
             // Build new data (only serializable text fields)
@@ -93,7 +99,7 @@ class ProfileService
                     break;
                 }
             }
-            $hasPersonalChanges = $hasPersonalChanges || $fotoPath !== null;
+            $hasPersonalChanges = $hasPersonalChanges || $fotoPath !== null || $fotoSampulPath !== null;
 
             // Only create/update personal_info pending if there are actual changes
             if ($hasPersonalChanges) {
@@ -111,6 +117,12 @@ class ProfileService
                         }
                         $updateData['foto_path'] = $fotoPath;
                     }
+                    if ($fotoSampulPath) {
+                        if ($existingPending->gambar_path) {
+                            Storage::disk('public')->delete($existingPending->gambar_path);
+                        }
+                        $updateData['gambar_path'] = $fotoSampulPath;
+                    }
                     $existingPending->update($updateData);
                 } else {
                     // Create new pending personal info update
@@ -121,6 +133,7 @@ class ProfileService
                         'old_data' => $oldData,
                         'new_data' => $newData,
                         'foto_path' => $fotoPath,
+                        'gambar_path' => $fotoSampulPath,
                     ]);
                 }
             }

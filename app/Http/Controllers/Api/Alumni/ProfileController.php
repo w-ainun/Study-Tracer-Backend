@@ -49,10 +49,12 @@ class ProfileController extends Controller
     {
         try {
             $foto = $request->hasFile('foto') ? $request->file('foto') : null;
+            $fotoSampul = $request->hasFile('foto_sampul') ? $request->file('foto_sampul') : null;
             $alumni = $this->profileService->updateProfile(
                 $request->user()->id_users,
                 $request->validated(),
-                $foto
+                $foto,
+                $fotoSampul
             );
 
             return $this->successResponse(

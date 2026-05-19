@@ -63,6 +63,7 @@ class ProfileResource extends JsonResource
             'tempat_lahir' => $this->tempat_lahir,
             'tahun_masuk' => $this->tahun_masuk,
             'foto' => $this->foto ?: null,
+            'foto_sampul' => $this->foto_sampul ?: null,
             'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'alamat' => $this->alamat,
             'no_hp' => $this->no_hp,
@@ -91,6 +92,9 @@ class ProfileResource extends JsonResource
                 $latestPersonalInfo['foto'] = $pendingPersonalInfo->foto_path;
                 $latestPersonalInfo['foto_thumbnail'] = GeneratesThumbnail::thumbnailPath($pendingPersonalInfo->foto_path);
             }
+            if (!empty($pendingPersonalInfo->gambar_path)) {
+                $latestPersonalInfo['foto_sampul'] = $pendingPersonalInfo->gambar_path;
+            }
 
             $changedFields = [];
             foreach ($newData as $field => $newValue) {
@@ -101,6 +105,9 @@ class ProfileResource extends JsonResource
             }
             if (!empty($pendingPersonalInfo->foto_path)) {
                 $changedFields[] = 'foto';
+            }
+            if (!empty($pendingPersonalInfo->gambar_path)) {
+                $changedFields[] = 'foto_sampul';
             }
 
             $latestPersonalInfo['status'] = 'pending';
@@ -170,6 +177,7 @@ class ProfileResource extends JsonResource
             'tempat_lahir' => $this->tempat_lahir,
             'tahun_masuk' => $this->tahun_masuk,
             'foto' => $this->foto ?: null,
+            'foto_sampul' => $this->foto_sampul ?: null,
             'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'alamat' => $this->alamat,
             'no_hp' => $this->no_hp,

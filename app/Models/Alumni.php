@@ -27,6 +27,7 @@ class Alumni extends Model
         'tahun_lulus',
         'id_users',
         'status_create',
+        'foto_sampul',
         'is_featured',
     ];
 

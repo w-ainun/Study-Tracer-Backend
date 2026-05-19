@@ -311,7 +311,8 @@ class AdminService
 
     private function applyPersonalInfo(Alumni $alumni, ?array $newData, PendingProfileUpdate $pending): void
     {
-        if (!$newData) return;
+        if (!$newData && !$pending->foto_path && !$pending->gambar_path) return;
+        if (!$newData) $newData = [];
 
         // If new foto, move from pending to permanent location and delete old
         if ($pending->foto_path) {
@@ -332,6 +333,19 @@ class AdminService
             $newData['foto'] = $newPath;
         } else {
             unset($newData['foto']);
+        }
+
+        if ($pending->gambar_path) {
+            if ($alumni->foto_sampul) {
+                $this->deleteWithThumbnail($alumni->foto_sampul);
+            }
+            $newSampulPath = str_replace('alumni/sampul/pending', 'alumni/sampul', $pending->gambar_path);
+            if (Storage::disk('public')->exists($pending->gambar_path)) {
+                Storage::disk('public')->move($pending->gambar_path, $newSampulPath);
+            }
+            $newData['foto_sampul'] = $newSampulPath;
+        } else {
+            unset($newData['foto_sampul']);
         }
 
         $alumni->update($newData);

@@ -57,6 +57,7 @@ class AlumniDirectoryResource extends JsonResource
             'name'     => $this->nama_alumni,
             'angkatan' => $this->tahun_masuk,
             'foto'     => $this->foto ?: null,
+            'foto_sampul' => $this->foto_sampul ?: null,
             'foto_thumbnail' => GeneratesThumbnail::thumbnailPath($this->foto),
             'jurusan'  => $this->whenLoaded('jurusan', fn() => $this->jurusan?->nama_jurusan),
             'role'     => $role ?? 'Mencari Pekerjaan',

@@ -24,6 +24,7 @@ class UpdateProfileRequest extends FormRequest
             'tempat_lahir' => ['nullable', 'string', 'max:255'],
             'tahun_masuk' => ['nullable', 'integer'],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'foto_sampul' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:4096'],
             'alamat' => ['nullable', 'string'],
             'no_hp' => ['nullable', 'string', 'max:20'],
             'id_jurusan' => ['sometimes', 'exists:jurusan,id_jurusan'],

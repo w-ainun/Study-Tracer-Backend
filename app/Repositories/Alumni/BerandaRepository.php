@@ -48,6 +48,14 @@ class BerandaRepository implements BerandaRepositoryInterface
             'riwayatStatus.wirausaha',
         ])
             ->where('status_create', 'ok')
+            ->whereDoesntHave('riwayatStatus', function ($rq) {
+                $rq->whereHas('status', fn($sq) => $sq->where('nama_status', 'Siswa Aktif'))
+                    ->whereRaw('id_riwayat = (
+                        SELECT MAX(rs2.id_riwayat)
+                        FROM riwayat_status rs2
+                        WHERE rs2.id_alumni = riwayat_status.id_alumni
+                    )');
+            })
             ->orderByDesc('updated_at')
             ->limit($limit)
             ->get();
