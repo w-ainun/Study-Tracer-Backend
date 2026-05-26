@@ -2,6 +2,7 @@
 
 namespace App\Services\Alumni;
 
+use App\Events\DashboardStatsUpdated;
 use App\Interfaces\Alumni\ProfileRepositoryInterface;
 use App\Models\Kuliah;
 use App\Models\Pekerjaan;
@@ -136,6 +137,12 @@ class ProfileService
                         'gambar_path' => $fotoSampulPath,
                     ]);
                 }
+
+                // Broadcast ke admin dashboard
+                broadcast(new DashboardStatsUpdated('profile_update', [
+                    'alumni_name' => $alumni->nama_alumni,
+                    'section' => 'personal_info',
+                ]))->toOthers();
             }
 
             // If skills are provided, create separate pending update
@@ -184,6 +191,12 @@ class ProfileService
                         'new_data' => ['social_media' => $socialMedia],
                     ]);
                 }
+
+                // Broadcast ke admin dashboard
+                broadcast(new DashboardStatsUpdated('profile_update', [
+                    'alumni_name' => $alumni->nama_alumni,
+                    'section' => 'social_media',
+                ]))->toOthers();
             }
 
             return $this->profileRepository->getAlumniWithRelations($alumni->id_alumni);

@@ -36,7 +36,7 @@ class BerandaRepository implements BerandaRepositoryInterface
     /**
      * Get recently registered & verified alumni (for jejaring alumni section).
      */
-    public function getRecentVerifiedAlumni(int $limit = 8)
+    public function getRecentVerifiedAlumni(int $currentUserId, int $limit = 8)
     {
         return Alumni::with([
             'jurusan',
@@ -48,6 +48,7 @@ class BerandaRepository implements BerandaRepositoryInterface
             'riwayatStatus.wirausaha',
         ])
             ->where('status_create', 'ok')
+            ->where('id_users', '!=', $currentUserId)
             ->whereDoesntHave('riwayatStatus', function ($rq) {
                 $rq->whereHas('status', fn($sq) => $sq->where('nama_status', 'Siswa Aktif'))
                     ->whereRaw('id_riwayat = (

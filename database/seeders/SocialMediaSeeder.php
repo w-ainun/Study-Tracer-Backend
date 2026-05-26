@@ -17,10 +17,14 @@ class SocialMediaSeeder extends Seeder
             ['nama_sosmed' => 'GitHub', 'icon_sosmed' => 'github'],
             ['nama_sosmed' => 'YouTube', 'icon_sosmed' => 'youtube'],
             ['nama_sosmed' => 'TikTok', 'icon_sosmed' => 'tiktok'],
+            ['nama_sosmed' => 'Website', 'icon_sosmed' => 'globe'],
         ];
 
         foreach ($socialMediaList as $sosmed) {
-            SocialMedia::create($sosmed);
+            SocialMedia::firstOrCreate(
+                ['nama_sosmed' => $sosmed['nama_sosmed']],
+                ['icon_sosmed' => $sosmed['icon_sosmed']]
+            );
         }
     }
 }

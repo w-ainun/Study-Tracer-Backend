@@ -190,6 +190,22 @@ class MessageController extends Controller
         }
     }
 
+    /**
+     * POST /alumni/messages/conversations/{id}/clear
+     * Clear all messages in a conversation.
+     */
+    public function clearMessages(int $id)
+    {
+        try {
+            $userId = auth()->user()->id_users;
+            $this->messageService->clearMessagesForUser($userId, $id);
+
+            return $this->successResponse(null, 'Seluruh pesan berhasil dibersihkan.');
+        } catch (\Exception $e) {
+            return $this->errorResponse($e->getMessage(), 422);
+        }
+    }
+
     // =====================
     // CONVERSATION SETTINGS
     // =====================

@@ -182,6 +182,13 @@ class MessageRepository implements MessageRepositoryInterface
             ->update($data);
     }
 
+    public function unarchiveConversationForParticipants(int $conversationId)
+    {
+        return ConversationParticipant::where('id_conversation', $conversationId)
+            ->whereNull('left_at')
+            ->update(['is_archived' => false]);
+    }
+
     public function markAsRead(int $conversationId, int $userId)
     {
         return ConversationParticipant::where('id_conversation', $conversationId)
@@ -225,6 +232,12 @@ class MessageRepository implements MessageRepositoryInterface
     public function deleteMessage(int $messageId)
     {
         return Message::where('id_message', $messageId)
+            ->update(['is_deleted' => true]);
+    }
+
+    public function clearMessages(int $conversationId)
+    {
+        return Message::where('id_conversation', $conversationId)
             ->update(['is_deleted' => true]);
     }
 

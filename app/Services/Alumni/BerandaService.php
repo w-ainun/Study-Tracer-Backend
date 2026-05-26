@@ -49,7 +49,7 @@ class BerandaService
             // Restricted sections: always returned (visible) but with locked flag
             'alumni_terbaru' => [
                 'locked' => !$canAccessAll,
-                'data' => $this->berandaRepository->getRecentVerifiedAlumni(8),
+                'data' => $this->berandaRepository->getRecentVerifiedAlumni($userId, 8),
             ],
             'lowongan_terbaru' => [
                 'locked' => !$canAccessAll,

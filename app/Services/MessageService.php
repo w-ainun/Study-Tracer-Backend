@@ -59,6 +59,9 @@ class MessageService
         $conversation = $this->messageRepository->findPrivateConversation($userId, $targetUserId);
 
         if ($conversation) {
+            $this->messageRepository->updateParticipantSettings($conversation->id_conversation, $userId, [
+                'is_archived' => false,
+            ]);
             return $conversation->load(['activeParticipants.user.alumni', 'latestMessage.sender.alumni']);
         }
 
@@ -160,13 +163,29 @@ class MessageService
 
     /**
      * Delete a conversation (only for the current user — hides it).
+     * For group chats, only the creator can delete.
      */
     public function deleteConversationForUser(int $userId, int $conversationId)
     {
         $this->ensureParticipant($conversationId, $userId);
+        $conversation = $this->messageRepository->findConversation($conversationId);
+
+        if ($conversation->type === 'group' && (int) $conversation->created_by !== $userId) {
+            throw new \Exception('Hanya pembuat grup yang dapat menghapus percakapan grup.');
+        }
+
         $this->messageRepository->updateParticipantSettings($conversationId, $userId, [
             'is_archived' => true,
         ]);
+    }
+
+    /**
+     * Clear all messages in a conversation.
+     */
+    public function clearMessagesForUser(int $userId, int $conversationId)
+    {
+        $this->ensureParticipant($conversationId, $userId);
+        $this->messageRepository->clearMessages($conversationId);
     }
 
     // =====================
@@ -254,10 +273,8 @@ class MessageService
 
         $message = $this->messageRepository->createMessage($messageData);
 
-        // Unarchive conversation for all participants (if someone sends a message)
-        $this->messageRepository->updateParticipantSettings($conversationId, $userId, [
-            'is_archived' => false,
-        ]);
+        // Unarchive conversation for all active participants (so the chat reappears in their chat list)
+        $this->messageRepository->unarchiveConversationForParticipants($conversationId);
 
         // Broadcast to participants
         $participantIds = $this->messageRepository->getParticipantIds($conversationId);

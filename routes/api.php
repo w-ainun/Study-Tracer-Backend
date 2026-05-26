@@ -252,6 +252,7 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
                 Route::delete('/conversations/{id}', [MessageController::class, 'deleteConversation']);
                 Route::match(['put', 'post'], '/conversations/{id}/group', [MessageController::class, 'updateGroup']);
                 Route::post('/conversations/{id}/leave', [MessageController::class, 'leaveConversation']);
+                Route::post('/conversations/{id}/clear', [MessageController::class, 'clearMessages']);
 
                 // Conversation settings
                 Route::post('/conversations/{id}/pin', [MessageController::class, 'togglePin']);

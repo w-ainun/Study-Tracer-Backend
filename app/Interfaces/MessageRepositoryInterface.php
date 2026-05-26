@@ -21,6 +21,7 @@ interface MessageRepositoryInterface
     public function getParticipantIds(int $conversationId): array;
     public function isParticipant(int $conversationId, int $userId): bool;
     public function updateParticipantSettings(int $conversationId, int $userId, array $data);
+    public function unarchiveConversationForParticipants(int $conversationId);
     public function markAsRead(int $conversationId, int $userId);
 
     // =====================
@@ -30,6 +31,7 @@ interface MessageRepositoryInterface
     public function findMessage(int $messageId);
     public function createMessage(array $data);
     public function deleteMessage(int $messageId);
+    public function clearMessages(int $conversationId);
 
     // =====================
     // STATS

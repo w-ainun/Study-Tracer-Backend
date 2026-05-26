@@ -37,6 +37,7 @@ class ConversationResource extends JsonResource
             'type'            => $this->type,
             'group_name'      => $this->group_name,
             'group_avatar'    => $this->group_avatar,
+            'created_by'      => $this->created_by,
             'created_at'      => $this->created_at?->toISOString(),
             'unread_count'    => $this->unread_count ?? 0,
         ];

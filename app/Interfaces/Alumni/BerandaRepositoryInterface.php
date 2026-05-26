@@ -12,7 +12,7 @@ interface BerandaRepositoryInterface
     /**
      * Get recently registered & verified alumni (for jejaring alumni section).
      */
-    public function getRecentVerifiedAlumni(int $limit = 8);
+    public function getRecentVerifiedAlumni(int $currentUserId, int $limit = 8);
 
     /**
      * Get latest published & approved lowongan (for beranda job section).
