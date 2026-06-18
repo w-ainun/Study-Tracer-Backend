@@ -65,4 +65,9 @@ class Lowongan extends Model
         return $this->belongsToMany(Skill::class, 'lowongan_skills', 'id_lowongan', 'id_skills')
             ->withTimestamps();
     }
+
+    public function lamaran()
+    {
+        return $this->hasMany(Lamaran::class, 'id_lowongan', 'id_lowongan');
+    }
 }

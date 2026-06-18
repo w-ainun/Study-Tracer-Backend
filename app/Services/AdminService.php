@@ -22,13 +22,16 @@ class AdminService
     use GeneratesThumbnail;
     private AdminRepositoryInterface $adminRepository;
     private NotificationService $notificationService;
+    private GrafikBidangService $grafikBidangService;
 
     public function __construct(
         AdminRepositoryInterface $adminRepository,
-        NotificationService $notificationService
+        NotificationService $notificationService,
+        GrafikBidangService $grafikBidangService
     ) {
         $this->adminRepository = $adminRepository;
         $this->notificationService = $notificationService;
+        $this->grafikBidangService = $grafikBidangService;
     }
 
     public function getDashboardStats(): array
@@ -169,6 +172,16 @@ class AdminService
     {
         $riwayat = $this->adminRepository->approveCareerUpdate($riwayatId);
         
+        // Auto-compute kesesuaian bidang saat career status disetujui
+        if ($riwayat) {
+            try {
+                $this->grafikBidangService->computeKesesuaian($riwayat);
+            } catch (\Exception $e) {
+                // Don't block approval if kesesuaian computation fails
+                \Illuminate\Support\Facades\Log::warning('Failed to compute kesesuaian bidang: ' . $e->getMessage());
+            }
+        }
+
         // Dispatch notifikasi ke queue (non-blocking)
         if ($riwayat && $riwayat->alumni && $riwayat->alumni->id_users) {
             $statusName = $riwayat->status->nama_status ?? 'Status Karir';

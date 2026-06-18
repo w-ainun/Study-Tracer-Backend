@@ -14,7 +14,15 @@ class Jurusan extends Model
 
     protected $fillable = [
         'nama_jurusan',
+        'bidang_relevan',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'bidang_relevan' => 'array',
+        ];
+    }
 
     public function alumni()
     {

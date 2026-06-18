@@ -27,7 +27,11 @@ use App\Http\Controllers\Api\GeocodeController;
 use App\Http\Controllers\Api\Alumni\ConnectionController;
 use App\Http\Controllers\Api\Alumni\MessageController;
 use App\Http\Controllers\Api\Alumni\PostController;
+use App\Http\Controllers\Api\Alumni\LamaranController as AlumniLamaranController;
 use App\Http\Controllers\Api\KelulusanController;
+use App\Http\Controllers\Api\GrafikBidangController;
+use App\Http\Controllers\Api\LamaranAdminController;
+use App\Http\Controllers\Api\ExportController;
 
 // PUBLIC ROUTES
 
@@ -152,6 +156,14 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
             // Saved lowongan
             Route::get('/saved-lowongan', [AlumniLowonganController::class, 'saved']);
             Route::post('/lowongan/{id}/toggle-save', [AlumniLowonganController::class, 'toggleSave']);
+
+            // Lamaran (Job Application Tracking)
+            Route::prefix('lamaran')->group(function () {
+                Route::get('/stats', [AlumniLamaranController::class, 'stats']);
+                Route::get('/', [AlumniLamaranController::class, 'index']);
+                Route::post('/{lowonganId}', [AlumniLamaranController::class, 'apply']);
+                Route::delete('/{id}', [AlumniLamaranController::class, 'cancel']);
+            });
 
 
         // Deskripsi Karier (accessible even if not verified)
@@ -492,5 +504,33 @@ Route::middleware(['auth:sanctum', 'token.expiration'])->group(function () {
 
         // Meta Data Management
         Route::post('/metadata', [MetaDataController::class, 'update']);
+
+        // Grafik Kesesuaian Bidang
+        Route::prefix('grafik-bidang')->group(function () {
+            Route::get('/stats', [GrafikBidangController::class, 'stats']);
+            Route::get('/by-jurusan', [GrafikBidangController::class, 'byJurusan']);
+            Route::get('/by-tahun', [GrafikBidangController::class, 'byTahun']);
+            Route::get('/detail', [GrafikBidangController::class, 'detail']);
+            Route::get('/export', [GrafikBidangController::class, 'export']);
+            Route::post('/recompute/{jurusanId}', [GrafikBidangController::class, 'recompute']);
+        });
+
+        // Lamaran Management (Admin)
+        Route::prefix('lamaran')->group(function () {
+            Route::get('/stats', [LamaranAdminController::class, 'stats']);
+            Route::get('/export', [LamaranAdminController::class, 'export']);
+            Route::get('/lowongan/{id}', [LamaranAdminController::class, 'byLowongan']);
+            Route::get('/', [LamaranAdminController::class, 'index']);
+            Route::post('/{id}/terima', [LamaranAdminController::class, 'terima']);
+            Route::post('/{id}/tolak', [LamaranAdminController::class, 'tolak']);
+        });
+
+        // Export Semua Data
+        Route::prefix('export')->group(function () {
+            Route::get('/alumni', [ExportController::class, 'alumni']);
+            Route::get('/lamaran', [ExportController::class, 'lamaran']);
+            Route::get('/kesesuaian-bidang', [ExportController::class, 'kesesuaianBidang']);
+            Route::get('/lowongan', [ExportController::class, 'lowongan']);
+        });
     });
 });

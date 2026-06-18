@@ -10,6 +10,7 @@ use App\Http\Requests\ForgotPasswordRequest;
 use App\Http\Requests\ResetPasswordRequest;
 use App\Http\Resources\UserResource;
 use App\Services\AuthService;
+use App\Jobs\SendJobRecommendationJob;
 use App\Traits\ApiResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -49,6 +50,13 @@ class AuthController extends Controller
             // Add can_access_all to user object if available
             if (isset($result['can_access_all'])) {
                 $result['user']->can_access_all = $result['can_access_all'];
+            }
+
+            // Dispatch job recommendation for alumni with "Belum Bekerja" status
+            $user = $result['user'];
+            if ($user->alumni) {
+                SendJobRecommendationJob::dispatch($user->id_users, $user->alumni->id_alumni)
+                    ->delay(now()->addSeconds(5)); // slight delay for UX
             }
 
             return $this->successResponse([
@@ -154,6 +162,13 @@ class AuthController extends Controller
             // Add can_access_all to user object if available
             if (isset($result['can_access_all'])) {
                 $result['user']->can_access_all = $result['can_access_all'];
+            }
+
+            // Dispatch job recommendation for alumni with "Belum Bekerja" status
+            $user = $result['user'];
+            if ($user->alumni) {
+                SendJobRecommendationJob::dispatch($user->id_users, $user->alumni->id_alumni)
+                    ->delay(now()->addSeconds(5));
             }
 
             return $this->successResponse([

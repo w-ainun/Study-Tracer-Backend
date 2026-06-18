@@ -149,4 +149,16 @@ class Alumni extends Model
     {
         return $this->hasMany(AlumniBlock::class, 'id_alumni_blocked', 'id_alumni');
     }
+
+    // =====================
+    // LAMARAN RELATIONSHIPS
+    // =====================
+
+    /**
+     * Lamaran/aplikasi pekerjaan yang diajukan oleh alumni ini.
+     */
+    public function lamaran()
+    {
+        return $this->hasMany(Lamaran::class, 'id_alumni', 'id_alumni');
+    }
 }

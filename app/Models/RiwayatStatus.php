@@ -18,7 +18,15 @@ class RiwayatStatus extends Model
         'tahun_mulai',
         'tahun_selesai',
         'approval_status',
+        'is_sesuai_bidang',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_sesuai_bidang' => 'boolean',
+        ];
+    }
 
     public function alumni()
     {
